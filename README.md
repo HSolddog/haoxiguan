@@ -4,6 +4,10 @@
 
 Haoxiguan is a gentle, offline-first habit tracker built with Flutter. Habits, check-ins, and daily notes stay on your device; no account or cloud sync is required.
 
+## 产品与工程设计
+
+2026-10-02 的[完整设计文档](docs/README.md)已整理：保持 MIT，Android 优先，首轮完成／计数／手动时长；默认单机数据完整性不依赖同步和用户备份。后续支持加密自选备份及小型自部署／官方同协议同步。新方案尚待实施，当前能力仍如下。
+
 ## 功能 | Features
 
 - 按天、周或月设置习惯频率，并按分类整理习惯。
@@ -37,11 +41,11 @@ flutter test
 powershell -ExecutionPolicy Bypass -File .\scripts\build_release_apk.ps1
 ```
 
-脚本会在构建成功后递增版本号，并将 APK 放入 `dist`。构建产物和签名凭据不会提交到仓库。版本升级与本地数据兼容说明见[版本与数据升级](docs/版本与数据升级.md)。
+当前脚本沿用历史内测签名流程，不能据此视为正式发布方案。脚本会在构建成功后递增版本号，并将 APK 放入 `dist`。构建产物和签名凭据不会提交到仓库。版本升级与本地数据兼容说明见[版本与数据升级](docs/版本与数据升级.md)。
 
 ## 数据与隐私 | Data and privacy
 
-应用数据保存在设备本地；设置页支持导出和导入 JSON。仓库不包含用户的应用数据、签名密钥或构建产物。
+当前数据存于本地 SharedPreferences，设置页通过剪贴板复制／粘贴 JSON 导出恢复；尚无文件备份、WebDAV 或云同步。Android 清单允许系统备份，行为受系统和用户设置影响。新设计将明确敏感数据规则及应用内备份，见[数据与同步规范](docs/数据与同步规范.md)。仓库不包含用户数据、签名密钥或构建产物。
 
 ## 参与贡献 | Contributing
 
