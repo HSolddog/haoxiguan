@@ -22,9 +22,11 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
-    env:
-      PUB_CACHE: ${{ runner.temp }}/haoxiguan-pub-cache
     steps:
+      - name: Configure SDK paths
+        run: |
+          echo "PUB_CACHE=$RUNNER_TEMP/haoxiguan-pub-cache" >> "$GITHUB_ENV"
+          echo "$GITHUB_WORKSPACE/.tooling/flutter/bin" >> "$GITHUB_PATH"
       - name: Check out project
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -48,8 +50,6 @@ jobs:
             .tooling/flutter/bin/cache
             ${{ env.PUB_CACHE }}
           key: flutter-3.44.6-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pubspec.lock') }}
-      - name: Add Flutter to PATH
-        run: echo "$GITHUB_WORKSPACE/.tooling/flutter/bin" >> "$GITHUB_PATH"
       - name: Report SDK
         run: flutter --version
       - name: Resolve locked dependencies
