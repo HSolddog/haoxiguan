@@ -1,0 +1,25 @@
+{
+  "platform": "linux",
+  "dart": "3.12.2 (stable) (Tue Jun 9 01:11:39 2026 -0700) on \"linux_x64\"",
+  "execution": "flutter test / JIT / background SQLite",
+  "habits": 100,
+  "records": 100000,
+  "samples": 5,
+  "snapshotBytes": 28782191,
+  "importMs": 18882,
+  "saveMs": [
+    113,
+    81,
+    96,
+    92,
+    76
+  ],
+  "reopenMs": [
+    7333,
+    6982,
+    7521,
+    6972,
+    6883
+  ],
+  "databaseBytes": 77418496
+}

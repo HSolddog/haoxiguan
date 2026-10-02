@@ -1,0 +1,50 @@
+[
+  {
+    "build": "10001",
+    "status": "passed",
+    "runId": "1790929183035116",
+    "phase": "create",
+    "habits": 3,
+    "schema": 2,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  },
+  {
+    "build": "10001",
+    "status": "passed",
+    "runId": "1790929187148329",
+    "phase": "reopen",
+    "habits": 3,
+    "schema": 2,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  },
+  {
+    "build": "10002",
+    "status": "passed",
+    "runId": "1790929197283152",
+    "phase": "reopen",
+    "habits": 3,
+    "schema": 2,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  },
+  {
+    "build": "10002",
+    "status": "passed",
+    "runId": "1790929201596555",
+    "phase": "reopen",
+    "habits": 3,
+    "schema": 2,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  }
+]

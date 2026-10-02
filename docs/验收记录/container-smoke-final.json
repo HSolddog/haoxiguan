@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "uid": "65532:65532",
+  "cpuLimit": 1,
+  "memoryLimitGiB": 1,
+  "readOnlyRoot": true,
+  "persistentRestart": true,
+  "consistentBackupRestore": true,
+  "restoredCredentialsRevoked": true,
+  "opaqueObjectPreserved": true,
+  "idleMemoryOnlyNotLoadBenchmark": "5.574MiB / 1GiB"
+}

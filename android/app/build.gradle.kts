@@ -5,7 +5,24 @@ plugins {
 }
 
 val updateKeystorePath = System.getenv("HAOXIGUAN_UPDATE_KEYSTORE")
-val updateKeystoreFile = updateKeystorePath?.let { file(it) }?.takeIf { it.exists() }
+val updateKeystoreFile = updateKeystorePath?.let { file(it) }?.takeIf { it.isFile }
+val updateStorePassword = System.getenv("HAOXIGUAN_UPDATE_STORE_PASSWORD")
+val updateKeyAlias = System.getenv("HAOXIGUAN_UPDATE_KEY_ALIAS")
+val updateKeyPassword = System.getenv("HAOXIGUAN_UPDATE_KEY_PASSWORD")
+val hasReleaseSigning = updateKeystoreFile != null && !updateStorePassword.isNullOrEmpty() &&
+    !updateKeyAlias.isNullOrEmpty() && !updateKeyPassword.isNullOrEmpty()
+
+// Release builds never fall back to a machine's unrelated debug certificate.
+// Generic assemble tasks are covered as well as explicit assembleRelease.
+gradle.taskGraph.whenReady {
+    if (allTasks.any { it.project.path == ":app" && it.name.contains("Release") }) {
+        check(hasReleaseSigning) {
+            "Release signing is required. Set HAOXIGUAN_UPDATE_KEYSTORE, " +
+                "HAOXIGUAN_UPDATE_STORE_PASSWORD, HAOXIGUAN_UPDATE_KEY_ALIAS and " +
+                "HAOXIGUAN_UPDATE_KEY_PASSWORD; verify the existing install certificate first."
+        }
+    }
+}
 
 android {
     namespace = "com.haoxiguan.haoxiguan"
@@ -31,24 +48,20 @@ android {
     }
 
     signingConfigs {
-        if (updateKeystoreFile != null) {
+        if (hasReleaseSigning) {
             create("update") {
                 storeFile = updateKeystoreFile
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
+                storePassword = updateStorePassword
+                keyAlias = updateKeyAlias
+                keyPassword = updateKeyPassword
             }
         }
     }
 
     buildTypes {
         release {
-            // Reuse the established update certificate when the release script
-            // finds it; this allows Android to install over older builds.
-            signingConfig = if (updateKeystoreFile != null) {
-                signingConfigs.getByName("update")
-            } else {
-                signingConfigs.getByName("debug")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("update")
             }
         }
     }

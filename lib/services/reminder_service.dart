@@ -1,4 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import '../data/sqlite_habit_repository.dart';
+import '../data/snapshot_codec.dart';
+import 'device_task_lock.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -6,14 +11,16 @@ import 'package:timezone/data/latest_10y.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/habit.dart';
+import 'reminder_plan.dart';
 
 enum ReminderActionType { complete, snooze }
 
 class ReminderAction {
-  const ReminderAction(this.type, this.habitId);
+  const ReminderAction(this.type, this.habitId, {this.localDate});
 
   final ReminderActionType type;
   final String habitId;
+  final String? localDate;
 }
 
 abstract class ReminderScheduler {
@@ -21,7 +28,7 @@ abstract class ReminderScheduler {
   Future<bool> requestPermission();
   Future<void> syncHabit(Habit habit);
   Future<void> syncAll(Iterable<Habit> habits);
-  Future<void> snooze(Habit habit);
+  Future<void> snooze(Habit habit, {DateTime? forDate});
 }
 
 class NoopReminderScheduler implements ReminderScheduler {
@@ -32,7 +39,7 @@ class NoopReminderScheduler implements ReminderScheduler {
   Future<bool> requestPermission() async => true;
 
   @override
-  Future<void> snooze(Habit habit) async {}
+  Future<void> snooze(Habit habit, {DateTime? forDate}) async {}
 
   @override
   Future<void> syncAll(Iterable<Habit> habits) async {}
@@ -42,6 +49,8 @@ class NoopReminderScheduler implements ReminderScheduler {
 }
 
 class LocalReminderService implements ReminderScheduler {
+  LocalReminderService({this.handleLaunchActions = true});
+  final bool handleLaunchActions;
   static const _channelId = 'habit_reminders';
   static const _channelName = '习惯提醒';
   static const _channelDescription = '在设定的时间提醒你完成习惯';
@@ -54,6 +63,8 @@ class LocalReminderService implements ReminderScheduler {
   final StreamController<ReminderAction> _actions =
       StreamController<ReminderAction>.broadcast();
   Future<void>? _initializing;
+  Future<void>? _scheduleQueue;
+  List<Habit> _knownHabits = [];
 
   @override
   Stream<ReminderAction> get actions => _actions.stream;
@@ -66,12 +77,7 @@ class LocalReminderService implements ReminderScheduler {
 
   Future<void> _initialize() async {
     tz_data.initializeTimeZones();
-    try {
-      final timezone = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timezone.identifier));
-    } on Object {
-      tz.setLocalLocation(tz.UTC);
-    }
+    await _refreshTimezone();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     final darwin = DarwinInitializationSettings(
@@ -82,7 +88,7 @@ class LocalReminderService implements ReminderScheduler {
         DarwinNotificationCategory(
           _categoryId,
           actions: <DarwinNotificationAction>[
-            DarwinNotificationAction.plain(_completeAction, '完成'),
+            DarwinNotificationAction.plain(_completeAction, '记录'),
             DarwinNotificationAction.plain(_snoozeAction, '稍后提醒'),
           ],
         ),
@@ -92,15 +98,45 @@ class LocalReminderService implements ReminderScheduler {
       settings: InitializationSettings(android: android, iOS: darwin),
       onDidReceiveNotificationResponse: _handleResponse,
     );
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    if (handleLaunchActions &&
+        launch?.didNotificationLaunchApp == true &&
+        launch?.notificationResponse != null) {
+      _handleResponse(launch!.notificationResponse!);
+    }
+  }
+
+  Future<void> _refreshTimezone() async {
+    final timezone = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timezone.identifier));
   }
 
   void _handleResponse(NotificationResponse response) {
-    final habitId = response.payload;
-    if (habitId == null || habitId.isEmpty) return;
-    if (response.actionId == _completeAction) {
-      _actions.add(ReminderAction(ReminderActionType.complete, habitId));
-    } else if (response.actionId == _snoozeAction) {
-      _actions.add(ReminderAction(ReminderActionType.snooze, habitId));
+    try {
+      final payload =
+          jsonDecode(response.payload ?? '') as Map<String, dynamic>;
+      if (payload['v'] != 1 ||
+          payload['habitId'] is! String ||
+          payload['date'] is! String) {
+        return;
+      }
+      final type = response.actionId == _snoozeAction
+          ? ReminderActionType.snooze
+          : ReminderActionType.complete;
+      // Tapping the notification body only opens the app; an explicit action records.
+      if (response.actionId != _completeAction &&
+          response.actionId != _snoozeAction) {
+        return;
+      }
+      _actions.add(
+        ReminderAction(
+          type,
+          payload['habitId'] as String,
+          localDate: payload['date'] as String,
+        ),
+      );
+    } on Object {
+      /* Old undated payloads cannot safely record today's date. */
     }
   }
 
@@ -130,94 +166,173 @@ class LocalReminderService implements ReminderScheduler {
   }
 
   @override
-  Future<void> syncAll(Iterable<Habit> habits) async {
-    await _ensureInitialized();
-    await _plugin.cancelAll();
-    for (final habit in habits) {
-      await syncHabit(habit);
+  Future<void> syncAll(Iterable<Habit> habits) {
+    var snapshot = List<Habit>.of(habits);
+    Future<void> perform() async {
+      await _ensureInitialized();
+      await _refreshTimezone();
+      if (Platform.isAndroid) {
+        final repository = await SqliteHabitRepository.open();
+        try {
+          final raw = await repository.load();
+          if (raw == null) return;
+          snapshot = (SnapshotCodec.decode(raw)['habits'] as List)
+              .map((h) => Habit.fromJson((h as Map).cast<String, Object?>()))
+              .toList();
+        } finally {
+          await repository.close();
+        }
+      }
+      _knownHabits = snapshot;
+      final plan = buildReminderPlan(snapshot, DateTime.now());
+      final pending = await _plugin.pendingNotificationRequests();
+      final snoozes = <({Habit habit, String date, DateTime at})>[];
+      for (final notification in pending) {
+        try {
+          final payload = jsonDecode(notification.payload ?? '') as Map;
+          final at = DateTime.tryParse(payload['snoozeAt'] as String? ?? '');
+          final habit = snapshot
+              .where((h) => h.id == payload['habitId'])
+              .firstOrNull;
+          final date = payload['date'] as String;
+          if (at != null &&
+              at.isAfter(DateTime.now()) &&
+              habit != null &&
+              !habit.archived &&
+              !habit.inTrash &&
+              !habit.isPaused &&
+              !habit.isCompletedOn(DateTime.parse(date))) {
+            snoozes.add((habit: habit, date: date, at: at));
+          }
+        } on Object {
+          /* Only our valid dated snoozes can be preserved. */
+        }
+      }
+      await _plugin.cancelAll();
+      for (var index = 0; index < plan.length; index++) {
+        final item = plan[index];
+        await _plugin.zonedSchedule(
+          id: index + 1,
+          title: '${item.habit.emoji} ${item.habit.title}',
+          body:
+              '${dateKey(item.date)} · ${item.habit.recordType == 'boolean' ? '完成后可直接打卡' : '点记录后填写实际数值'}',
+          scheduledDate: tz.TZDateTime(
+            tz.local,
+            item.date.year,
+            item.date.month,
+            item.date.day,
+            item.hour,
+            item.minute,
+          ),
+          notificationDetails: _notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: jsonEncode({
+            'v': 1,
+            'habitId': item.habit.id,
+            'date': dateKey(item.date),
+          }),
+        );
+      }
+      for (var index = 0; index < snoozes.length; index++) {
+        final item = snoozes[index];
+        await _scheduleSnooze(1000 + index, item.habit, item.date, item.at);
+      }
     }
+
+    return _enqueue(perform);
+  }
+
+  Future<void> _enqueue(Future<void> Function() perform) {
+    final unlocked = perform;
+    perform = () => DeviceTaskLock.run('reminders', unlocked);
+    final prior = _scheduleQueue;
+    final result = prior == null
+        ? Future<void>.sync(perform)
+        : prior.then((_) => perform());
+    late Future<void> tail;
+    void release() {
+      if (identical(_scheduleQueue, tail)) _scheduleQueue = null;
+    }
+
+    tail = result.then(
+      (_) => release(),
+      onError: (Object _, StackTrace _) => release(),
+    );
+    _scheduleQueue = tail;
+    return result;
   }
 
   @override
-  Future<void> syncHabit(Habit habit) async {
-    await _ensureInitialized();
-    await _cancelHabit(habit.id);
-    final time = _parseTime(habit.reminderTime);
-    if (time == null || habit.archived || habit.isPaused) return;
+  Future<void> syncHabit(Habit habit) =>
+      syncAll([..._knownHabits.where((h) => h.id != habit.id), habit]);
 
-    for (var weekday = 1; weekday <= 7; weekday++) {
-      await _plugin.zonedSchedule(
-        id: _notificationId(habit.id, weekday),
+  @override
+  Future<void> snooze(Habit habit, {DateTime? forDate}) => _enqueue(() async {
+    var current = habit;
+    // The callback may have waited behind a newer completion/pause or a
+    // background scheduler. Read committed facts only after taking the lock.
+    if (Platform.isAndroid) {
+      final repository = await SqliteHabitRepository.open();
+      try {
+        final raw = await repository.load();
+        if (raw == null) return;
+        final latest = (SnapshotCodec.decode(raw)['habits'] as List)
+            .map((h) => Habit.fromJson((h as Map).cast<String, Object?>()))
+            .where((h) => h.id == habit.id)
+            .firstOrNull;
+        if (latest == null) return;
+        current = latest;
+      } finally {
+        await repository.close();
+      }
+    }
+    if (current.archived || current.inTrash || current.isPaused) return;
+    await _ensureInitialized();
+    await _refreshTimezone();
+    final date = dateKey(forDate ?? DateTime.now());
+    if (current.isCompletedOn(DateTime.parse(date))) return;
+    final pending = await _plugin.pendingNotificationRequests();
+    final ids = pending.map((r) => r.id).toSet();
+    for (final item in pending) {
+      try {
+        final payload = jsonDecode(item.payload ?? '') as Map;
+        if (payload['habitId'] == current.id &&
+            payload['date'] == date &&
+            payload['snoozeAt'] != null) {
+          await _plugin.cancel(id: item.id);
+          ids.remove(item.id);
+        }
+      } on Object {
+        /* Ignore notifications not owned by this format. */
+      }
+    }
+    var id = 1000;
+    while (ids.contains(id)) {
+      id++;
+    }
+    await _scheduleSnooze(
+      id,
+      current,
+      date,
+      DateTime.now().add(const Duration(minutes: 10)),
+    );
+  });
+
+  Future<void> _scheduleSnooze(int id, Habit habit, String date, DateTime at) =>
+      _plugin.zonedSchedule(
+        id: id,
         title: '${habit.emoji} ${habit.title}',
-        body: '${executionLabel(habit)}，现在做一点就很好。完成后可以直接打卡。',
-        scheduledDate: _nextWeekday(weekday, time.$1, time.$2),
+        body: '$date · 十分钟过去了，可以记录一点进展。',
+        scheduledDate: tz.TZDateTime.from(at, tz.local),
         notificationDetails: _notificationDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-        payload: habit.id,
+        payload: jsonEncode({
+          'v': 1,
+          'habitId': habit.id,
+          'date': date,
+          'snoozeAt': at.toUtc().toIso8601String(),
+        }),
       );
-    }
-  }
-
-  @override
-  Future<void> snooze(Habit habit) async {
-    await _ensureInitialized();
-    await _plugin.zonedSchedule(
-      id: _notificationId(habit.id, 8),
-      title: '${habit.emoji} ${habit.title}',
-      body: '十分钟过去了，要不要现在完成一点？',
-      scheduledDate: tz.TZDateTime.now(
-        tz.local,
-      ).add(const Duration(minutes: 10)),
-      notificationDetails: _notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: habit.id,
-    );
-  }
-
-  Future<void> _cancelHabit(String habitId) async {
-    for (var slot = 1; slot <= 8; slot++) {
-      await _plugin.cancel(id: _notificationId(habitId, slot));
-    }
-  }
-
-  (int, int)? _parseTime(String? value) {
-    if (value == null) return null;
-    final parts = value.split(':');
-    if (parts.length != 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-    if (hour == null || minute == null) return null;
-    return (hour, minute);
-  }
-
-  tz.TZDateTime _nextWeekday(int weekday, int hour, int minute) {
-    final now = tz.TZDateTime.now(tz.local);
-    var candidate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
-    while (candidate.weekday != weekday || !candidate.isAfter(now)) {
-      candidate = candidate.add(const Duration(days: 1));
-    }
-    return candidate;
-  }
-
-  int _notificationId(String habitId, int slot) =>
-      (_stableHash(habitId) % 100000) * 10 + slot;
-
-  int _stableHash(String value) {
-    var hash = 0x811C9DC5;
-    for (final unit in value.codeUnits) {
-      hash ^= unit;
-      hash = (hash * 0x01000193) & 0x7FFFFFFF;
-    }
-    return hash;
-  }
 
   NotificationDetails get _notificationDetails => const NotificationDetails(
     android: AndroidNotificationDetails(
@@ -229,7 +344,7 @@ class LocalReminderService implements ReminderScheduler {
       actions: <AndroidNotificationAction>[
         AndroidNotificationAction(
           _completeAction,
-          '完成',
+          '记录',
           showsUserInterface: true,
         ),
         AndroidNotificationAction(

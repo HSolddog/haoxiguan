@@ -1,0 +1,6 @@
+/data/
+/dist/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.process.lock

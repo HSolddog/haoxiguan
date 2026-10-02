@@ -4,11 +4,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../models/habit.dart';
 import '../state/habit_controller.dart';
+import '../models/record_entry.dart';
+import 'data_screen.dart';
+import 'record_editor.dart';
+import 'trash_screen.dart';
 
 const _warmBackground = Color(0xFFF7F5EF);
 
 class HabitApp extends StatelessWidget {
-  const HabitApp({super.key, required this.controller});
+  HabitApp({super.key, required this.controller});
+  final _navigator = GlobalKey<NavigatorState>();
 
   final HabitController controller;
 
@@ -17,7 +22,18 @@ class HabitApp extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final request = controller.takePendingRecord();
+        if (request != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = _navigator.currentContext;
+            final habit = controller.habitById(request.habitId);
+            if (context != null && habit != null) {
+              showRecordEditor(context, controller, habit, request.date);
+            }
+          });
+        }
         return MaterialApp(
+          navigatorKey: _navigator,
           title: '好习惯',
           debugShowCheckedModeBanner: false,
           locale: const Locale('zh', 'CN'),
@@ -27,14 +43,141 @@ class HabitApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          themeMode: controller.darkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: switch (controller.appearanceMode) {
+            'dark' => ThemeMode.dark,
+            'light' => ThemeMode.light,
+            _ => ThemeMode.system,
+          },
           theme: _theme(Brightness.light, Color(controller.themeColorValue)),
           darkTheme: _theme(Brightness.dark, Color(controller.themeColorValue)),
-          home: HomeShell(controller: controller),
+          builder: (context, child) => Column(
+            children: [
+              if (controller.saveError != null)
+                Material(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(controller.saveError!)),
+                          TextButton(
+                            onPressed: controller.dismissSaveError,
+                            child: const Text('知道了'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              Expanded(child: child ?? const SizedBox.shrink()),
+            ],
+          ),
+          home: controller.loaded
+              ? HomeShell(controller: controller)
+              : _RecoveryScreen(controller: controller),
         );
       },
     );
   }
+}
+
+class _RecoveryScreen extends StatelessWidget {
+  const _RecoveryScreen({required this.controller});
+  final HabitController controller;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('好习惯')),
+    body: Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (controller.loading)
+              const CircularProgressIndicator()
+            else ...[
+              const Icon(Icons.shield_outlined, size: 56),
+              const SizedBox(height: 20),
+              Text(controller.loadError ?? '正在准备本地数据'),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: controller.load,
+                child: const Text('重新检查'),
+              ),
+              if (controller.canRecoverBackup)
+                TextButton(
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('恢复保护副本？'),
+                        content: const Text(
+                          '保护副本可能较旧，最近记录可能不在其中。恢复前会保留当前源数据；不会删除损坏的源文件。',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('取消'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('确认恢复'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) await controller.recoverBackup();
+                  },
+                  child: const Text('从保护副本恢复'),
+                ),
+              TextButton(
+                onPressed: () async {
+                  try {
+                    final sources = await controller.rawSources();
+                    if (!context.mounted) return;
+                    await showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('原始数据（包含私人记录）'),
+                        content: SizedBox(
+                          width: 600,
+                          child: SingleChildScrollView(
+                            child: SelectableText(
+                              sources.entries
+                                  .map((e) => '${e.key}\n${e.value}')
+                                  .join('\n\n'),
+                            ),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('关闭'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } on Object {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('暂时无法读取源文件。请保留应用数据，勿卸载或清除。'),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('查看原始数据'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 ThemeData _theme(Brightness brightness, Color seedColor) {
@@ -142,7 +285,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),
             selectedIcon: Icon(Icons.person_rounded),
-            label: '我的',
+            label: '数据',
           ),
         ],
       ),
@@ -199,7 +342,7 @@ class TodayScreen extends StatelessWidget {
                   Row(
                     children: <Widget>[
                       Text(
-                        '今天的习惯',
+                        '今日应做',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -218,7 +361,7 @@ class TodayScreen extends StatelessWidget {
               ),
             ),
           ),
-          if (habits.isEmpty)
+          if (habits.isEmpty && controller.periodHabits.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: _EmptyState(
@@ -231,7 +374,7 @@ class TodayScreen extends StatelessWidget {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
               sliver: SliverList.list(
                 children: <Widget>[
                   for (final entry in groupedHabits.entries)
@@ -241,7 +384,31 @@ class TodayScreen extends StatelessWidget {
                       date: today,
                       controller: controller,
                     ),
-                  if (completed == habits.length) const _AllDoneCard(),
+                  if (habits.isNotEmpty && completed == habits.length)
+                    const _AllDoneCard(),
+                  if (controller.periodHabits.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      '本周 / 本月可安排',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('按整个周期达标；未记录的一天不单独算失败。'),
+                    ),
+                    for (final habit in controller.periodHabits)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: HabitCard(
+                          habit: habit,
+                          date: today,
+                          controller: controller,
+                        ),
+                      ),
+                  ],
+                  const SizedBox(height: 110),
                 ],
               ),
             ),
@@ -463,6 +630,14 @@ class HabitCard extends StatelessWidget {
                                   : null,
                             ),
                       ),
+                      if (habit.recordType != 'boolean')
+                        Text(
+                          '${habit.valueLabel(habit.valueOn(date))} / ${habit.valueLabel(habit.planOn(date).dailyTarget)}',
+                        ),
+                      if (habit.planOn(date).flexible)
+                        Text(
+                          '${habit.planOn(date).kind == 'week' ? '本周' : '本月'} ${habit.periodResult(date).completed}/${habit.periodResult(date).expected} 天',
+                        ),
                       const SizedBox(height: 5),
                       Row(
                         children: <Widget>[
@@ -512,7 +687,9 @@ class HabitCard extends StatelessWidget {
                   duration: const Duration(milliseconds: 220),
                   child: IconButton.filled(
                     key: Key('complete-${habit.id}-$completed'),
-                    tooltip: completed ? '撤销完成' : '完成',
+                    tooltip: habit.recordType == 'boolean'
+                        ? (completed ? '撤销完成' : '完成')
+                        : '记录数值',
                     style: IconButton.styleFrom(
                       backgroundColor: completed
                           ? color
@@ -521,10 +698,18 @@ class HabitCard extends StatelessWidget {
                     ),
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      controller.toggleCompletion(habit.id, date);
+                      if (habit.recordType == 'boolean') {
+                        controller.toggleCompletion(habit.id, date);
+                      } else {
+                        showRecordEditor(context, controller, habit, date);
+                      }
                     },
                     icon: Icon(
-                      completed ? Icons.check_rounded : Icons.circle_outlined,
+                      habit.recordType != 'boolean'
+                          ? Icons.add_rounded
+                          : completed
+                          ? Icons.check_rounded
+                          : Icons.circle_outlined,
                     ),
                   ),
                 ),
@@ -581,6 +766,16 @@ class HabitsScreen extends StatelessWidget {
                 activeHabits: active,
                 controller: controller,
               ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: Text('回收站 · ${controller.trashedHabits.length}'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => TrashScreen(controller: controller),
+              ),
+            ),
+          ),
           if (archived.isNotEmpty) ...<Widget>[
             const SizedBox(height: 16),
             ExpansionTile(
@@ -602,7 +797,7 @@ class HabitsScreen extends StatelessWidget {
                             child: const Text('恢复'),
                           ),
                           IconButton(
-                            tooltip: '永久删除',
+                            tooltip: '移入回收站',
                             onPressed: () =>
                                 _confirmDeleteHabit(context, controller, habit),
                             icon: const Icon(Icons.delete_outline_rounded),
@@ -842,7 +1037,7 @@ class ReviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final habits = controller.activeHabits;
+    final habits = controller.habits;
     final days = controller.reviewDays;
     final completed = controller.completedTotalInRange(days: days);
     final scheduled = controller.expectedTotalInRange(days: days);
@@ -862,7 +1057,7 @@ class ReviewScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '看见积累，也给遗漏留一点余地。',
+            '截至昨天已结算；包括归档和回收站历史。',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -888,8 +1083,8 @@ class ReviewScreen extends StatelessWidget {
               Expanded(
                 child: _MetricCard(
                   icon: Icons.auto_graph_rounded,
-                  value: '${(rate * 100).round()}%',
-                  label: '$periodLabel完成率',
+                  value: scheduled == 0 ? '—' : '${(rate * 100).round()}%',
+                  label: '已结算日计划达标率',
                 ),
               ),
               const SizedBox(width: 12),
@@ -897,14 +1092,14 @@ class ReviewScreen extends StatelessWidget {
                 child: _MetricCard(
                   icon: Icons.check_circle_outline_rounded,
                   value: '$completed',
-                  label: '$periodLabel完成',
+                  label: '已结算达标日',
                 ),
               ),
             ],
           ),
           const SizedBox(height: 26),
           Text(
-            '$periodLabel打卡日历',
+            '$periodLabel日计划日历',
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -1063,7 +1258,13 @@ class _HabitInsightCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: <Widget>[
-                  Text('当前连续 ${controller.currentStreak(habit)} 次'),
+                  Text(
+                    '当前连续 ${controller.currentStreak(habit)} ${habit.planOn(controller.today).kind == 'week'
+                        ? '周'
+                        : habit.planOn(controller.today).kind == 'month'
+                        ? '月'
+                        : '次计划'}',
+                  ),
                   const Spacer(),
                   Text('最佳 ${controller.bestStreak(habit)} 次'),
                 ],
@@ -1119,219 +1320,14 @@ class _MetricCard extends StatelessWidget {
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.controller});
-
   final HabitController controller;
-
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-        children: <Widget>[
-          Text(
-            '我的',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.8,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Card(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: <Widget>[
-                  Container(
-                    width: 54,
-                    height: 54,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Text('🌱', style: TextStyle(fontSize: 26)),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const Text(
-                          '数据只属于你',
-                          style: TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 4),
-                        Text('当前累计 ${controller.totalEffort} 努力值'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 22),
-          _SettingsGroup(
-            children: <Widget>[
-              SwitchListTile(
-                secondary: const Icon(Icons.dark_mode_outlined),
-                title: const Text('深色模式'),
-                subtitle: const Text('在夜间使用更舒适'),
-                value: controller.darkMode,
-                onChanged: controller.setDarkMode,
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: Icon(
-                  Icons.palette_outlined,
-                  color: Color(controller.themeColorValue),
-                ),
-                title: const Text('主题颜色'),
-                subtitle: const Text('从丰富配色中选择，也可以输入自定义色值'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _showThemeDialog(context, controller),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.date_range_rounded),
-                title: const Text('默认回顾周期'),
-                subtitle: Text(_reviewPeriodLabel(controller.reviewDays)),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _showReviewPeriodDialog(context, controller),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.notifications_none_rounded),
-                title: const Text('习惯提醒'),
-                subtitle: Text(
-                  '${controller.activeHabits.where((habit) => habit.reminderTime != null).length} 个习惯已设置时间',
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () async {
-                  final granted = await controller.requestReminderPermission();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          granted ? '通知权限已开启' : '通知权限未开启，请在系统设置中允许',
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-          if (controller.activeHabits.any(
-            (habit) => habit.wishEnabled && habit.wishTitle.isNotEmpty,
-          )) ...<Widget>[
-            const SizedBox(height: 22),
-            Text(
-              '心愿进度',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 12),
-            ...controller.activeHabits
-                .where(
-                  (habit) => habit.wishEnabled && habit.wishTitle.isNotEmpty,
-                )
-                .map((habit) {
-                  final effort = controller.effortPoints(habit);
-                  final progress = (effort / habit.wishTarget).clamp(0.0, 1.0);
-                  final reached = effort >= habit.wishTarget;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Text(
-                                  reached ? '🎉' : '🎁',
-                                  style: const TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    habit.wishTitle,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                                Text('$effort / ${habit.wishTarget}'),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            LinearProgressIndicator(
-                              value: progress,
-                              minHeight: 8,
-                              borderRadius: BorderRadius.circular(8),
-                              color: Color(habit.colorValue),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-          ],
-          const SizedBox(height: 16),
-          _SettingsGroup(
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.copy_all_rounded),
-                title: const Text('导出数据'),
-                subtitle: const Text('复制 JSON 备份到剪贴板'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: controller.exportJson()),
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('备份已复制到剪贴板')));
-                  }
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.settings_backup_restore_rounded),
-                title: const Text('恢复数据'),
-                subtitle: const Text('从 JSON 备份恢复'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _showImportDialog(context, controller),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          Center(
-            child: Text(
-              '好习惯 MVP · 离线优先',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsGroup extends StatelessWidget {
-  const _SettingsGroup({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => Card(child: Column(children: children));
+  Widget build(BuildContext context) => DataScreen(
+    controller: controller,
+    onTheme: () => _showThemeDialog(context, controller),
+    onReview: () => _showReviewPeriodDialog(context, controller),
+    onLegacyRestore: () => _showImportDialog(context, controller),
+  );
 }
 
 class _AllDoneCard extends StatelessWidget {
@@ -1530,19 +1526,16 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
 
   final _titleController = TextEditingController();
   final _categoryController = TextEditingController();
-  final _wishController = TextEditingController();
+  final _unitController = TextEditingController(text: '次');
+  final _dailyTargetController = TextEditingController(text: '1');
+  final _targetSecondsController = TextEditingController(text: '0');
+  String _recordType = 'boolean';
+  Set<int> _weekdays = {1, 2, 3, 4, 5, 6, 7};
   late String _emoji;
   late int _color;
   late String _scheduleType;
   late int _scheduleCount;
   TimeOfDay? _reminder;
-  late int _rewardPoints;
-  late int _penaltyPoints;
-  late int _targetCount;
-  late int _wishTarget;
-  late String _rewardPeriod;
-  late bool _effortEnabled;
-  late bool _wishEnabled;
   bool _saving = false;
 
   bool get _editing => widget.habit != null;
@@ -1553,18 +1546,23 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
     final habit = widget.habit;
     _titleController.text = habit?.title ?? '';
     _categoryController.text = habit?.category ?? '未分类';
-    _wishController.text = habit?.wishTitle ?? '';
+    _recordType = habit?.recordType ?? 'boolean';
+    _weekdays = {
+      ...habit?.weekdays ?? {1, 2, 3, 4, 5, 6, 7},
+    };
+    _unitController.text = habit?.unit ?? '次';
+    _dailyTargetController.text = habit == null
+        ? '1'
+        : habit.recordType == 'duration'
+        ? '${habit.dailyTarget ~/ 60}'
+        : formatFixed(habit.dailyTarget, scale: habit.scale);
+    _targetSecondsController.text = habit?.recordType == 'duration'
+        ? '${habit!.dailyTarget % 60}'
+        : '0';
     _emoji = habit?.emoji ?? _emojis.first;
     _color = habit?.colorValue ?? _colors.first;
     _scheduleType = habit?.scheduleType ?? 'daily';
     _scheduleCount = habit?.scheduleCount ?? 1;
-    _rewardPoints = habit?.rewardPoints ?? 10;
-    _penaltyPoints = habit?.penaltyPoints ?? 5;
-    _targetCount = habit?.targetCount ?? 3;
-    _rewardPeriod = habit?.rewardPeriod ?? 'week';
-    _wishTarget = habit?.wishTarget ?? 100;
-    _effortEnabled = habit?.effortEnabled ?? false;
-    _wishEnabled = habit?.wishEnabled ?? false;
     final reminder = habit?.reminderTime?.split(':');
     if (reminder != null && reminder.length == 2) {
       _reminder = TimeOfDay(
@@ -1578,7 +1576,9 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
   void dispose() {
     _titleController.dispose();
     _categoryController.dispose();
-    _wishController.dispose();
+    _unitController.dispose();
+    _dailyTargetController.dispose();
+    _targetSecondsController.dispose();
     super.dispose();
   }
 
@@ -1642,6 +1642,56 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              key: const Key('record-type-field'),
+              initialValue: _recordType,
+              decoration: const InputDecoration(labelText: '记录方式'),
+              items: const [
+                DropdownMenuItem(value: 'boolean', child: Text('完成 / 未完成')),
+                DropdownMenuItem(value: 'count', child: Text('计数')),
+                DropdownMenuItem(value: 'duration', child: Text('手动时长')),
+              ],
+              onChanged: _editing
+                  ? null
+                  : (value) => setState(() {
+                      _recordType = value!;
+                      _dailyTargetController.text = value == 'duration'
+                          ? '20'
+                          : '1';
+                    }),
+            ),
+            if (_recordType != 'boolean') ...[
+              const SizedBox(height: 12),
+              if (_recordType == 'count')
+                TextField(
+                  controller: _unitController,
+                  enabled: !_editing,
+                  maxLength: 20,
+                  decoration: const InputDecoration(labelText: '单位，例如 杯、页'),
+                ),
+              TextField(
+                key: const Key('daily-target-field'),
+                controller: _dailyTargetController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: _recordType == 'duration' ? '每日目标（分钟，整数）' : '每日目标',
+                ),
+              ),
+              if (_recordType == 'duration')
+                TextField(
+                  controller: _targetSecondsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: '目标秒数（0–59）'),
+                ),
+            ],
+            if (_editing)
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Text('记录类型和单位保持不变。日计划调整明天生效；周/月计划在下个周期生效。'),
+              ),
             const SizedBox(height: 22),
             const Text('选择图标', style: TextStyle(fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
@@ -1711,38 +1761,44 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
             const SizedBox(height: 22),
             const Text('执行频次', style: TextStyle(fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<String>(
-                segments: const <ButtonSegment<String>>[
-                  ButtonSegment(
-                    value: 'daily',
-                    icon: Icon(Icons.today_rounded),
-                    label: Text('每天'),
-                  ),
-                  ButtonSegment(
-                    value: 'week',
-                    icon: Icon(Icons.view_week_outlined),
-                    label: Text('每周'),
-                  ),
-                  ButtonSegment(
-                    value: 'month',
-                    icon: Icon(Icons.calendar_month_outlined),
-                    label: Text('每月'),
-                  ),
-                ],
-                selected: <String>{_scheduleType},
-                onSelectionChanged: (value) {
-                  setState(() {
-                    _scheduleType = value.first;
-                    final max = _scheduleType == 'week' ? 7 : 31;
-                    if (_scheduleCount > max) _scheduleCount = max;
-                    if (_scheduleType == 'daily') _scheduleCount = 1;
-                  });
-                },
-              ),
+            DropdownButtonFormField<String>(
+              initialValue: _scheduleType,
+              decoration: const InputDecoration(labelText: '计划'),
+              items: const [
+                DropdownMenuItem(value: 'daily', child: Text('每天')),
+                DropdownMenuItem(value: 'weekdays', child: Text('指定星期')),
+                DropdownMenuItem(value: 'week', child: Text('每周 N 天')),
+                DropdownMenuItem(value: 'month', child: Text('每月 N 天')),
+              ],
+              onChanged: (value) => setState(() {
+                _scheduleType = value!;
+                _scheduleCount = _scheduleCount.clamp(
+                  1,
+                  value == 'week' ? 7 : 31,
+                );
+                if (value == 'daily' || value == 'weekdays') _scheduleCount = 1;
+              }),
             ),
-            if (_scheduleType != 'daily') ...<Widget>[
+            if (_scheduleType == 'weekdays')
+              Wrap(
+                spacing: 6,
+                children: [
+                  for (var day = 1; day <= 7; day++)
+                    FilterChip(
+                      label: Text('周${chineseWeekdays[day - 1]}'),
+                      selected: _weekdays.contains(day),
+                      onSelected: (selected) => setState(() {
+                        if (selected) {
+                          _weekdays.add(day);
+                        } else {
+                          _weekdays.remove(day);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+            if (_scheduleType == 'week' ||
+                _scheduleType == 'month') ...<Widget>[
               const SizedBox(height: 16),
               Card(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -1807,157 +1863,11 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
               ),
             ),
             const SizedBox(height: 22),
-            Card(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Column(
-                children: <Widget>[
-                  SwitchListTile(
-                    key: const Key('effort-enabled-switch'),
-                    secondary: const Icon(Icons.bolt_rounded),
-                    title: const Text('努力值奖惩'),
-                    subtitle: Text(
-                      _effortEnabled ? '已开启，点击可收起设置' : '开启后设置完成奖励与未达标扣分',
-                    ),
-                    value: _effortEnabled,
-                    onChanged: (value) => setState(() {
-                      _effortEnabled = value;
-                      if (!value) _wishEnabled = false;
-                    }),
-                  ),
-                  if (_effortEnabled) ...<Widget>[
-                    const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: '$_rewardPoints',
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: '每次完成奖励',
-                                    prefixText: '+ ',
-                                  ),
-                                  onChanged: (value) => _rewardPoints =
-                                      int.tryParse(value) ?? _rewardPoints,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: '$_penaltyPoints',
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: '每次未达标扣除',
-                                    prefixText: '- ',
-                                  ),
-                                  onChanged: (value) => _penaltyPoints =
-                                      int.tryParse(value) ?? _penaltyPoints,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  initialValue: _rewardPeriod,
-                                  decoration: const InputDecoration(
-                                    labelText: '考核周期',
-                                  ),
-                                  items: const <DropdownMenuItem<String>>[
-                                    DropdownMenuItem(
-                                      value: 'week',
-                                      child: Text('每周'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'month',
-                                      child: Text('每月'),
-                                    ),
-                                  ],
-                                  onChanged: (value) => setState(
-                                    () => _rewardPeriod = value ?? 'week',
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: TextFormField(
-                                  initialValue: '$_targetCount',
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: '周期目标次数',
-                                  ),
-                                  onChanged: (value) => _targetCount =
-                                      int.tryParse(value) ?? _targetCount,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
+            if (_editing && widget.habit!.legacyRewardBalance != null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('旧版奖励已保留，可在数据页只读查看。'),
               ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Column(
-                children: <Widget>[
-                  SwitchListTile(
-                    key: const Key('wish-enabled-switch'),
-                    secondary: const Icon(Icons.redeem_outlined),
-                    title: const Text('心愿清单'),
-                    subtitle: Text(
-                      !_effortEnabled
-                          ? '请先开启努力值奖惩'
-                          : _wishEnabled
-                          ? '已开启，点击可收起设置'
-                          : '开启后用努力值跟进心愿进度',
-                    ),
-                    value: _wishEnabled,
-                    onChanged: _effortEnabled
-                        ? (value) => setState(() => _wishEnabled = value)
-                        : null,
-                  ),
-                  if (_wishEnabled) ...<Widget>[
-                    const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: <Widget>[
-                          TextField(
-                            controller: _wishController,
-                            decoration: const InputDecoration(
-                              labelText: '达成后想实现的心愿',
-                              hintText: '例如：看一场期待已久的电影',
-                              prefixIcon: Icon(Icons.redeem_outlined),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            initialValue: '$_wishTarget',
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: '需要多少努力值',
-                              prefixIcon: Icon(Icons.bolt_rounded),
-                            ),
-                            onChanged: (value) => _wishTarget =
-                                int.tryParse(value) ?? _wishTarget,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 22),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -1983,58 +1893,77 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
 
   Future<void> _save() async {
     final title = _titleController.text.trim();
-    if (title.isEmpty) {
+    if (title.isEmpty || title.length > 80) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('先给这个习惯起个名字吧')));
+      ).showSnackBar(const SnackBar(content: Text('习惯名称需要 1–80 个字符')));
+      return;
+    }
+    int dailyTarget = 1;
+    final scale = _recordType == 'count' ? widget.habit?.scale ?? 1000 : 1;
+    try {
+      if (_recordType == 'count') {
+        dailyTarget = parseFixed(_dailyTargetController.text, scale: scale);
+      }
+      if (_recordType == 'duration') {
+        final minutes = int.parse(_dailyTargetController.text);
+        final seconds = int.parse(_targetSecondsController.text);
+        if (minutes < 0 || seconds < 0 || seconds > 59) {
+          throw const FormatException('目标时长无效');
+        }
+        dailyTarget = minutes * 60 + seconds;
+      }
+      if (dailyTarget < 1 ||
+          (_scheduleType == 'weekdays' && _weekdays.isEmpty)) {
+        throw const FormatException('目标需大于 0，并至少选择一个星期');
+      }
+    } on FormatException catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
       return;
     }
     setState(() => _saving = true);
     final reminderTime = _reminder == null ? null : _formatTime(_reminder!);
-    if (reminderTime != null) {
-      await widget.controller.requestReminderPermission();
-    }
+    bool saved;
     if (_editing) {
-      await widget.controller.updateHabit(
+      saved = await widget.controller.updateHabit(
         habitId: widget.habit!.id,
         title: title,
         emoji: _emoji,
         colorValue: _color,
-        weekdays: const <int>{1, 2, 3, 4, 5, 6, 7},
+        weekdays: _weekdays,
         scheduleType: _scheduleType,
         scheduleCount: _scheduleCount,
+        dailyTarget: dailyTarget,
         reminderTime: reminderTime,
         category: _categoryController.text,
-        effortEnabled: _effortEnabled,
-        rewardPoints: _rewardPoints.clamp(0, 9999).toInt(),
-        penaltyPoints: _penaltyPoints.clamp(0, 9999).toInt(),
-        targetCount: _targetCount.clamp(1, 999).toInt(),
-        rewardPeriod: _rewardPeriod,
-        wishEnabled: _wishEnabled,
-        wishTitle: _wishController.text,
-        wishTarget: _wishTarget.clamp(1, 999999).toInt(),
       );
     } else {
-      await widget.controller.addHabit(
+      saved = await widget.controller.addHabit(
+        recordType: _recordType,
+        unit: _recordType == 'duration' ? '秒' : _unitController.text.trim(),
+        scale: scale,
         title: title,
         emoji: _emoji,
         colorValue: _color,
-        weekdays: const <int>{1, 2, 3, 4, 5, 6, 7},
+        weekdays: _weekdays,
         scheduleType: _scheduleType,
         scheduleCount: _scheduleCount,
+        dailyTarget: dailyTarget,
         reminderTime: reminderTime,
         category: _categoryController.text,
-        effortEnabled: _effortEnabled,
-        rewardPoints: _rewardPoints.clamp(0, 9999).toInt(),
-        penaltyPoints: _penaltyPoints.clamp(0, 9999).toInt(),
-        targetCount: _targetCount.clamp(1, 999).toInt(),
-        rewardPeriod: _rewardPeriod,
-        wishEnabled: _wishEnabled,
-        wishTitle: _wishController.text,
-        wishTarget: _wishTarget.clamp(1, 999999).toInt(),
       );
     }
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+    if (!saved) {
+      setState(() => _saving = false);
+      return;
+    }
+    Navigator.pop(context);
+    if (reminderTime != null) {
+      await widget.controller.requestReminderPermission();
+    }
   }
 }
 
@@ -2255,7 +2184,7 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
               ],
             ),
             Text(
-              '点击已到日期即可打卡或补记',
+              '点击日期记录，长按设置或取消休息日',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -2298,7 +2227,7 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                         if (dayNumber < 1 || dayNumber > dayCount) {
                           return const SizedBox.shrink();
                         }
-                        final day = DateTime(
+                        final day = DateTime.utc(
                           _visibleMonth.year,
                           _visibleMonth.month,
                           dayNumber,
@@ -2307,7 +2236,9 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                         final completed = habit.isCompletedOn(day);
                         final backfilled = habit.isBackfilledOn(day);
                         final available =
-                            scheduled && !day.isAfter(controller.today);
+                            !habit.inTrash &&
+                            !day.isBefore(dateOnly(habit.createdAt)) &&
+                            !day.isAfter(controller.today);
                         final isToday =
                             dateKey(day) == dateKey(controller.today);
                         return Semantics(
@@ -2320,9 +2251,58 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                                   : '非计划日'}',
                           child: InkWell(
                             borderRadius: BorderRadius.circular(13),
+                            onLongPress: available
+                                ? () async {
+                                    final rest = habit.exemptions.contains(
+                                      dateKey(day),
+                                    );
+                                    final confirmed = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text(
+                                          '${dateKey(day)} ${rest ? '取消休息' : '设为休息日'}？',
+                                        ),
+                                        content: const Text(
+                                          '已记录的内容会保留。休息日不计入应完成数量。',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text('取消'),
+                                          ),
+                                          FilledButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            child: const Text('确认'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirmed == true) {
+                                      await controller.toggleRest(
+                                        habit.id,
+                                        day,
+                                      );
+                                    }
+                                  }
+                                : null,
                             onTap: available
-                                ? () =>
-                                      controller.toggleCompletion(habit.id, day)
+                                ? () {
+                                    if (habit.recordType == 'boolean') {
+                                      controller.toggleCompletion(
+                                        habit.id,
+                                        day,
+                                      );
+                                    } else {
+                                      showRecordEditor(
+                                        context,
+                                        controller,
+                                        habit,
+                                        day,
+                                      );
+                                    }
+                                  }
                                 : null,
                             child: Container(
                               alignment: Alignment.center,
@@ -2470,7 +2450,11 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                   ListTile(
                     leading: const Icon(Icons.edit_outlined),
                     title: const Text('编辑习惯'),
-                    subtitle: const Text('修改名称、日期、颜色和提醒'),
+                    subtitle: Text(
+                      habit.hasPendingPlan(controller.today)
+                          ? '新计划 ${dateKey(habit.effectivePlans.last.from)} 生效'
+                          : '修改名称、计划、颜色和提醒',
+                    ),
                     onTap: () async {
                       await showAddHabitSheet(
                         context,
@@ -2500,7 +2484,7 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                           : Icons.archive_outlined,
                     ),
                     title: Text(habit.archived ? '恢复到习惯列表' : '归档习惯'),
-                    subtitle: const Text('历史记录会继续保留'),
+                    subtitle: const Text('明天起停用，历史记录继续保留'),
                     onTap: () async {
                       await controller.toggleArchived(habit.id);
                       if (context.mounted) Navigator.pop(context);
@@ -2518,11 +2502,11 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                    subtitle: const Text('打卡记录也会一并删除，无法撤销'),
+                    subtitle: const Text('移入回收站，至少保留 30 天，可随时恢复'),
                     onTap: () async {
                       await _confirmDeleteHabit(context, controller, habit);
                       if (context.mounted &&
-                          controller.habitById(habit.id) == null) {
+                          (controller.habitById(habit.id)?.inTrash ?? true)) {
                         Navigator.pop(context);
                       }
                     },
@@ -2573,31 +2557,48 @@ Future<void> _showNoteDialog(
   DateTime date,
 ) async {
   final textController = TextEditingController(text: habit.noteOn(date));
-  final result = await showDialog<String>(
+  var saving = false;
+  await showDialog<void>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text('${habit.emoji} 今日备注'),
-      content: TextField(
-        controller: textController,
-        autofocus: true,
-        maxLines: 3,
-        maxLength: 120,
-        decoration: const InputDecoration(hintText: '简单记下感受或完成情况'),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: Text('${habit.emoji} ${dateKey(date)} 备注'),
+        content: TextField(
+          controller: textController,
+          autofocus: true,
+          maxLines: 3,
+          maxLength: 2000,
+          decoration: const InputDecoration(hintText: '简单记下感受或完成情况'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: saving ? null : () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    final saved = await controller.setNote(
+                      habit.id,
+                      date,
+                      textController.text,
+                    );
+                    if (!context.mounted) return;
+                    if (saved) {
+                      Navigator.pop(context);
+                    } else {
+                      setState(() => saving = false);
+                    }
+                  },
+            child: Text(saving ? '正在保存' : '保存'),
+          ),
+        ],
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, textController.text),
-          child: const Text('保存'),
-        ),
-      ],
     ),
   );
-  textController.dispose();
-  if (result != null) await controller.setNote(habit.id, date, result);
+  // Dialog widgets can still be alive during their reverse transition.
 }
 
 Future<void> _showImportDialog(
@@ -2605,36 +2606,52 @@ Future<void> _showImportDialog(
   HabitController controller,
 ) async {
   final textController = TextEditingController();
-  final raw = await showDialog<String>(
+  var saving = false;
+  await showDialog<void>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('恢复数据'),
-      content: TextField(
-        controller: textController,
-        minLines: 5,
-        maxLines: 9,
-        decoration: const InputDecoration(hintText: '粘贴之前导出的 JSON 数据'),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('恢复旧 JSON 数据'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('这会替换当前数据。确认恢复前会自动保留当前数据保护副本。'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: textController,
+                maxLines: 6,
+                decoration: const InputDecoration(hintText: '粘贴完整的旧版 JSON'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: saving ? null : () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    final saved = await controller.importJson(
+                      textController.text,
+                    );
+                    if (!context.mounted) return;
+                    if (saved) {
+                      Navigator.pop(context);
+                    } else {
+                      setState(() => saving = false);
+                    }
+                  },
+            child: Text(saving ? '正在恢复' : '确认替换并恢复'),
+          ),
+        ],
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, textController.text),
-          child: const Text('恢复'),
-        ),
-      ],
     ),
   );
-  textController.dispose();
-  if (raw == null || !context.mounted) return;
-  final success = await controller.importJson(raw);
-  if (context.mounted) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(success ? '数据恢复成功' : '无法识别这份备份')));
-  }
 }
 
 Future<void> _confirmDeleteHabit(
@@ -2646,7 +2663,7 @@ Future<void> _confirmDeleteHabit(
     context: context,
     builder: (context) => AlertDialog(
       title: const Text('删除这个习惯？'),
-      content: Text('“${habit.title}”及其所有打卡记录都会被永久删除。'),
+      content: Text('“${habit.title}”及记录将移入回收站，至少保留 30 天。永久删除需要在回收站另行确认。'),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.pop(context, false),
@@ -2657,7 +2674,7 @@ Future<void> _confirmDeleteHabit(
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('确认删除'),
+          child: const Text('移入回收站'),
         ),
       ],
     ),
