@@ -45,7 +45,7 @@ def start_and_wait(build, phase, previous=None):
 
 image = f'system-images;android-{args.api};default;x86_64'
 manager = sdk / 'cmdline-tools/latest/bin'
-subprocess.run([str(manager / 'sdkmanager'), image], input='y\n' * 100,
+subprocess.run([str(manager / 'sdkmanager'), 'emulator', 'platform-tools', image], input='y\n' * 100,
                text=True, check=True, timeout=600)
 subprocess.run([str(manager / 'avdmanager'), 'create', 'avd', '--force', '--name', 'acceptance',
                 '--package', image, '--device', 'pixel_4'], input='no\n', text=True, check=True, timeout=60)
@@ -63,7 +63,10 @@ try:
     while time.monotonic() < deadline:
         if process.poll() is not None:
             raise RuntimeError('emulator exited; inspect emulator.log')
-        r = command(adb, 'shell', 'getprop', 'sys.boot_completed', check=False, timeout=15)
+        try:
+            r = command(adb, 'shell', 'getprop', 'sys.boot_completed', check=False, timeout=15)
+        except subprocess.TimeoutExpired:
+            continue
         if r.stdout.strip() == b'1':
             break
         time.sleep(2)
@@ -90,8 +93,11 @@ try:
     (args.output/'result.png').write_bytes(screenshot.stdout)
     print(f'API {args.api}: native SQLite, crypto, Keystore, process reopen and version upgrade passed')
 finally:
-    diagnostic = command(adb, 'logcat', '-d', '-s', 'flutter', 'AndroidRuntime', check=False, timeout=30)
-    (args.output/'runtime.log').write_bytes(diagnostic.stdout)
+    try:
+        diagnostic = command(adb, 'logcat', '-d', '-s', 'flutter', 'AndroidRuntime', check=False, timeout=15)
+        (args.output/'runtime.log').write_bytes(diagnostic.stdout)
+    except subprocess.TimeoutExpired:
+        (args.output/'runtime.log').write_text('adb logcat timed out; inspect emulator.log')
     process.terminate()
     try:
         process.wait(timeout=30)
