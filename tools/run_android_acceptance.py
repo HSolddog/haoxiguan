@@ -42,10 +42,20 @@ def drive_document_picker(value):
     stage = value.get('stage')
     if stage == 'awaitingBackgroundReschedule':
         if value['runId'] not in background_requested:
-            jobs = shell('dumpsys', 'jobscheduler')
-            (args.output/'workmanager-jobs.txt').write_text('\n'.join(
-                line for line in jobs.splitlines() if package in line))
             background_requested.add(value['runId'])
+            # This is optional evidence, not the test's success condition. Android
+            # 16 dumpsys can exit 255 while WorkManager mutates the job list.
+            # The fixture must still report renewal + periodic registration.
+            try:
+                diagnostic = command(adb, 'shell', 'dumpsys', 'jobscheduler', check=False, timeout=15)
+                jobs = diagnostic.stdout.decode(errors='replace')
+                (args.output/'workmanager-jobs.txt').write_text('\n'.join(
+                    line for line in jobs.splitlines() if package in line))
+                if diagnostic.returncode:
+                    (args.output/'workmanager-diagnostic.txt').write_text(
+                        f'dumpsys exit {diagnostic.returncode}\n' + diagnostic.stderr.decode(errors='replace'))
+            except subprocess.TimeoutExpired:
+                (args.output/'workmanager-diagnostic.txt').write_text('dumpsys timed out; application assertions still required\n')
         return
     if stage not in ('awaitingDocumentSave', 'awaitingDocumentOpen', 'awaitingOversizeSave', 'awaitingOversizeOpen'):
         return
