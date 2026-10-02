@@ -1,0 +1,70 @@
+{
+  "sourceHead": "9d037f33118e5423a7c43956570e2b4440a137cd",
+  "ciMergeCommit": "c771be765d00d2b0737d8ee89b4009cfd488827e",
+  "releaseStatus": "development-only; not signed with verified historical release identity",
+  "android": {
+    "fileName": "haoxiguan-1.1.0+5-9d037f3-debug.apk",
+    "bytes": 170102865,
+    "sha256": "02a295b2c528da0844b6233fd7999b025c8f0c91da25710c3ff78fe39aa2bc0c",
+    "applicationId": "com.haoxiguan.haoxiguan",
+    "versionName": "1.1.0",
+    "versionCode": 5,
+    "minSdk": 24,
+    "targetSdk": 36,
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a",
+      "x86_64"
+    ],
+    "certificateSha256": "eff9a1b342c7ccab5d163b533ff27d7024f910489485487309cda5e69297c98a",
+    "signatureVerification": "passed; Android Debug certificate",
+    "artifactUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/36999580510/artifacts/11223261418",
+    "artifactZipSha256": "361a8dcc78ecd9952b0ee433a87a3354481363b9b5621ff8798117fff729b293"
+  },
+  "server": {
+    "fileName": "haoxiguan-sync-9d037f3-linux.zip",
+    "bytes": 18456109,
+    "sha256": "0178b476d35c1ae0d52707ac6afff35989a878f5c466cf694a6420da124ede40",
+    "artifactUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/36999580519/artifacts/11223022469",
+    "filesSha256": {
+      "THIRD_PARTY_NOTICES.txt": "a416c13a1bb1d669e9ebc00b781a374152403b106d80cac2645b9c7dfbad6c08",
+      "haoxiguan-server-linux-amd64": "63a48f08869f3492f511cc8a25b93235926cfe61929682a3a23278c9351858c6",
+      "haoxiguan-server-linux-arm64": "c78ca65bf6d4804ea1dbfcec97328a09bc83e41b3e3703101627eaa6e1c70d4e"
+    },
+    "containerReport": "container-smoke-final.json"
+  },
+  "artifactRetentionUntil": "2026-10-16; rebuild from source after CI retention expires",
+  "nativeAcceptance": {
+    "fixtureApplicationId": "com.haoxiguan.haoxiguan.acceptance",
+    "fixtureArtifactId": 11223631988,
+    "fixtureArtifactZipSha256": "a95c2987daf0cc6b4e713824c19215bb6c060e49d9bc6494a6bd9e88eacbd2ab",
+    "scope": "same compiled fixture APK pair on API 24/35/36; schema 2 to 3; native crypto, Keystore, SAF and background entry point; synthetic data, not historical production signing",
+    "results": [
+      {
+        "api": 24,
+        "runId": 37001861441,
+        "driverSourceHead": "0f0eb6a6641b172f1ead49d5362f0489d531ec5c",
+        "unchangedApplicationSourcesGate": "passed",
+        "reportArtifactId": 11223259067,
+        "reportZipSha256": "130855d33c03d3b21b838a03c19fedab5f6be79cffae76624fa7fb7c5f50b378",
+        "report": "final-api-24/results.json"
+      },
+      {
+        "api": 35,
+        "runId": 36999580510,
+        "reportArtifactId": 11223642388,
+        "reportZipSha256": "fe6eb2a0a89b2fe2188abac38dc45ad0acc16f9874e07f933e612dda59bddacc",
+        "report": "final-api-35/results.json",
+        "environmentEvents": "final-api-35/environment-events.json"
+      },
+      {
+        "api": 36,
+        "runId": 36999580510,
+        "reportArtifactId": 11223019734,
+        "reportZipSha256": "1cbd3cf9c5d200f9af8a0d0ecbade3aa8cc10999463d812c9dc73819738fbe66",
+        "report": "final-api-36/results.json",
+        "environmentEvents": "final-api-36/environment-events.json"
+      }
+    ]
+  }
+}

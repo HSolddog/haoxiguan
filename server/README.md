@@ -6,6 +6,8 @@ Go + SQLite 单进程原型，只保存不透明对象和授权元数据。当�
 
 ## 本地构建与隔离验证
 
+也可使用[实施进度](../docs/实施进度.md)中的 CI 开发包。将 ZIP 解压到当前目录的 `dist/`，从当前目录运行 `sha256sum -c dist/SHA256SUMS`，再为匹配机器架构的 `dist/haoxiguan-server-linux-amd64` 或 `dist/haoxiguan-server-linux-arm64` 执行 `chmod +x`。下面命令中的二进制路径替换为该文件；仍需按本文配置数据目录、邀请与 HTTPS。
+
 ```sh
 cd server
 go test -race ./...
