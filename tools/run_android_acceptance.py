@@ -30,7 +30,20 @@ def command(*values, timeout=90, check=True, **kwargs):
     return subprocess.run(list(values), timeout=timeout, check=check, capture_output=True, **kwargs)
 
 def shell(*values, timeout=90):
-    return command(adb, 'shell', *values, timeout=timeout).stdout.decode()
+    # ADB occasionally closes a shell with status 255 on a busy AVD. Retry only
+    # reads, never input/installation/writes that could duplicate an action.
+    attempts = 3 if values and values[0] in ('stat', 'dumpsys', 'cat', 'getprop') else 1
+    for attempt in range(attempts):
+        result = command(adb, 'shell', *values, timeout=timeout, check=False)
+        if result.returncode == 0:
+            return result.stdout.decode()
+        with (args.output/'adb-read-errors.jsonl').open('a') as evidence:
+            evidence.write(json.dumps({'command': values[0], 'exit': result.returncode,
+                                       'attempt': attempt + 1, 'stdoutBytes': len(result.stdout),
+                                       'stderr': result.stderr.decode(errors='replace')[:2000]}) + '\n')
+        if result.returncode != 255 or attempt + 1 == attempts:
+            result.check_returncode()
+        time.sleep(0.5)
 
 oversize_ready = set()
 background_requested = set()
@@ -190,6 +203,18 @@ try:
     else:
         raise TimeoutError('emulator did not boot')
     shell('input', 'keyevent', '82')
+    if args.api == 24:
+        # boot_completed can precede the CE user store and package service on
+        # Android 7. Its UserManager dump uses numeric RUNNING_UNLOCKED = 3.
+        ready = time.monotonic() + 90
+        while time.monotonic() < ready:
+            users = shell('dumpsys', 'user', timeout=15)
+            packages = command(adb, 'shell', 'pm', 'path', 'android', check=False, timeout=15)
+            if re.search(r'Started users state:\s*\{[^}]*\b0=3\b', users) and packages.stdout.startswith(b'package:'):
+                break
+            time.sleep(2)
+        else:
+            raise TimeoutError('Android 7 user storage/package service did not become ready')
     shell('settings', 'put', 'system', 'screen_off_timeout', '2147483647')
     shell('svc', 'power', 'stayon', 'true')
     for setting in ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']:
@@ -198,7 +223,8 @@ try:
     for build in (10001, 10002):
         apk = args.apks/f'acceptance-{build}.apk'
         assert apk.exists(), apk
-        command(adb, 'install', '-r', str(apk), timeout=180)
+        install_mode = ['--no-streaming'] if args.api == 24 else []
+        command(adb, 'install', *install_mode, '-r', str(apk), timeout=180)
         if args.api >= 33:
             shell('pm', 'grant', package, 'android.permission.POST_NOTIFICATIONS')
         info = shell('dumpsys', 'package', package)
