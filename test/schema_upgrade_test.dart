@@ -46,7 +46,7 @@ void createV1(File file, String raw) {
 void main() {
   for (final interrupted in [false, true]) {
     test(
-      'schema 1→2 ${interrupted ? '提交前失败保持版本和原数据，再打开可重试' : '保留记录、备注、设置与保护副本'}',
+      'schema 1→3 ${interrupted ? '提交前失败保持版本和原数据，再打开可重试' : '保留记录、备注、设置与保护副本'}',
       () async {
         final dir = await Directory.systemTemp.createTemp('haoxiguan-upgrade-');
         final file = File('${dir.path}/db.sqlite');
@@ -107,7 +107,7 @@ void main() {
           final version = await repository.database
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(version.data.values.single, 2);
+          expect(version.data.values.single, 3);
           final export = controller.exportJson();
           controller.dispose();
           await repository.close();

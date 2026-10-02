@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'webdav_screen.dart';
+import 'sync_screen.dart';
 
 import 'package:flutter/material.dart';
 
@@ -231,6 +232,18 @@ class _DataScreenState extends State<DataScreen> {
                           MaterialPageRoute<void>(
                             builder: (_) =>
                                 WebDavScreen(controller: controller),
+                          ),
+                        ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.sync),
+                  title: const Text('自有同步服务'),
+                  subtitle: const Text('实验性端到端加密同步、设备与冲突'),
+                  onTap: _busy
+                      ? null
+                      : () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => SyncScreen(controller: controller),
                           ),
                         ),
                 ),

@@ -55,7 +55,7 @@ class PlatformBackupFiles implements BackupFiles {
       acceptedTypeGroups: const [
         XTypeGroup(
           label: '好习惯备份',
-          extensions: ['hgb', 'json'],
+          extensions: ['hgb', 'hgr', 'json'],
           uniformTypeIdentifiers: ['public.data'],
         ),
       ],

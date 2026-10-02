@@ -1,56 +1,45 @@
 # 好习惯 · Haoxiguan
 
-**一个温和、离线优先的 Flutter 习惯养成应用。** 习惯、打卡和每日备注保存在设备本地，无需账号或云同步。
+一个离线优先、MIT 开源的习惯记录应用。无需账号、服务器或备份配置即可使用；记录先在设备本地事务提交，联网能力由用户自行选择。
 
-Haoxiguan is a gentle, offline-first habit tracker built with Flutter. Habits, check-ins, and daily notes stay on your device; no account or cloud sync is required.
+An MIT-licensed, offline-first habit tracker. Your records commit locally; encrypted backups and a self-hosted sync service are optional.
 
-## 产品与工程设计
+当前分支为 Android 开发验收版本，Flutter 共用领域与数据层；iOS 尚未制作和验收。完整设计与实施证据从 [docs](docs/README.md) 开始，最新范围见[实施进度](docs/实施进度.md)。
 
-2026-10-02 的[完整设计文档](docs/README.md)已整理：保持 MIT，Android 优先，首轮完成／计数／手动时长；默认单机数据完整性不依赖同步和用户备份。后续支持加密自选备份及小型自部署／官方同协议同步。新方案尚待实施，当前能力仍如下。
+## 当前能力
 
-## 功能 | Features
+- 完成、定点计数、手动时长；补记、更正、每日备注。
+- 每天、固定星期、每周/每月若干天；计划历史、暂停、休息、归档和回收站。
+- 今日记录、历史回顾、结算统计、本地通知；旧奖励数据保留为只读。
+- SQLite/Drift WAL + FULL 事务，提交后确认；旧数据幂等迁移、原文保护、损坏时停止写入而不清空。
+- Argon2id + XChaCha20-Poly1305 加密文件备份、读回验证、预览恢复；可读 JSON 导出。
+- 自选 HTTPS WebDAV，不可变加密快照、后台尝试、保留清理和换机恢复。
+- 实验性自有同步服务：Go + SQLite、不透明密文、设备邀请、加密恢复文件、手动同步和冲突处理。密钥轮换与规模门禁仍待完成，见[同步实现与验收](docs/同步实现与验收.md)。
 
-- 按天、周或月设置习惯频率，并按分类整理习惯。
-- 使用本地通知设置提醒，记录每日打卡和备注。
-- 查看连续记录、完成率和历史趋势。
-- 可选的努力值奖惩与心愿目标。
-- 支持深色模式、主题颜色，以及 JSON 数据导入和导出。
-- Local notifications, streaks, completion rates, history, optional point goals, themes, and JSON backup/restore.
+## 开发与验证
 
-## 开发 | Development
-
-需要安装与 `pubspec.yaml` SDK 约束兼容的 Flutter SDK。在项目根目录运行：
-
-```sh
-flutter pub get
-flutter run
-```
-
-运行静态检查和测试：
+固定 Flutter 3.44.6（Dart 3.12.2）、JDK 17，提交中包含依赖锁文件。服务端使用 Go 1.27.1。
 
 ```sh
+flutter pub get --enforce-lockfile
+dart format --output=none --set-exit-if-changed lib test tools
 flutter analyze
 flutter test
+flutter build apk --debug
 ```
 
-## Android APK
+CI 构建 Debug APK，并在 API 24/35/36 的 KVM 模拟器上验证原生存储、加密、Keystore、强停重开及同签名覆盖升级。[验收记录](docs/验收记录/2026-10-02.md)区分已通过证据与未完成的系统/真机项目。需要真实服务的 WebDAV/Go 集成测试默认跳过，必须按文档显式运行。
 
-在已配置 Android SDK、JDK 和更新签名证书的 Windows 环境中，可使用发布脚本构建 APK：
+服务端构建、邀请和恢复说明见 [server](server/README.md)。单机应用的启动与保存不依赖服务。
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_release_apk.ps1
-```
+## 数据、升级与发布
 
-当前脚本沿用历史内测签名流程，不能据此视为正式发布方案。脚本会在构建成功后递增版本号，并将 APK 放入 `dist`。构建产物和签名凭据不会提交到仓库。版本升级与本地数据兼容说明见[版本与数据升级](docs/版本与数据升级.md)。
+数据保存于应用私有 SQLite；Android 系统自动备份/设备转移已排除业务数据与密钥，避免不成套复制。应用不含广告或分析 SDK。只有启用 WebDAV 或自有同步后才联系用户选择的服务；对方仍可见连接及密文大小等元数据。文件恢复先保护本地内容并创建新空间，旧同步配置不会自动覆盖远端。
 
-## 数据与隐私 | Data and privacy
+本地数据库依赖操作系统保护，未宣称应用级数据库加密。加密备份密码和同步恢复文件必须由用户保管；账号恢复无法替代内容密钥。
 
-当前数据存于本地 SharedPreferences，设置页通过剪贴板复制／粘贴 JSON 导出恢复；尚无文件备份、WebDAV 或云同步。Android 清单允许系统备份，行为受系统和用户设置影响。新设计将明确敏感数据规则及应用内备份，见[数据与同步规范](docs/数据与同步规范.md)。仓库不包含用户数据、签名密钥或构建产物。
+正常升级必须保持 applicationId、签名连续性、递增 versionCode 和兼容迁移。现有真实安装的证书尚需核对；CI 临时调试签名不能替代正式升级链。不得以卸载重装当作无损升级。历史 Windows 内测构建脚本在 `scripts/build_release_apk.ps1`，正式发布条件见[版本与数据升级](docs/版本与数据升级.md)和[执行计划](docs/执行计划.md)。
 
-## 参与贡献 | Contributing
+## 参与与许可证
 
-欢迎提交问题和改进建议。开始前请阅读[贡献指南](CONTRIBUTING.md)。
-
-## 许可证 | License
-
-本项目采用 [MIT License](LICENSE)。第三方依赖仍遵循各自的许可证。
+阅读[贡献指南](CONTRIBUTING.md)后提交问题或改进。应用与服务器均采用 [MIT](LICENSE)；第三方依赖遵循各自许可证。允许自部署、商业衍生和使用同套开源代码提供托管服务。

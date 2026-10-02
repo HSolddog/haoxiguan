@@ -153,8 +153,13 @@ func (s *Store) RotateEpoch(ctx context.Context) error {
 	if _, err = tx.ExecContext(ctx, "UPDATE metadata SET value=? WHERE key='epoch'", randomToken(24)); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, "DELETE FROM operations"); err != nil {
-		return err
+	// Restoring an old backup must never revive a previously revoked token or an
+	// already consumed invitation. Require fresh operator authorization on every
+	// device; content keys stay client-side and old ciphertext remains readable.
+	for _, query := range []string{"DELETE FROM operations", "DELETE FROM sessions", "DELETE FROM invites", "UPDATE devices SET revoked=1,bootstrap_high=NULL,bootstrap_cursor=NULL,bootstrap_previous=NULL"} {
+		if _, err = tx.ExecContext(ctx, query); err != nil {
+			return err
+		}
 	}
 	return tx.Commit()
 }

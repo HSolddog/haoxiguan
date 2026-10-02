@@ -728,6 +728,34 @@ class HabitController extends ChangeNotifier {
     }, replace: true);
   }
 
+  /// Serializes explicit external database work with UI and notification writes.
+  /// Reloading the same repository also refreshes its optimistic revision guard.
+  Future<T> runExternalUpdate<T>(Future<T> Function() operation) {
+    Future<T> perform() async {
+      try {
+        return await operation();
+      } finally {
+        if (!_disposed) await load();
+      }
+    }
+
+    final prior = _writeQueue;
+    final result = prior == null
+        ? Future<T>.sync(perform)
+        : prior.then((_) => perform());
+    late Future<void> tail;
+    void release() {
+      if (identical(_writeQueue, tail)) _writeQueue = null;
+    }
+
+    tail = result.then<void>(
+      (_) => release(),
+      onError: (Object _, StackTrace _) => release(),
+    );
+    _writeQueue = tail;
+    return result;
+  }
+
   Future<bool> _mutate(void Function() change, {bool replace = false}) {
     Future<bool> perform() async {
       if (!_loaded) return false;

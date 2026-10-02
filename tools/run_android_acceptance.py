@@ -44,6 +44,7 @@ def start_and_wait(build, phase, previous=None):
                     raise RuntimeError(json.dumps(value, ensure_ascii=False))
                 if value.get('status') == 'passed':
                     assert value['phase'] == phase, value
+                    assert value['schema'] == (2 if build == 10001 else 3), value
                     return value
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass

@@ -187,6 +187,27 @@ func TestAccountIsolationEpochAndDelete(t *testing.T) {
 	if err = s.RotateEpoch(ctx); err != nil {
 		t.Fatal(err)
 	}
+	if _, err = s.Push(ctx, id, tokens.Epoch, []Operation{op(2, 1)}); !errors.Is(err, ErrUnauthorized) {
+		t.Fatal(err)
+	}
+	if _, err = s.Authenticate(ctx, tokens.Access); !errors.Is(err, ErrUnauthorized) {
+		t.Fatal(err)
+	}
+	if _, err = s.Refresh(ctx, tokens.Refresh); !errors.Is(err, ErrUnauthorized) {
+		t.Fatal(err)
+	}
+	newInvite, err := s.NewInvite(ctx, id.User)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newTokens, err := s.Enroll(ctx, newInvite, "reauthorized phone")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err = s.Authenticate(ctx, newTokens.Access)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err = s.Push(ctx, id, tokens.Epoch, []Operation{op(2, 1)}); !errors.Is(err, ErrEpoch) {
 		t.Fatal(err)
 	}

@@ -44,6 +44,7 @@ class SyncKeyring {
   };
   factory SyncKeyring.fromJson(Map<String, dynamic> value) {
     if (value['format'] != 'haoxiguan-sync-keyring' ||
+        value['version'] is! int ||
         value['version'] != 1 ||
         value.length != 6) {
       throw const FormatException('同步恢复材料格式不支持');
@@ -54,8 +55,8 @@ class SyncKeyring {
     }
     final keys = <int, Uint8List>{};
     for (final entry in raw.entries) {
-      final n = int.tryParse(entry.key as String);
-      if (n == null || n < 1 || n > 1000000) {
+      final n = entry.key is String ? int.tryParse(entry.key as String) : null;
+      if (n == null || n < 1 || n > 1000000 || entry.key != '$n') {
         throw const FormatException('密钥版本无效');
       }
       keys[n] = _decodeBytes(entry.value, 32);
@@ -167,6 +168,7 @@ class SyncCrypto {
     final envelope = jsonDecode(utf8.decode(raw));
     if (envelope is! Map ||
         envelope.length != 4 ||
+        envelope['v'] is! int ||
         envelope['v'] != 1 ||
         envelope['generation'] is! int) {
       throw const FormatException('同步加密版本不支持');
