@@ -8,6 +8,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../models/habit.dart';
+
 import 'habit_repository.dart';
 import 'snapshot_codec.dart';
 
@@ -118,12 +120,42 @@ class SqliteHabitRepository implements HabitRepository {
         throw const DataRecoveryRequired('习惯主键与数据内容不一致，已停止写入。');
       }
     }
-    return jsonEncode({
-      ...settings,
-      'habits': habits
-          .map((r) => jsonDecode(r.read<String>('payload')))
-          .toList(),
-    });
+    final assembled = <Map<String, Object?>>[];
+    for (final row in habits) {
+      final id = row.read<String>('id');
+      final habit = (jsonDecode(row.read<String>('payload')) as Map)
+          .cast<String, Object?>();
+      habit['entries'] =
+          (await database
+                  .customSelect(
+                    'SELECT payload FROM records WHERE habit_id = ? ORDER BY local_date, id',
+                    variables: [Variable(id)],
+                  )
+                  .get())
+              .map((r) => jsonDecode(r.read<String>('payload')))
+              .toList();
+      habit['plans'] =
+          (await database
+                  .customSelect(
+                    'SELECT payload FROM plans WHERE habit_id = ? ORDER BY effective_from',
+                    variables: [Variable(id)],
+                  )
+                  .get())
+              .map((r) => jsonDecode(r.read<String>('payload')))
+              .toList();
+      final notes = await database
+          .customSelect(
+            'SELECT local_date, content FROM daily_notes WHERE habit_id = ?',
+            variables: [Variable(id)],
+          )
+          .get();
+      habit['notes'] = {
+        for (final r in notes)
+          r.read<String>('local_date'): r.read<String>('content'),
+      };
+      assembled.add(Habit.fromJson(habit).toJson());
+    }
+    return jsonEncode({...settings, 'habits': assembled});
   }
 
   @override
@@ -192,24 +224,42 @@ class SqliteHabitRepository implements HabitRepository {
         .get();
     final old = {for (final r in existing) r.read<String>('id'): r};
     for (var index = 0; index < incoming.length; index++) {
-      final habit = incoming[index];
-      final id = habit['id']! as String;
-      final payload = jsonEncode(habit);
+      final full = incoming[index];
+      final habit = Habit.fromJson(full);
+      final id = habit.id;
+      final metadata = Map<String, Object?>.from(full)
+        ..remove('entries')
+        ..remove('plans')
+        ..remove('notes')
+        ..remove('completions');
+      final payload = jsonEncode(metadata);
       final previous = old.remove(id);
-      if (previous?.read<String>('payload') == payload &&
-          previous?.read<int>('position') == index) {
-        continue;
+      if (previous?.read<String>('payload') != payload ||
+          previous?.read<int>('position') != index) {
+        await database.customStatement(
+          'INSERT INTO habits(id, payload, position) VALUES (?, ?, ?) '
+          'ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, position=excluded.position',
+          [id, payload, index],
+        );
+        await _log('habit:$id', payload, current + 1);
       }
-      await database.customStatement(
-        'INSERT INTO habits(id, payload, position) VALUES (?, ?, ?) '
-        'ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, position=excluded.position',
-        [id, payload, index],
-      );
-      await _log(id, payload, current + 1);
+      await _syncChildren('records', id, {
+        for (final e in habit.entries) e.id: jsonEncode(e.toJson()),
+      }, current + 1);
+      await _syncChildren('plans', id, {
+        for (final p in habit.plans) p.id: jsonEncode(p.toJson()),
+      }, current + 1);
+      await _syncChildren('daily_notes', id, {
+        for (final note in habit.notes.entries)
+          '$id:${note.key}': jsonEncode({'date': note.key, 'text': note.value}),
+      }, current + 1);
     }
     for (final id in old.keys) {
+      for (final table in ['records', 'plans', 'daily_notes']) {
+        await _syncChildren(table, id, {}, current + 1);
+      }
       await database.customStatement('DELETE FROM habits WHERE id = ?', [id]);
-      await _log(id, null, current + 1);
+      await _log('habit:$id', null, current + 1);
     }
     await database.customStatement(
       'INSERT INTO app_state(id, settings, revision) VALUES (1, ?, ?) '
@@ -222,6 +272,32 @@ class SqliteHabitRepository implements HabitRepository {
     // Test hook is inside the transaction, including metadata and the journal.
     await database.beforeCommit?.call();
     return current + 1;
+  }
+
+  Future<void> _syncChildren(
+    String table,
+    String habitId,
+    Map<String, String> incoming,
+    int revision,
+  ) async {
+    final existing = await database
+        .customSelect(
+          'SELECT id, payload FROM $table WHERE habit_id = ?',
+          variables: [Variable(habitId)],
+        )
+        .get();
+    final old = {
+      for (final r in existing) r.read<String>('id'): r.read<String>('payload'),
+    };
+    for (final id in old.keys.where((id) => !incoming.containsKey(id))) {
+      await database.customStatement('DELETE FROM $table WHERE id = ?', [id]);
+      await _log('$table:$id', null, revision);
+    }
+    for (final entry in incoming.entries) {
+      if (old[entry.key] == entry.value) continue;
+      await database.putChild(table, habitId, entry.key, entry.value);
+      await _log('$table:${entry.key}', entry.value, revision);
+    }
   }
 
   Future<void> _log(
@@ -258,15 +334,16 @@ class SqliteHabitRepository implements HabitRepository {
 class HabitDatabase extends GeneratedDatabase {
   HabitDatabase(super.executor);
   Future<void> Function()? beforeCommit;
+  Future<void> Function()? beforeMigrationCommit;
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (migrator) async {
+    onCreate: (migrator) => transaction(() async {
       await customStatement(
         'CREATE TABLE app_state(id INTEGER PRIMARY KEY CHECK(id=1), settings TEXT NOT NULL, revision INTEGER NOT NULL CHECK(revision>0))',
       );
@@ -282,9 +359,71 @@ class HabitDatabase extends GeneratedDatabase {
       await customStatement(
         'CREATE TABLE protections(sequence INTEGER PRIMARY KEY AUTOINCREMENT, payload TEXT NOT NULL, digest TEXT NOT NULL, created_at TEXT NOT NULL)',
       );
-    },
+      await _createDomainTables();
+      await customStatement('PRAGMA user_version = 2');
+    }),
     onUpgrade: (migrator, from, to) async {
-      throw DataRecoveryRequired('不支持数据库版本 $from → $to。请使用兼容版本，原库未被重置。');
+      if (from != 1 || to != 2) {
+        throw DataRecoveryRequired('不支持数据库版本 $from → $to。请使用兼容版本，原库未被重置。');
+      }
+      await transaction(() async {
+        final state = await customSelect(
+          'SELECT settings FROM app_state WHERE id=1',
+        ).getSingleOrNull();
+        final rows = await customSelect(
+          'SELECT id, payload FROM habits ORDER BY position',
+        ).get();
+        final settings = state == null
+            ? <String, Object?>{}
+            : (jsonDecode(state.read<String>('settings')) as Map)
+                  .cast<String, Object?>();
+        final raw = jsonEncode({
+          ...settings,
+          'habits': rows
+              .map((r) => jsonDecode(r.read<String>('payload')))
+              .toList(),
+        });
+        SnapshotCodec.decode(raw);
+        await customStatement(
+          'INSERT INTO protections(payload,digest,created_at) VALUES (?,?,?)',
+          [
+            raw,
+            SqliteHabitRepository._digest(raw),
+            DateTime.now().toUtc().toIso8601String(),
+          ],
+        );
+        await _createDomainTables();
+        for (final row in rows) {
+          final full = (jsonDecode(row.read<String>('payload')) as Map)
+              .cast<String, Object?>();
+          final habit = Habit.fromJson(full);
+          for (final e in habit.entries) {
+            await putChild('records', habit.id, e.id, jsonEncode(e.toJson()));
+          }
+          for (final p in habit.plans) {
+            await putChild('plans', habit.id, p.id, jsonEncode(p.toJson()));
+          }
+          for (final note in habit.notes.entries) {
+            await putChild(
+              'daily_notes',
+              habit.id,
+              '${habit.id}:${note.key}',
+              jsonEncode({'date': note.key, 'text': note.value}),
+            );
+          }
+          full
+            ..remove('entries')
+            ..remove('plans')
+            ..remove('notes')
+            ..remove('completions');
+          await customStatement('UPDATE habits SET payload=? WHERE id=?', [
+            jsonEncode(full),
+            habit.id,
+          ]);
+        }
+        await beforeMigrationCommit?.call();
+        await customStatement('PRAGMA user_version = 2');
+      });
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -292,4 +431,52 @@ class HabitDatabase extends GeneratedDatabase {
       await customStatement('PRAGMA synchronous = FULL');
     },
   );
+  Future<void> _createDomainTables() async {
+    await customStatement(
+      "CREATE TABLE records(id TEXT PRIMARY KEY NOT NULL, habit_id TEXT NOT NULL REFERENCES habits(id) ON DELETE CASCADE, local_date TEXT NOT NULL CHECK(length(local_date)=10), value INTEGER NOT NULL CHECK(value>0), deleted INTEGER NOT NULL CHECK(deleted IN (0,1)), payload TEXT NOT NULL)",
+    );
+    await customStatement(
+      'CREATE INDEX records_habit_date ON records(habit_id, local_date)',
+    );
+    await customStatement(
+      'CREATE TABLE plans(id TEXT PRIMARY KEY NOT NULL, habit_id TEXT NOT NULL REFERENCES habits(id) ON DELETE CASCADE, effective_from TEXT NOT NULL, daily_target INTEGER NOT NULL CHECK(daily_target>0), payload TEXT NOT NULL, UNIQUE(habit_id,effective_from))',
+    );
+    await customStatement(
+      'CREATE TABLE daily_notes(id TEXT PRIMARY KEY NOT NULL, habit_id TEXT NOT NULL REFERENCES habits(id) ON DELETE CASCADE, local_date TEXT NOT NULL CHECK(length(local_date)=10), content TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(habit_id,local_date))',
+    );
+  }
+
+  Future<void> putChild(
+    String table,
+    String habitId,
+    String id,
+    String payload,
+  ) async {
+    final value = jsonDecode(payload) as Map<String, dynamic>;
+    if (table == 'records') {
+      await customStatement(
+        'INSERT INTO records(id,habit_id,local_date,value,deleted,payload) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,deleted=excluded.deleted,payload=excluded.payload',
+        [
+          id,
+          habitId,
+          value['date'],
+          value['value'],
+          value['deleted'] == true ? 1 : 0,
+          payload,
+        ],
+      );
+    } else if (table == 'plans') {
+      await customStatement(
+        'INSERT INTO plans(id,habit_id,effective_from,daily_target,payload) VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET effective_from=excluded.effective_from,daily_target=excluded.daily_target,payload=excluded.payload',
+        [id, habitId, value['from'], value['dailyTarget'], payload],
+      );
+    } else if (table == 'daily_notes') {
+      await customStatement(
+        'INSERT INTO daily_notes(id,habit_id,local_date,content,payload) VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content,payload=excluded.payload',
+        [id, habitId, value['date'], value['text'], payload],
+      );
+    } else {
+      throw ArgumentError.value(table);
+    }
+  }
 }

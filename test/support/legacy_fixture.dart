@@ -3,7 +3,13 @@ import 'package:haoxiguan/models/habit.dart';
 
 String legacyFixture(DateTime now) => jsonEncode({
   'version': 5,
-  'habits': legacyHabits(now).map((h) => h.toJson()).toList(),
+  'habits': legacyHabits(now)
+      .map(
+        (h) => h.toJson()
+          ..['createdAt'] = '${dateKey(h.createdAt)}T00:00:00.000'
+          ..removeWhere((key, _) => !_legacyKeys.contains(key)),
+      )
+      .toList(),
 });
 
 List<Habit> legacyHabits(DateTime now) {
@@ -65,3 +71,29 @@ List<Habit> legacyHabits(DateTime now) {
     ),
   ];
 }
+
+const _legacyKeys = {
+  'id',
+  'title',
+  'emoji',
+  'colorValue',
+  'weekdays',
+  'createdAt',
+  'reminderTime',
+  'completions',
+  'notes',
+  'exemptions',
+  'pausedAt',
+  'archived',
+  'category',
+  'effortEnabled',
+  'rewardPoints',
+  'penaltyPoints',
+  'targetCount',
+  'rewardPeriod',
+  'wishEnabled',
+  'wishTitle',
+  'wishTarget',
+  'scheduleType',
+  'scheduleCount',
+};

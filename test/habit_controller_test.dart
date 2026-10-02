@@ -125,13 +125,21 @@ void main() {
     await controller.load();
 
     reminders.emit(
-      const ReminderAction(ReminderActionType.complete, 'seed-reading'),
+      const ReminderAction(
+        ReminderActionType.complete,
+        'seed-reading',
+        localDate: '2026-07-15',
+      ),
     );
     await Future<void>.delayed(Duration.zero);
     expect(controller.habitById('seed-reading')!.isCompletedOn(now), isTrue);
 
     reminders.emit(
-      const ReminderAction(ReminderActionType.snooze, 'seed-water'),
+      const ReminderAction(
+        ReminderActionType.snooze,
+        'seed-water',
+        localDate: '2026-07-15',
+      ),
     );
     await Future<void>.delayed(Duration.zero);
     expect(reminders.snoozed.map((habit) => habit.id), contains('seed-water'));
@@ -308,6 +316,8 @@ void main() {
 
     final restored = HabitController(repository, clock: () => now);
     await restored.load();
+    expect(restored.habitById('seed-water')!.inTrash, isTrue);
+    await restored.permanentlyDeleteHabit('seed-water');
     expect(restored.habitById('seed-water'), isNull);
     expect(restored.themeColorValue, 0xFF6558A8);
     expect(restored.reviewDays, 90);
@@ -350,7 +360,8 @@ class _FakeReminderScheduler implements ReminderScheduler {
   Future<bool> requestPermission() async => true;
 
   @override
-  Future<void> snooze(Habit habit) async => snoozed.add(habit);
+  Future<void> snooze(Habit habit, {DateTime? forDate}) async =>
+      snoozed.add(habit);
 
   @override
   Future<void> syncAll(Iterable<Habit> habits) async {

@@ -21,17 +21,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('阅读 20 分钟'), findsOneWidget);
-    expect(find.text('0/3'), findsOneWidget);
+    expect(find.text('0/2'), findsOneWidget);
     expect(find.byKey(const Key('today-category-学习')), findsOneWidget);
     expect(find.byKey(const Key('today-category-健康')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('complete-seed-reading-false')));
     await tester.pumpAndSettle();
-    expect(find.text('1/3'), findsOneWidget);
+    expect(find.text('1/2'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('complete-seed-reading-true')));
     await tester.pumpAndSettle();
-    expect(find.text('0/3'), findsOneWidget);
+    expect(find.text('0/2'), findsOneWidget);
   });
 
   testWidgets('保存失败保留创建输入，重试后才关闭面板', (tester) async {
@@ -118,26 +118,56 @@ void main() {
     expect(controller.isTodayCategoryCollapsed('学习'), isTrue);
   });
 
-  testWidgets('奖惩和心愿设置默认收起，开启后展开', (tester) async {
+  testWidgets('新建不显示奖惩开关，旧版奖励在数据页只读保留', (tester) async {
     await tester.pumpWidget(HabitApp(controller: controller));
     await tester.pumpAndSettle();
-
     await tester.tap(find.byKey(const Key('add-habit-button')));
     await tester.pumpAndSettle();
-    expect(find.text('每次完成奖励'), findsNothing);
-    expect(find.text('达成后想实现的心愿'), findsNothing);
-
-    final effortSwitch = find.byKey(const Key('effort-enabled-switch'));
-    await tester.ensureVisible(effortSwitch);
-    await tester.tap(effortSwitch);
+    expect(find.byKey(const Key('effort-enabled-switch')), findsNothing);
+    expect(find.byKey(const Key('wish-enabled-switch')), findsNothing);
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('每次完成奖励'), findsOneWidget);
-
-    final wishSwitch = find.byKey(const Key('wish-enabled-switch'));
-    await tester.ensureVisible(wishSwitch);
-    await tester.tap(wishSwitch);
+    await tester.tap(find.byIcon(Icons.person_outline_rounded));
     await tester.pumpAndSettle();
-    expect(find.text('达成后想实现的心愿'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const PageStorageKey<String>('data-scroll')),
+      const Offset(0, -1000),
+    );
+    await tester.pumpAndSettle();
+    final legacy = find.text('旧版奖励（只读）');
+    await tester.ensureVisible(legacy);
+    expect(legacy, findsOneWidget);
+  });
+
+  testWidgets('计数记录入口输入实际数值并累加', (tester) async {
+    await controller.addHabit(
+      title: '喝水计数',
+      emoji: '💧',
+      colorValue: 0xFF5F8068,
+      weekdays: {1, 2, 3, 4, 5, 6, 7},
+      recordType: 'count',
+      unit: '杯',
+      scale: 1000,
+      dailyTarget: 8000,
+    );
+    final id = controller.habits.last.id;
+    await tester.pumpWidget(HabitApp(controller: controller));
+    await tester.pumpAndSettle();
+    expect(controller.habitById(id)!.recordType, 'count');
+    await tester.drag(
+      find.byKey(const PageStorageKey<String>('today-scroll')),
+      const Offset(0, -600),
+    );
+    await tester.pumpAndSettle();
+    final record = find.byKey(Key('complete-$id-false'));
+    await tester.ensureVisible(record);
+    await tester.tap(record);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('record-value-field')), '2.5');
+    await tester.tap(find.byKey(const Key('save-record-button')));
+    await tester.pumpAndSettle();
+    expect(controller.habitById(id)!.valueOn(controller.today), 2500);
+    expect(find.byKey(const Key('record-value-field')), findsNothing);
   });
 
   testWidgets('回顾里的习惯可以进入并查看每日备注', (tester) async {

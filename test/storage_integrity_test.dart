@@ -8,6 +8,7 @@ import 'package:haoxiguan/data/habit_repository.dart';
 import 'package:haoxiguan/data/snapshot_codec.dart';
 import 'package:haoxiguan/data/sqlite_habit_repository.dart';
 import 'package:haoxiguan/state/habit_controller.dart';
+import 'package:haoxiguan/models/habit.dart';
 
 import 'support/legacy_fixture.dart';
 
@@ -183,7 +184,7 @@ void main() {
       try {
         final loaded = SnapshotCodec.decode((await other.load())!);
         expect(loaded['darkMode'], isTrue);
-        expect(loaded['habits'], document['habits']);
+        expect(_canonical(loaded)['habits'], _canonical(document)['habits']);
       } finally {
         await other.close();
       }
@@ -201,7 +202,10 @@ void main() {
         throwsA(isA<FileSystemException>()),
       );
       repository.database.beforeCommit = null;
-      expect(jsonDecode((await repository.load())!), jsonDecode(original!));
+      expect(
+        _canonical(jsonDecode((await repository.load())!)),
+        _canonical(jsonDecode(original!)),
+      );
       final afterLog = await repository.database
           .customSelect('SELECT COUNT(*) AS n FROM local_changes')
           .getSingle();
@@ -257,7 +261,10 @@ void main() {
       expect(await repository.loadBackup(), isNull);
       repository.database.beforeCommit = null;
       await repository.replace(SnapshotCodec.empty());
-      expect(jsonDecode((await repository.loadBackup())!), jsonDecode(first));
+      expect(
+        _canonical(jsonDecode((await repository.loadBackup())!)),
+        _canonical(jsonDecode(first)),
+      );
       expect(
         SnapshotCodec.decode((await repository.load())!)['habits'],
         isEmpty,
@@ -291,3 +298,10 @@ class _ControlledRepository extends MemoryHabitRepository {
     await super.save(value);
   }
 }
+
+Map<String, dynamic> _canonical(Map<String, dynamic> document) => {
+  ...document,
+  'habits': (document['habits'] as List)
+      .map((h) => Habit.fromJson((h as Map).cast<String, Object?>()).toJson())
+      .toList(),
+};

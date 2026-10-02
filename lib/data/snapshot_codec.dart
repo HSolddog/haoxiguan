@@ -4,7 +4,7 @@ import '../models/habit.dart';
 
 /// Logical format is independent from the SQLite schema and the app version.
 class SnapshotCodec {
-  static const currentVersion = 6;
+  static const currentVersion = 7;
   static const maxBytes = 50 * 1024 * 1024;
 
   static Map<String, Object?> decode(String raw) {
@@ -25,14 +25,80 @@ class SnapshotCodec {
       throw const FormatException('习惯列表无效');
     }
     final ids = <String>{};
+    final allRecordIds = <String>{};
+    final allPlanIds = <String>{};
     for (final item in items) {
       if (item is! Map<String, dynamic>) {
         throw const FormatException('习惯格式无效');
       }
+      if (item['plans'] case final List plans) {
+        for (final plan in plans) {
+          requireDate((plan as Map)['from'] as String);
+        }
+      }
       final habit = Habit.fromJson(item);
+      if (version >= 7 && habit.plans.isEmpty) {
+        throw const FormatException('计划历史缺失，未修改原数据');
+      }
       final createdAt = item['createdAt'] as String;
       if (createdAt.length < 10) throw const FormatException('创建日期无效');
       requireDate(createdAt.substring(0, 10));
+      if (!const {'boolean', 'count', 'duration'}.contains(habit.recordType) ||
+          !const {1, 10, 100, 1000}.contains(habit.scale) ||
+          habit.dailyTarget <= 0 ||
+          habit.dailyTarget > 1000000000000 ||
+          (habit.recordType != 'count' && habit.scale != 1) ||
+          (habit.recordType == 'boolean' && habit.dailyTarget != 1) ||
+          habit.unit.isEmpty ||
+          habit.unit.length > 20) {
+        throw const FormatException('记录类型或目标无效');
+      }
+      final planIds = <String>{};
+      DateTime? previousPlan;
+      for (final plan in habit.plans) {
+        requireDate(plan.toJson()['from']! as String);
+        if (!planIds.add(plan.id) ||
+            !allPlanIds.add(plan.id) ||
+            plan.id.isEmpty ||
+            (previousPlan != null && !plan.from.isAfter(previousPlan)) ||
+            (previousPlan == null &&
+                dateKey(plan.from) != dateKey(habit.createdAt)) ||
+            !const {'daily', 'weekdays', 'week', 'month'}.contains(plan.kind) ||
+            plan.weekdays.isEmpty ||
+            plan.weekdays.any((d) => d < 1 || d > 7) ||
+            plan.periodTarget < 1 ||
+            plan.periodTarget > (plan.kind == 'week' ? 7 : 31) ||
+            plan.dailyTarget <= 0 ||
+            plan.dailyTarget > 1000000000000 ||
+            (habit.recordType == 'boolean' && plan.dailyTarget != 1)) {
+          throw const FormatException('计划版本无效或时间区间重叠');
+        }
+        previousPlan = plan.from;
+      }
+      final recordIds = <String>{};
+      final booleanDates = <String>{};
+      for (final entry in habit.entries) {
+        final date = requireDate(entry.date);
+        requireDate(entry.recordedLocalDate);
+        if (!recordIds.add(entry.id) ||
+            !allRecordIds.add(entry.id) ||
+            entry.id.isEmpty ||
+            date.isBefore(dateOnly(habit.createdAt)) ||
+            entry.value <= 0 ||
+            entry.value > 1000000000000 ||
+            entry.revision < 1 ||
+            (habit.recordType == 'boolean' &&
+                (entry.value != 1 ||
+                    (!entry.deleted && !booleanDates.add(entry.date)))) ||
+            (entry.recordedAtUtc == null &&
+                (entry.source != 'legacy' || entry.legacyTimestamp == null)) ||
+            (entry.recordedAtUtc != null &&
+                DateTime.tryParse(entry.recordedAtUtc!)?.isUtc != true) ||
+            (entry.utcOffsetMinutes != null &&
+                entry.utcOffsetMinutes!.abs() > 24 * 60)) {
+          throw const FormatException('记录数据无效或重复');
+        }
+      }
       if (habit.id.isEmpty || !ids.add(habit.id)) {
         throw const FormatException('习惯 ID 为空或重复');
       }
@@ -100,7 +166,7 @@ class SnapshotCodec {
         dateKey(parsed) != value) {
       throw const FormatException('日期无效');
     }
-    return parsed;
+    return dateOnly(parsed);
   }
 
   static String empty() =>

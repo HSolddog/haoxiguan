@@ -1,0 +1,30 @@
+{
+  "generator": "Python ctypes + libsodium 1.0.21; synthetic test-only password/key/nonce",
+  "password": "test only twelve words for vectors",
+  "expectedKdfKeyHex": "33d3ae57bc54136b5083bab3a9214a34344b7e129b61de3d0d2adee154e59edf",
+  "aadHex": "5b2268616f78696775616e2d6261636b7570222c312c22312e312e30222c747275652c226172676f6e3269642d786368616368613230706f6c79313330352d7631222c2241414543417751464267634943516f4c4441304f44773d3d222c36353533362c332c312c2241414543417751464267634943516f4c4441304f4478415245684d5546525958225d",
+  "snapshot": {
+    "version": 7,
+    "vaultId": "00000000-0000-4000-8000-000000000001",
+    "habits": [],
+    "darkMode": false
+  },
+  "envelope": {
+    "format": "haoxiguan-backup",
+    "formatVersion": 1,
+    "appVersion": "1.1.0",
+    "encrypted": true,
+    "crypto": {
+      "suite": "argon2id-xchacha20poly1305-v1",
+      "salt": "AAECAwQFBgcICQoLDA0ODw==",
+      "kdfParams": {
+        "memoryKiB": 65536,
+        "iterations": 3,
+        "parallelism": 1
+      },
+      "nonce": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYX"
+    },
+    "payload": "Dm++BZWypkwnfUQq6WzlhR1ZyQyoyLiYaTTtKoeCf5VokkmN0g31gW04YUAy3Ol2f/33blFaUyc3F0NXkgIEiyiiVJV/SP2uE841sQinnEQf77YfZ+fX3dmZ7YZYobR/41JXT6iZ/34VcNhAhako/0cY5IfOqSi3IHnMHQomAlYyTo7EBTOo5GQK0KTML/uFqfYQxyB7bzPC3BiL5d1GgLfI1KMW7HH4O4DfFw2o5uKFk10cOe7NerePEz0jT/a5Ggtzsh19M6HWBbqdkcQIa66u7E7F/pqJqizG0EnJcj2BiiWaC31HI7U0Qiiu7osfIXSJvL3Y0N29nSOEHZgFiOihrPrZZXGqQrG8NMAQAnzo/ifefNhWT7PGBcUznCHuBwpeFMiDb61A+bAxuDBaVFs4BAYxEO8/23dD",
+    "payloadSha256": "fc24e94004e1e1b3291226d6fec2ffd21cd7553bd6be20079bd5d9f15b1287fe"
+  }
+}

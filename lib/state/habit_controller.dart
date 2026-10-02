@@ -8,6 +8,8 @@ import '../data/snapshot_codec.dart';
 
 import '../data/habit_repository.dart';
 import '../models/habit.dart';
+import '../models/plan.dart';
+import '../models/record_entry.dart';
 import '../services/reminder_service.dart';
 
 class HabitController extends ChangeNotifier {
@@ -15,7 +17,9 @@ class HabitController extends ChangeNotifier {
     this._repository, {
     DateTime Function()? clock,
     ReminderScheduler? reminderScheduler,
+    String Function()? timezoneId,
   }) : _clock = clock ?? DateTime.now,
+       _timezoneId = timezoneId ?? (() => 'unknown'),
        _reminders = reminderScheduler ?? NoopReminderScheduler() {
     _reminderSubscription = _reminders.actions.listen(_handleReminderAction);
   }
@@ -23,6 +27,7 @@ class HabitController extends ChangeNotifier {
   final HabitRepository _repository;
   final DateTime Function() _clock;
   final ReminderScheduler _reminders;
+  final String Function() _timezoneId;
   late final StreamSubscription<ReminderAction> _reminderSubscription;
   final List<Habit> _habits = <Habit>[];
   bool _darkMode = false;
@@ -32,14 +37,22 @@ class HabitController extends ChangeNotifier {
   final Set<String> _collapsedHabitCategories = <String>{};
   bool _loaded = false;
   bool _loading = false;
+  bool _disposed = false;
   String? _loadError;
   String? _saveError;
   String? _reminderError;
+  ({String habitId, DateTime date})? _pendingRecord;
+  ({String habitId, DateTime date})? takePendingRecord() {
+    final value = _pendingRecord;
+    _pendingRecord = null;
+    return value;
+  }
+
   String? _recoveryBackup;
   Map<String, Object?> _extensions = {};
   Future<void>? _writeQueue;
 
-  bool get loading => _loading;
+  bool get loading => _loading || (!_loaded && _loadError == null);
   String? get loadError => _loadError;
   String? get saveError => _saveError;
   String? get reminderError => _reminderError;
@@ -57,13 +70,23 @@ class HabitController extends ChangeNotifier {
   int get reviewDays => _reviewDays;
   DateTime get today => dateOnly(_clock());
   List<Habit> get habits => List<Habit>.unmodifiable(_habits);
-  List<Habit> get activeHabits =>
-      _habits.where((habit) => !habit.archived).toList(growable: false);
-  List<Habit> get archivedHabits =>
-      _habits.where((habit) => habit.archived).toList(growable: false);
-  List<Habit> get todayHabits => activeHabits
-      .where((habit) => habit.isScheduledOn(today))
+  List<Habit> get activeHabits => _habits
+      .where((habit) => !habit.archived && !habit.inTrash)
       .toList(growable: false);
+  List<Habit> get archivedHabits => _habits
+      .where((habit) => habit.archived && !habit.inTrash)
+      .toList(growable: false);
+  List<Habit> get todayHabits => _habits
+      .where((h) => !h.inTrash)
+      .where(
+        (habit) => !habit.planOn(today).flexible && habit.isScheduledOn(today),
+      )
+      .toList(growable: false);
+  List<Habit> get periodHabits => _habits
+      .where((h) => !h.inTrash)
+      .where((h) => h.planOn(today).flexible && h.isActiveOn(today))
+      .toList();
+  List<Habit> get trashedHabits => _habits.where((h) => h.inTrash).toList();
   List<String> get categories {
     final values = activeHabits.map((habit) => habit.category).toSet().toList()
       ..sort();
@@ -95,6 +118,11 @@ class HabitController extends ChangeNotifier {
         _restore(empty);
       } else {
         _restore(raw);
+        final source = SnapshotCodec.decode(raw);
+        if ((source['version'] as int? ?? 1) < SnapshotCodec.currentVersion ||
+            source['vaultId'] == null) {
+          await _repository.save(exportJson());
+        }
       }
       _loaded = true;
       unawaited(_syncAllReminders());
@@ -166,6 +194,10 @@ class HabitController extends ChangeNotifier {
     int wishTarget = 100,
     String scheduleType = 'daily',
     int scheduleCount = 1,
+    String recordType = 'boolean',
+    String unit = '次',
+    int scale = 1,
+    int dailyTarget = 1,
   }) => _mutate(() {
     _habits.add(
       Habit(
@@ -187,6 +219,20 @@ class HabitController extends ChangeNotifier {
         wishTarget: wishTarget,
         scheduleType: scheduleType,
         scheduleCount: scheduleCount,
+        recordType: recordType,
+        unit: unit,
+        scale: scale,
+        dailyTarget: dailyTarget,
+        plans: [
+          PlanVersion(
+            id: const Uuid().v4(),
+            from: today,
+            kind: scheduleType,
+            weekdays: weekdays,
+            periodTarget: scheduleCount,
+            dailyTarget: dailyTarget,
+          ),
+        ],
       ),
     );
   });
@@ -209,10 +255,35 @@ class HabitController extends ChangeNotifier {
     int? wishTarget,
     String? scheduleType,
     int? scheduleCount,
+    int? dailyTarget,
   }) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
+    final kind = scheduleType ?? habit.scheduleType;
+    final count = scheduleCount ?? habit.scheduleCount;
+    final target = dailyTarget ?? habit.dailyTarget;
+    var plans = habit.effectivePlans;
+    if (kind != habit.scheduleType ||
+        count != habit.scheduleCount ||
+        target != habit.dailyTarget ||
+        !setEquals(weekdays, habit.weekdays)) {
+      final current = habit.planOn(today);
+      final effective = current.flexible
+          ? calendarDay(current.end(today), 1)
+          : calendarDay(today, 1);
+      plans = [
+        ...plans.where((p) => p.from.isBefore(effective)),
+        PlanVersion(
+          id: const Uuid().v4(),
+          from: effective,
+          kind: kind,
+          weekdays: weekdays,
+          periodTarget: count,
+          dailyTarget: target,
+        ),
+      ];
+    }
     _habits[index] = habit.copyWith(
       title: title.trim(),
       emoji: emoji,
@@ -231,6 +302,8 @@ class HabitController extends ChangeNotifier {
       wishTarget: wishTarget,
       scheduleType: scheduleType,
       scheduleCount: scheduleCount,
+      dailyTarget: target,
+      plans: plans,
     );
   });
 
@@ -242,15 +315,19 @@ class HabitController extends ChangeNotifier {
     final moved = active.removeAt(oldIndex);
     active.insert(newIndex, moved);
     final archived = archivedHabits;
+    final trash = trashedHabits;
     _habits
       ..clear()
       ..addAll(active)
-      ..addAll(archived);
+      ..addAll(archived)
+      ..addAll(trash);
   });
 
   Future<bool> requestReminderPermission() async {
     try {
-      return await _reminders.requestPermission();
+      final granted = await _reminders.requestPermission();
+      if (granted) await _syncAllReminders();
+      return granted;
     } on Object {
       _reminderError = '无法申请通知权限，记录仍可正常保存。';
       notifyListeners();
@@ -258,33 +335,121 @@ class HabitController extends ChangeNotifier {
     }
   }
 
+  RecordEntry _entry(String habitId, DateTime date, int value, {String? id}) {
+    final now = _clock();
+    return RecordEntry(
+      id: id ?? const Uuid().v4(),
+      date: dateKey(date),
+      value: value,
+      recordedAtUtc: now.toUtc().toIso8601String(),
+      recordedLocalDate: dateKey(now),
+      timezoneId: _timezoneId(),
+      utcOffsetMinutes: now.timeZoneOffset.inMinutes,
+    );
+  }
+
   Future<bool> toggleCompletion(String habitId, DateTime date) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
-    final day = dateOnly(date);
-    if (day.isAfter(today) || day.isBefore(dateOnly(habit.createdAt))) return;
-    final key = dateKey(day);
-    final completions = Map<String, String>.from(habit.completions);
-    if (completions.containsKey(key)) {
-      completions.remove(key);
-    } else {
-      completions[key] = _clock().toIso8601String();
+    if (habit.recordType != 'boolean' ||
+        habit.inTrash ||
+        dateOnly(date).isAfter(today) ||
+        dateOnly(date).isBefore(dateOnly(habit.createdAt))) {
+      return;
     }
-    _habits[index] = habit.copyWith(completions: completions);
+    final key = dateKey(date);
+    final id = const Uuid().v5(
+      Namespace.url.value,
+      'haoxiguan/record/$habitId/$key',
+    );
+    final entries = habit.entries.where((e) => e.id != id).toList();
+    final previous = habit.entries.where((e) => e.id == id).firstOrNull;
+    entries.add(
+      previous == null
+          ? _entry(habitId, date, 1, id: id)
+          : previous.copyWith(deleted: habit.isCompletedOn(date)),
+    );
+    _habits[index] = habit.copyWith(entries: entries);
   });
 
   Future<bool> markCompleted(String habitId, DateTime date) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
-    final day = dateOnly(date);
-    if (day.isAfter(today) || day.isBefore(dateOnly(habit.createdAt))) return;
-    final key = dateKey(day);
-    if (habit.completions.containsKey(key)) return;
-    final completions = Map<String, String>.from(habit.completions)
-      ..[key] = _clock().toIso8601String();
-    _habits[index] = habit.copyWith(completions: completions);
+    if (habit.recordType != 'boolean' ||
+        habit.inTrash ||
+        habit.isCompletedOn(date) ||
+        dateOnly(date).isAfter(today) ||
+        dateOnly(date).isBefore(dateOnly(habit.createdAt))) {
+      return;
+    }
+    final id = const Uuid().v5(
+      Namespace.url.value,
+      'haoxiguan/record/$habitId/${dateKey(date)}',
+    );
+    final previous = habit.entries.where((e) => e.id == id).firstOrNull;
+    _habits[index] = habit.copyWith(
+      entries: [
+        ...habit.entries.where((e) => e.id != id),
+        previous == null
+            ? _entry(habitId, date, 1, id: id)
+            : previous.copyWith(deleted: false),
+      ],
+    );
+  });
+
+  Future<bool> addValue(
+    String habitId,
+    DateTime date,
+    int value, {
+    String? entryId,
+    bool replaceTotal = false,
+  }) {
+    final id = entryId ?? const Uuid().v4();
+    return _mutate(() {
+      final index = _habits.indexWhere((habit) => habit.id == habitId);
+      if (index < 0) return;
+      final habit = _habits[index];
+      if (habit.inTrash ||
+          habit.recordType == 'boolean' ||
+          value < 0 ||
+          value > 1000000000000 ||
+          dateOnly(date).isAfter(today) ||
+          dateOnly(date).isBefore(dateOnly(habit.createdAt))) {
+        throw const FormatException('记录范围无效');
+      }
+      if (habit.entries.any((e) => e.id == id)) return;
+      final entries = habit.entries
+          .map(
+            (e) => replaceTotal && e.date == dateKey(date)
+                ? e.copyWith(deleted: true)
+                : e,
+          )
+          .toList();
+      if (value > 0) entries.add(_entry(habitId, date, value, id: id));
+      _habits[index] = habit.copyWith(entries: entries);
+    });
+  }
+
+  Future<bool> deleteEntry(String habitId, String entryId) => _mutate(() {
+    final index = _habits.indexWhere((habit) => habit.id == habitId);
+    if (index < 0) return;
+    final habit = _habits[index];
+    _habits[index] = habit.copyWith(
+      entries: habit.entries
+          .map((e) => e.id == entryId ? e.copyWith(deleted: true) : e)
+          .toList(),
+    );
+  });
+
+  Future<bool> toggleRest(String habitId, DateTime date) => _mutate(() {
+    final index = _habits.indexWhere((habit) => habit.id == habitId);
+    if (index < 0 || dateOnly(date).isAfter(today)) return;
+    final habit = _habits[index];
+    final exemptions = {...habit.exemptions};
+    if (!exemptions.add(dateKey(date))) exemptions.remove(dateKey(date));
+    _habits[index] = habit.copyWith(exemptions: exemptions);
   });
 
   Future<bool> setNote(String habitId, DateTime date, String value) =>
@@ -293,6 +458,7 @@ class HabitController extends ChangeNotifier {
         if (index < 0) return;
         final habit = _habits[index];
         final notes = Map<String, String>.from(habit.notes);
+        if (value.length > 2000) throw const FormatException('备注最多 2000 字');
         final trimmed = value.trim();
         if (trimmed.isEmpty) {
           notes.remove(dateKey(date));
@@ -313,7 +479,7 @@ class HabitController extends ChangeNotifier {
       var cursor = dateOnly(habit.pausedAt!);
       while (cursor.isBefore(today)) {
         exemptions.add(dateKey(cursor));
-        cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
+        cursor = calendarDay(cursor, 1);
       }
       _habits[index] = habit.copyWith(
         exemptions: exemptions,
@@ -326,11 +492,51 @@ class HabitController extends ChangeNotifier {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
-    _habits[index] = habit.copyWith(archived: !habit.archived);
+    final exemptions = {...habit.exemptions};
+    if (habit.archived && habit.archivedAt != null) {
+      for (
+        var day = dateOnly(habit.archivedAt!);
+        day.isBefore(today);
+        day = calendarDay(day, 1)
+      ) {
+        exemptions.add(dateKey(day));
+      }
+    }
+    _habits[index] = habit.copyWith(
+      archived: !habit.archived,
+      exemptions: exemptions,
+      archivedAt: habit.archived ? null : calendarDay(today, 1),
+      clearArchivedAt: habit.archived,
+    );
   });
 
   Future<bool> deleteHabit(String habitId) => _mutate(() {
-    _habits.removeWhere((habit) => habit.id == habitId);
+    final index = _habits.indexWhere((h) => h.id == habitId);
+    if (index >= 0) _habits[index] = _habits[index].copyWith(deletedAt: today);
+  });
+
+  Future<bool> restoreHabit(String habitId) => _mutate(() {
+    final index = _habits.indexWhere((h) => h.id == habitId);
+    if (index < 0) return;
+    final habit = _habits[index];
+    final exemptions = {...habit.exemptions};
+    if (habit.deletedAt != null) {
+      for (
+        var day = calendarDay(habit.deletedAt!, 1);
+        day.isBefore(today);
+        day = calendarDay(day, 1)
+      ) {
+        exemptions.add(dateKey(day));
+      }
+    }
+    _habits[index] = habit.copyWith(
+      clearDeletedAt: true,
+      exemptions: exemptions,
+    );
+  });
+
+  Future<bool> permanentlyDeleteHabit(String habitId) => _mutate(() {
+    _habits.removeWhere((habit) => habit.id == habitId && habit.inTrash);
   });
 
   Future<bool> setDarkMode(bool value) => _mutate(() {
@@ -358,87 +564,74 @@ class HabitController extends ChangeNotifier {
     }
   });
 
-  int completedCount(DateTime date) => activeHabits
-      .where((habit) => habit.isActiveOn(date) && habit.isCompletedOn(date))
+  int completedCount(DateTime date) => _habits
+      .where((h) => dateOnly(date) != today || !h.inTrash)
+      .where(
+        (habit) =>
+            !habit.planOn(date).flexible &&
+            habit.isActiveOn(date) &&
+            habit.planOn(date).allows(date) &&
+            habit.isCompletedOn(date),
+      )
       .length;
+  int scheduledCount(DateTime date) => _habits
+      .where((h) => dateOnly(date) != today || !h.inTrash)
+      .where(
+        (habit) =>
+            !habit.planOn(date).flexible &&
+            habit.isActiveOn(date) &&
+            habit.planOn(date).allows(date),
+      )
+      .length;
+  double dayProgress(DateTime date) => scheduledCount(date) == 0
+      ? 0
+      : completedCount(date) / scheduledCount(date);
 
-  int scheduledCount(DateTime date) => activeHabits.where((habit) {
-    if (!habit.isActiveOn(date)) return false;
-    if (habit.scheduleType == 'daily') return true;
-    if (habit.isCompletedOn(date)) return true;
-    return dateKey(date) == dateKey(today) && habit.isScheduledOn(date);
-  }).length;
-
-  double dayProgress(DateTime date) {
-    final scheduled = scheduledCount(date);
-    if (scheduled == 0) return 0;
-    return completedCount(date) / scheduled;
+  List<PlanResult> settledResults(Habit habit, {int days = 30, String? kind}) {
+    final start = calendarDay(today, -days);
+    return habit
+        .resultsThrough(today)
+        .where(
+          (r) =>
+              !r.rested &&
+              r.end.isBefore(today) &&
+              !r.end.isBefore(start) &&
+              (kind == null || r.plan.kind == kind),
+        )
+        .toList();
   }
 
   double completionRate(Habit habit, {int days = 30}) {
-    final scheduled = expectedCountInRange(habit, days: days);
-    final completed = completedCountInRange(habit, days: days);
-    return scheduled == 0 ? 0 : (completed / scheduled).clamp(0.0, 1.0);
+    final results = settledResults(habit, days: days);
+    return results.isEmpty
+        ? 0
+        : results.where((r) => r.met).length / results.length;
   }
 
-  int completedCountInRange(Habit habit, {required int days}) {
-    final start = today.subtract(Duration(days: days - 1));
-    return habit.completions.keys.where((key) {
-      final completed = DateTime.tryParse(key);
-      if (completed == null) return false;
-      final day = dateOnly(completed);
-      return !day.isBefore(start) && !day.isAfter(today);
-    }).length;
-  }
-
-  int expectedCountInRange(Habit habit, {required int days}) {
-    final start = today.subtract(Duration(days: days - 1));
-    if (habit.scheduleType == 'daily') {
-      var expected = 0;
-      for (
-        var day = start;
-        !day.isAfter(today);
-        day = day.add(const Duration(days: 1))
-      ) {
-        if (habit.isActiveOn(day)) expected++;
-      }
-      return expected;
-    }
-    var expected = 0;
-    var periodStart = habit.schedulePeriodStart(start);
-    while (!periodStart.isAfter(today)) {
-      final periodEnd = habit.schedulePeriodEnd(periodStart);
-      final windowStart = periodStart.isBefore(start) ? start : periodStart;
-      final windowEnd = periodEnd.isAfter(today) ? today : periodEnd;
-      var availableDays = 0;
-      for (
-        var day = windowStart;
-        !day.isAfter(windowEnd);
-        day = day.add(const Duration(days: 1))
-      ) {
-        if (habit.isActiveOn(day)) availableDays++;
-      }
-      expected += habit.scheduleCount < availableDays
-          ? habit.scheduleCount
-          : availableDays;
-      periodStart = habit.scheduleType == 'month'
-          ? DateTime(periodStart.year, periodStart.month + 1)
-          : periodStart.add(const Duration(days: 7));
-    }
-    return expected;
-  }
-
-  int completedTotalInRange({required int days}) => activeHabits.fold<int>(
+  int completedCountInRange(Habit habit, {required int days}) =>
+      settledResults(habit, days: days).where((r) => r.met).length;
+  int expectedCountInRange(Habit habit, {required int days}) =>
+      settledResults(habit, days: days).length;
+  int completedTotalInRange({required int days}) => _habits.fold(
     0,
-    (total, habit) => total + completedCountInRange(habit, days: days),
+    (sum, h) =>
+        sum +
+        settledResults(
+          h,
+          days: days,
+        ).where((r) => !r.plan.flexible && r.met).length,
+  );
+  int expectedTotalInRange({required int days}) => _habits.fold(
+    0,
+    (sum, h) =>
+        sum +
+        settledResults(h, days: days).where((r) => !r.plan.flexible).length,
   );
 
-  int expectedTotalInRange({required int days}) => activeHabits.fold<int>(
-    0,
-    (total, habit) => total + expectedCountInRange(habit, days: days),
-  );
+  int effortPoints(Habit habit) =>
+      habit.legacyRewardBalance ?? _legacyEffortPoints(habit);
 
-  int effortPoints(Habit habit) {
+  int _legacyEffortPoints(Habit habit) {
     if (!habit.effortEnabled) return 0;
     final completed = habit.completions.keys.where((key) {
       final day = DateTime.tryParse(key);
@@ -465,7 +658,7 @@ class HabitController extends ChangeNotifier {
           scheduled++;
           if (habit.isCompletedOn(cursor)) completedInPeriod++;
         }
-        cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
+        cursor = calendarDay(cursor, 1);
       }
       final required = habit.targetCount < scheduled
           ? habit.targetCount
@@ -485,99 +678,38 @@ class HabitController extends ChangeNotifier {
 
   DateTime _periodStart(DateTime value, String period) {
     final day = dateOnly(value);
-    if (period == 'month') return DateTime(day.year, day.month);
+    if (period == 'month') return DateTime.utc(day.year, day.month);
     return day.subtract(Duration(days: day.weekday - 1));
   }
 
   int currentStreak(Habit habit) {
-    if (habit.scheduleType != 'daily') {
-      var streak = 0;
-      var periodStart = habit.schedulePeriodStart(today);
-      if (!_schedulePeriodMet(habit, periodStart)) {
-        periodStart = _previousSchedulePeriod(habit, periodStart);
-      }
-      final firstPeriod = habit.schedulePeriodStart(habit.createdAt);
-      while (!periodStart.isBefore(firstPeriod) &&
-          _schedulePeriodMet(habit, periodStart)) {
-        streak++;
-        periodStart = _previousSchedulePeriod(habit, periodStart);
-      }
-      return streak;
-    }
     var streak = 0;
-    var cursor = today;
-    if (habit.isScheduledOn(cursor) && !habit.isCompletedOn(cursor)) {
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    while (!cursor.isBefore(dateOnly(habit.createdAt))) {
-      if (habit.isScheduledOn(cursor)) {
-        if (!habit.isCompletedOn(cursor)) break;
-        streak++;
-      }
-      cursor = cursor.subtract(const Duration(days: 1));
+    final kind = habit.planOn(today).kind;
+    for (final r in habit.resultsThrough(today).toList().reversed) {
+      if (r.plan.kind != kind) break;
+      if (r.rested) continue;
+      if (!r.end.isBefore(today) && !r.met) continue;
+      if (!r.met) break;
+      streak++;
     }
     return streak;
   }
 
   int bestStreak(Habit habit) {
-    if (habit.scheduleType != 'daily') {
-      var best = 0;
-      var current = 0;
-      var periodStart = habit.schedulePeriodStart(habit.createdAt);
-      final lastPeriod = habit.schedulePeriodStart(today);
-      while (!periodStart.isAfter(lastPeriod)) {
-        if (_schedulePeriodMet(habit, periodStart)) {
-          current++;
-          if (current > best) best = current;
-        } else {
-          current = 0;
-        }
-        periodStart = _nextSchedulePeriod(habit, periodStart);
-      }
-      return best;
-    }
     var best = 0;
     var current = 0;
-    var cursor = dateOnly(habit.createdAt);
-    while (!cursor.isAfter(today)) {
-      if (habit.isScheduledOn(cursor)) {
-        if (habit.isCompletedOn(cursor)) {
-          current++;
-          if (current > best) best = current;
-        } else {
-          current = 0;
-        }
+    final kind = habit.planOn(today).kind;
+    for (final r in habit.resultsThrough(today)) {
+      if (r.plan.kind != kind) {
+        current = 0;
+        continue;
       }
-      cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
+      if (r.rested || (!r.end.isBefore(today) && !r.met)) continue;
+      current = r.met ? current + 1 : 0;
+      if (current > best) best = current;
     }
     return best;
   }
-
-  bool _schedulePeriodMet(Habit habit, DateTime periodStart) {
-    final periodEnd = habit.schedulePeriodEnd(periodStart);
-    var availableDays = 0;
-    for (
-      var day = periodStart;
-      !day.isAfter(periodEnd);
-      day = day.add(const Duration(days: 1))
-    ) {
-      if (habit.isActiveOn(day)) availableDays++;
-    }
-    final required = habit.scheduleCount < availableDays
-        ? habit.scheduleCount
-        : availableDays;
-    return required > 0 && habit.completionsInPeriod(periodStart) >= required;
-  }
-
-  DateTime _previousSchedulePeriod(Habit habit, DateTime periodStart) =>
-      habit.scheduleType == 'month'
-      ? DateTime(periodStart.year, periodStart.month - 1)
-      : periodStart.subtract(const Duration(days: 7));
-
-  DateTime _nextSchedulePeriod(Habit habit, DateTime periodStart) =>
-      habit.scheduleType == 'month'
-      ? DateTime(periodStart.year, periodStart.month + 1)
-      : periodStart.add(const Duration(days: 7));
 
   String exportJson() => jsonEncode(_stateJson());
 
@@ -589,7 +721,11 @@ class HabitController extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    return _mutate(() => _restore(raw), replace: true);
+    return _mutate(() {
+      _restore(raw);
+      _extensions['restoredFromVaultId'] = _extensions['vaultId'];
+      _extensions['vaultId'] = const Uuid().v4();
+    }, replace: true);
   }
 
   Future<bool> _mutate(void Function() change, {bool replace = false}) {
@@ -645,26 +781,55 @@ class HabitController extends ChangeNotifier {
   }
 
   Future<void> _syncAllReminders() async {
+    final previous = _reminderError;
     try {
-      await _reminders.syncAll(_habits);
+      await _reminders.syncAll(List<Habit>.of(_habits));
       _reminderError = null;
     } on Object {
       _reminderError = '提醒未能更新，记录已保存。可在系统通知设置中检查权限。';
     }
+    if (!_disposed && previous != _reminderError) notifyListeners();
+  }
+
+  void refreshCalendar() {
+    if (!_loaded || _disposed) return;
+    notifyListeners();
+    unawaited(_syncAllReminders());
   }
 
   Future<void> _handleReminderAction(ReminderAction action) async {
     final habit = habitById(action.habitId);
-    if (habit == null) return;
+    if (habit == null || habit.inTrash || action.localDate == null) return;
+    DateTime date;
+    try {
+      date = SnapshotCodec.requireDate(action.localDate!);
+    } on Object {
+      return;
+    }
+    if (dateOnly(date).isAfter(today) ||
+        dateOnly(date).isBefore(dateOnly(habit.createdAt))) {
+      return;
+    }
     if (action.type == ReminderActionType.complete) {
-      await markCompleted(habit.id, today);
+      if (habit.recordType == 'boolean') {
+        await markCompleted(habit.id, date);
+      } else {
+        _pendingRecord = (habitId: habit.id, date: date);
+        notifyListeners();
+      }
     } else {
-      await _reminders.snooze(habit);
+      try {
+        await _reminders.snooze(habit, forDate: date);
+      } on Object {
+        _reminderError = '稍后提醒未能设置，记录不受影响。';
+        notifyListeners();
+      }
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _reminderSubscription.cancel();
     super.dispose();
   }
@@ -697,9 +862,24 @@ class HabitController extends ChangeNotifier {
             .cast<String>()
             .toSet();
     _extensions = Map<String, Object?>.from(decoded);
+    _extensions['vaultId'] ??= const Uuid().v4();
     _habits
       ..clear()
-      ..addAll(restoredHabits);
+      ..addAll(
+        restoredHabits.map(
+          (h) => h.copyWith(
+            plans: h.effectivePlans,
+            archivedAt: h.archived && h.archivedAt == null
+                ? calendarDay(today, 1)
+                : h.archivedAt,
+            legacyRewardBalance:
+                h.legacyRewardBalance ??
+                (h.effortEnabled || h.wishEnabled
+                    ? _legacyEffortPoints(h)
+                    : null),
+          ),
+        ),
+      );
     _darkMode = restoredDarkMode;
     _themeColorValue = restoredThemeColor;
     _reviewDays = const <int>{7, 30, 90, 365}.contains(restoredReviewDays)
