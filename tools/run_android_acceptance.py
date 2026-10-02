@@ -42,13 +42,19 @@ def drive_document_picker(value):
     if stage == 'awaitingBackgroundReschedule':
         if value['runId'] not in background_requested:
             jobs = shell('dumpsys', 'jobscheduler')
-            matches = re.findall(r'JOB #[^/\s]+/(\d+):[^\n]*' + re.escape(package) +
-                                 r'/androidx\.work\.impl\.background\.systemjob\.SystemJobService', jobs)
+            matches = re.findall(r'^\s*JOB (?:(\S+?):|#)?[^/\s]+/(\d+):[^\n]*' + re.escape(package) +
+                                 r'/androidx\.work\.impl\.background\.systemjob\.SystemJobService', jobs,
+                                 flags=re.MULTILINE)
             (args.output/'workmanager-jobs.txt').write_text('\n'.join(
                 line for line in jobs.splitlines() if package in line))
             if matches:
-                for job in set(matches):
-                    command(adb, 'shell', 'cmd', 'jobscheduler', 'run', '-f', '-u', '0', package, job, check=False)
+                for namespace, job in set(matches):
+                    selector = ['-n', namespace] if namespace else []
+                    forced = command(adb, 'shell', 'cmd', 'jobscheduler', 'run', '-f', '-u', '0',
+                                     *selector, package, job, check=False)
+                    with (args.output/'workmanager-forced.txt').open('ab') as evidence:
+                        evidence.write(forced.stdout + forced.stderr)
+                    assert forced.returncode == 0, 'JobScheduler rejected isolated fixture job'
                 background_requested.add(value['runId'])
         return
     if stage not in ('awaitingDocumentSave', 'awaitingDocumentOpen', 'awaitingOversizeSave', 'awaitingOversizeOpen'):
@@ -69,10 +75,23 @@ def drive_document_picker(value):
                  if 'documentsui' in n.get('package', '') and n.get('enabled') == 'true']
     except ET.ParseError:
         return
-    def tap(node):
+    # API 24 can expose obscured controls in its accessibility tree while the
+    # IME still consumes their screen coordinates. Dismiss only a visible IME
+    # owned by DocumentsUI; an unconditional Back would cancel the picker.
+    if nodes:
+        ime = shell('dumpsys', 'input_method')
+        # mIsInputViewShown remains true on API 24 even after its window hides.
+        if re.search(r'\bmInputShown=true\b', ime):
+            shell('input', 'keyevent', '4')
+            return
+    def tap(node, hold=False):
         bounds = [int(x) for x in re.findall(r'\d+', node.get('bounds', ''))]
         if len(bounds) == 4 and bounds[2] > bounds[0] and bounds[3] > bounds[1]:
-            shell('input', 'tap', str((bounds[0]+bounds[2])//2), str((bounds[1]+bounds[3])//2))
+            x, y = str((bounds[0]+bounds[2])//2), str((bounds[1]+bounds[3])//2)
+            if hold:
+                shell('input', 'swipe', x, y, x, y, '900')
+            else:
+                shell('input', 'tap', x, y)
             return True
         return False
     if stage in ('awaitingDocumentSave', 'awaitingOversizeSave'):
@@ -86,10 +105,12 @@ def drive_document_picker(value):
             if node.get('content-desc') == 'List view' and tap(node):
                 return
         for node in nodes:
-            if node.get('text') == value['documentName'] and tap(node):
+            if node.get('text', '').upper() == 'OPEN' and tap(node):
                 return
         for node in nodes:
-            if node.get('text', '').upper() == 'OPEN' and tap(node):
+            # API 24's single-tap activation can be ignored by DocumentsUI.
+            # Its supported selection + OPEN flow has an explicit state change.
+            if node.get('text') == value['documentName'] and tap(node, hold=args.api == 24):
                 return
     for node in nodes:
         if node.get('text') == 'Downloads' and tap(node):
@@ -137,7 +158,8 @@ for root in [Path(os.environ.get('ANDROID_USER_HOME', str(Path.home()/'.android'
 log = (args.output/'emulator.log').open('wb')
 process = subprocess.Popen([str(sdk/'emulator/emulator'), '-avd', 'acceptance', '-no-window', '-no-audio',
                             '-no-snapshot', '-no-boot-anim', '-no-metrics', '-accel', 'on',
-                            '-gpu', 'swiftshader', '-memory', '1536'], stdout=log, stderr=subprocess.STDOUT)
+                            '-gpu', 'swiftshader', '-memory', '2048', '-skin', '720x1280',
+                            '-prop', 'qemu.sf.lcd_density=320'], stdout=log, stderr=subprocess.STDOUT)
 try:
     deadline = time.monotonic() + 240
     while time.monotonic() < deadline:
@@ -153,6 +175,8 @@ try:
     else:
         raise TimeoutError('emulator did not boot')
     shell('input', 'keyevent', '82')
+    shell('settings', 'put', 'system', 'screen_off_timeout', '2147483647')
+    shell('svc', 'power', 'stayon', 'true')
     for setting in ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']:
         shell('settings', 'put', 'global', setting, '0')
     results = []
