@@ -27,7 +27,7 @@ Future<void> main() async {
     }
     controller.refreshCalendar();
     if (controller.loaded) {
-      unawaited(attemptForegroundBackup(controller.exportJson()));
+      unawaited(attemptAutomaticBackup());
     }
   }
 
@@ -56,7 +56,7 @@ Future<void> main() async {
       /* Foreground refresh remains available. */
     }
     if (controller.loaded) {
-      unawaited(attemptForegroundBackup(controller.exportJson()));
+      unawaited(attemptAutomaticBackup());
     }
   }());
 }

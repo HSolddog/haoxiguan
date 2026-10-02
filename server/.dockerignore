@@ -1,4 +1,5 @@
 *
+!THIRD_PARTY_NOTICES.txt
 !dist/
 !dist/haoxiguan-server-linux-amd64
 !dist/haoxiguan-server-linux-arm64

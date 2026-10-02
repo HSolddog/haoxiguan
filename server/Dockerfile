@@ -4,6 +4,7 @@
 FROM scratch
 ARG TARGETARCH=amd64
 COPY --chmod=0555 dist/haoxiguan-server-linux-${TARGETARCH} /haoxiguan-server
+COPY --chmod=0444 THIRD_PARTY_NOTICES.txt /usr/share/licenses/haoxiguan/THIRD_PARTY_NOTICES.txt
 COPY --chown=65532:65532 --chmod=0700 deploy/empty-data/ /data/
 USER 65532:65532
 WORKDIR /data

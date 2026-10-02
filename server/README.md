@@ -55,10 +55,12 @@ ciphertext 当前为规范 Base64 不透明字节，最小 40 字节、最大解
 
 ## 实测边界
 
-2026-10-02，Go 1.27.1、modernc SQLite 1.47.0，Linux amd64。10 项测试与 race detector 通过：CAS 并发冲突、幂等、分页新增、令牌重放/撤销、账户隔离、epoch、过期设备引导、配额回滚、HTTP 边界、一致备份重开/未来 schema 拒绝。真实 Go 进程的邀请消费和授权设备列举通过。Linux ARM64 静态交叉构建通过；这不等于 ARM 实机测试。
+2026-10-02，Go 1.27.1、modernc SQLite 1.47.0，Linux amd64。14 项普通测试与 race detector 通过：CAS 并发冲突、幂等、分页新增、令牌重放/撤销、账户隔离、epoch、过期设备引导、配额回滚、HTTP 边界、一致备份重开/未来 schema 拒绝。真实 Go 进程的邀请消费和授权设备列举通过。Linux ARM64 静态交叉构建通过；这不等于 ARM 实机测试。
 
-真实 HTTPS Go/Flutter 双客户端 E2EE、恢复材料换机、冲突、撤销及删除远端后保留本地均通过。维护式轮换和非 root 容器重启/一致备份/旧备份恢复也已通过，见[运维文档](../docs/密钥轮换与服务运维.md)。尚无 1 vCPU/1 GiB/十万对象负载结果、生产域名部署和 Android 同步界面验收。不要用于真实用户数据；应用本地与已实现的加密文件/WebDAV 备份继续可用。
+真实 HTTPS Go/Flutter 双客户端 E2EE、恢复材料换机、冲突、撤销及删除远端后保留本地均通过。维护式轮换和非 root 容器重启/一致备份/旧备份恢复也已通过，见[运维文档](../docs/密钥轮换与服务运维.md)。已执行 1 vCPU/1 GiB 容器下的 20 用户/60 设备/十万对象存储、引导和备份诊断；不含 HTTP/TLS/网络成本，不能据此承诺在线用户容量。生产域名部署和完整 Android 同步界面联网验收尚未完成。不要用于真实用户数据；应用本地与已实现的加密文件/WebDAV 备份继续可用。
 
 精确 HTTP 字段见 [OpenAPI](openapi.yaml)。部署模板位于 `deploy/`；容器采用 scratch/UID 65532、只读根目录和独立数据卷。
 
 容量诊断与可复现命令见[性能诊断](../docs/性能诊断.md)。默认 Go 回归包含冻结 schema 1 升级与失败回滚；容量夹具需显式启用，避免每次普通测试都运行十万对象负载。
+
+分发包与容器内 `/usr/share/licenses/haoxiguan/THIRD_PARTY_NOTICES.txt` 包含项目 MIT、Go 及实际链接依赖的原始许可文本。更新依赖后用固定 Go 运行 `python3 tools/generate_server_notices.py`（仓库根目录）；CI 校验内容未过期。
