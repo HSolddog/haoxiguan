@@ -56,7 +56,7 @@ jobs:
       - name: Resolve locked dependencies
         run: flutter pub get --enforce-lockfile
       - name: Check Dart formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib test tools
       - name: Analyze
         run: flutter analyze
       - name: Test
@@ -70,6 +70,15 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Build isolated Android upgrade fixtures
+        run: python3 tools/build_android_acceptance.py
+      - name: Upload isolated upgrade fixtures
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: android-acceptance-${{ github.sha }}
+          path: build/acceptance/*.apk
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -77,4 +86,35 @@ jobs:
           name: coverage-${{ github.sha }}
           path: coverage/lcov.info
           if-no-files-found: ignore
+          retention-days: 14
+
+  native-acceptance:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [24, 35, 36]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: android-acceptance-${{ github.sha }}
+          path: acceptance-apks
+      - name: Allow this runner to use KVM
+        run: |
+          test -c /dev/kvm
+          sudo setfacl -m u:"$USER":rw /dev/kvm
+      - name: Native storage, crypto and upgrade
+        run: python3 tools/run_android_acceptance.py --api ${{ matrix.api }} --apks acceptance-apks --output acceptance-results
+      - name: Preserve native acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: android-native-api-${{ matrix.api }}-${{ github.sha }}
+          path: acceptance-results/
+          if-no-files-found: warn
           retention-days: 14

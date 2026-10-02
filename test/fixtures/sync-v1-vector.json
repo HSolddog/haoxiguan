@@ -1,0 +1,28 @@
+{
+  "description": "Public synthetic Python ctypes/libsodium vector; not user credentials",
+  "keys": {
+    "format": "haoxiguan-sync-keyring",
+    "version": 1,
+    "vault": "synthetic-vault",
+    "idKey": "ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8=",
+    "currentGeneration": 1,
+    "contentKeys": {
+      "1": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+    }
+  },
+  "context": {
+    "vault": "synthetic-vault",
+    "epoch": "synthetic-epoch",
+    "entityId": "t_fnEjY0UTXoyAcArKldzAlJGHcKxwQnI0dBFfndILA",
+    "baseRevision": 3,
+    "deleted": false
+  },
+  "logicalId": "records:synthetic-record",
+  "payload": {
+    "habitId": "synthetic-habit",
+    "date": "2026-10-02",
+    "value": 1250
+  },
+  "aadHex": "5b2268616f78696775616e2d73796e632d6f626a656374222c312c2273796e7468657469632d7661756c74222c2273796e7468657469632d65706f6368222c22745f666e456a59305554586f79416341724b6c647a416c4a4748634b7877516e4930644246666e64494c41222c332c66616c73652c315d",
+  "ciphertext": "eyJ2IjoxLCJnZW5lcmF0aW9uIjoxLCJub25jZSI6IkFBRUNBd1FGQmdjSUNRb0xEQTBPRHhBUkVoTVVGUllYIiwiY2lwaGVydGV4dCI6IjVlQmpFUGU3N3M5ZkRVTHM4WERhalNnb1dzR083RzZTRVc1WDAwbkVsblFzWTlXTE13TXJTUGZsenlDalRqSUdVNENaZXk4Vm1YQnowdmNmdGNVM2pkeFVsOVo4OEFlb1JENUVxQzlISllBOVlXai9rVDhmcTJhaUMxcUFJVjU4WENaWmJtRnhITDZBTHdmbUFUUnRJVTFWblJCaWlEdmRnTGloZlBCcW5QUzAifQ=="
+}
