@@ -441,7 +441,11 @@ class _SyncScreenState extends State<SyncScreen> {
     );
     if (target == null ||
         !mounted ||
-        !await _confirm('撤销设备授权？', '该设备之后不能读写服务器；其本地习惯仍保留。重新连接需要新的邀请。', '撤销授权')) {
+        !await _confirm(
+          '撤销设备授权？',
+          '该设备之后不能读写服务器；其本地习惯仍保留。重新连接需要新的邀请。',
+          '撤销授权',
+        )) {
       return;
     }
     if (!RegExp(r'^[A-Za-z0-9_-]{32}$').hasMatch(target)) {
