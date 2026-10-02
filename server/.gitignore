@@ -1,0 +1,6 @@
+/data/
+/dist/
+*.sqlite
+*.sqlite-*
+*.process.lock
+invite*.json

@@ -1,0 +1,45 @@
+name: Sync server
+on:
+  pull_request:
+    paths:
+      - 'server/**'
+      - '.github/workflows/server.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - '.github/workflows/server.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: server/go.sum
+      - name: Format
+        run: test -z "$(gofmt -l .)"
+      - name: Vet and race tests
+        run: |
+          go vet ./...
+          go test -race ./...
+      - name: Static Linux binaries
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o dist/haoxiguan-server-linux-amd64 ./cmd/haoxiguan-server
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o dist/haoxiguan-server-linux-arm64 ./cmd/haoxiguan-server
+          sha256sum dist/* > dist/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sync-server-${{ github.sha }}
+          path: server/dist/
+          retention-days: 14
