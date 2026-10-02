@@ -1,5 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import '../data/sqlite_habit_repository.dart';
+import '../data/snapshot_codec.dart';
+import 'device_task_lock.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -45,6 +49,8 @@ class NoopReminderScheduler implements ReminderScheduler {
 }
 
 class LocalReminderService implements ReminderScheduler {
+  LocalReminderService({this.handleLaunchActions = true});
+  final bool handleLaunchActions;
   static const _channelId = 'habit_reminders';
   static const _channelName = '习惯提醒';
   static const _channelDescription = '在设定的时间提醒你完成习惯';
@@ -93,7 +99,8 @@ class LocalReminderService implements ReminderScheduler {
       onDidReceiveNotificationResponse: _handleResponse,
     );
     final launch = await _plugin.getNotificationAppLaunchDetails();
-    if (launch?.didNotificationLaunchApp == true &&
+    if (handleLaunchActions &&
+        launch?.didNotificationLaunchApp == true &&
         launch?.notificationResponse != null) {
       _handleResponse(launch!.notificationResponse!);
     }
@@ -160,10 +167,22 @@ class LocalReminderService implements ReminderScheduler {
 
   @override
   Future<void> syncAll(Iterable<Habit> habits) {
-    final snapshot = List<Habit>.of(habits);
+    var snapshot = List<Habit>.of(habits);
     Future<void> perform() async {
       await _ensureInitialized();
       await _refreshTimezone();
+      if (Platform.isAndroid) {
+        final repository = await SqliteHabitRepository.open();
+        try {
+          final raw = await repository.load();
+          if (raw == null) return;
+          snapshot = (SnapshotCodec.decode(raw)['habits'] as List)
+              .map((h) => Habit.fromJson((h as Map).cast<String, Object?>()))
+              .toList();
+        } finally {
+          await repository.close();
+        }
+      }
       _knownHabits = snapshot;
       final plan = buildReminderPlan(snapshot, DateTime.now());
       final pending = await _plugin.pendingNotificationRequests();
@@ -224,6 +243,8 @@ class LocalReminderService implements ReminderScheduler {
   }
 
   Future<void> _enqueue(Future<void> Function() perform) {
+    final unlocked = perform;
+    perform = () => DeviceTaskLock.run('reminders', unlocked);
     final prior = _scheduleQueue;
     final result = prior == null
         ? Future<void>.sync(perform)

@@ -47,6 +47,9 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   http: ^1.6.0
   sodium: ^4.0.4
+  xml: ^7.0.1
+  workmanager: ^0.9.0+3
+  connectivity_plus: ^7.1.1
 
 dev_dependencies:
   sqlite3: ^3.3.2

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'webdav_screen.dart';
 
 import 'package:flutter/material.dart';
 
@@ -219,6 +220,19 @@ class _DataScreenState extends State<DataScreen> {
                   title: const Text('导出可读 JSON'),
                   subtitle: const Text('完整数据，不加密'),
                   onTap: _busy ? null : _exportPlain,
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cloud_outlined),
+                  title: const Text('自己的 WebDAV 备份'),
+                  subtitle: const Text('远端加密快照、自动尝试和换机恢复'),
+                  onTap: _busy
+                      ? null
+                      : () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                WebDavScreen(controller: controller),
+                          ),
+                        ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.history),
