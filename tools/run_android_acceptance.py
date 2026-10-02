@@ -17,6 +17,13 @@ adb = str(sdk / 'platform-tools/adb')
 package = 'com.haoxiguan.haoxiguan.acceptance'
 activity = package + '/com.haoxiguan.haoxiguan.MainActivity'
 args.output.mkdir(parents=True, exist_ok=True)
+# Command-line tools and the emulator otherwise inherit different AVD roots on
+# hosted runners. Keep every selector explicit and outside uploaded evidence.
+android_user = (Path.cwd() / 'build/android-acceptance-user').resolve()
+(android_user/'avd').mkdir(parents=True, exist_ok=True)
+os.environ['ANDROID_USER_HOME'] = str(android_user)
+os.environ['ANDROID_EMULATOR_HOME'] = str(android_user)
+os.environ['ANDROID_AVD_HOME'] = str(android_user/'avd')
 
 def command(*values, timeout=90, check=True, **kwargs):
     return subprocess.run(list(values), timeout=timeout, check=check, capture_output=True, **kwargs)
