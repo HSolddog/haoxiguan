@@ -1,0 +1,78 @@
+name: Android baseline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'codex/haoxiguan-implementation'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_SUPPRESS_ANALYTICS: 'true'
+  PUB_CACHE: ${{ runner.temp }}/haoxiguan-pub-cache
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Check out project
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check out pinned Flutter 3.44.6
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: flutter/flutter
+          ref: ee80f08bbf97172ec030b8751ceab557177a34a6
+          path: .tooling/flutter
+          persist-credentials: false
+      - name: Use JDK 17
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Cache Flutter engine and pub packages
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            .tooling/flutter/bin/cache
+            ${{ env.PUB_CACHE }}
+          key: flutter-3.44.6-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pubspec.lock') }}
+      - name: Add Flutter to PATH
+        run: echo "$GITHUB_WORKSPACE/.tooling/flutter/bin" >> "$GITHUB_PATH"
+      - name: Report SDK
+        run: flutter --version
+      - name: Resolve locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test --coverage
+      - name: Build Android debug APK
+        run: flutter build apk --debug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: haoxiguan-debug-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+          retention-days: 14
