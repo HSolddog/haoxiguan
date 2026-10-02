@@ -1,6 +1,6 @@
 /data/
 /dist/
 *.sqlite
-*.sqlite-*
+*.sqlite-wal
+*.sqlite-shm
 *.process.lock
-invite*.json

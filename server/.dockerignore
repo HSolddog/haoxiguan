@@ -1,0 +1,7 @@
+*
+!dist/
+!dist/haoxiguan-server-linux-amd64
+!dist/haoxiguan-server-linux-arm64
+!deploy/
+!deploy/empty-data/
+!deploy/empty-data/.keep

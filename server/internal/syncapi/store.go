@@ -56,10 +56,10 @@ func (s *Store) initialize() error {
 	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 1 {
+	if version > 2 {
 		return fmt.Errorf("database schema %d is newer than supported; file preserved", version)
 	}
-	if version == 1 {
+	if version == 2 {
 		return nil
 	}
 	tx, err := s.db.Begin()
@@ -67,9 +67,21 @@ func (s *Store) initialize() error {
 		return err
 	}
 	defer tx.Rollback()
+	if version == 1 {
+		for _, q := range []string{
+			"ALTER TABLE users ADD COLUMN read_only INTEGER NOT NULL DEFAULT 0",
+			"CREATE TABLE retired_vaults(vault TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),retired_at INTEGER NOT NULL)",
+			"PRAGMA user_version=2",
+		} {
+			if _, err = tx.Exec(q); err != nil {
+				return err
+			}
+		}
+		return tx.Commit()
+	}
 	statements := []string{
 		`CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)`,
-		`CREATE TABLE users(id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,vault TEXT NOT NULL UNIQUE,deleted INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL,used_bytes INTEGER NOT NULL DEFAULT 0)`,
+		`CREATE TABLE users(id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,vault TEXT NOT NULL UNIQUE,deleted INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL,used_bytes INTEGER NOT NULL DEFAULT 0,read_only INTEGER NOT NULL DEFAULT 0)`,
 		`CREATE TABLE invites(hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),expires INTEGER NOT NULL,used INTEGER NOT NULL DEFAULT 0)`,
 		`CREATE TABLE devices(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),name TEXT NOT NULL,revoked INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL,last_seen INTEGER NOT NULL,bootstrap_high INTEGER,bootstrap_cursor INTEGER,bootstrap_previous INTEGER)`,
 		`CREATE TABLE sessions(access_hash TEXT PRIMARY KEY,refresh_hash TEXT NOT NULL UNIQUE,device_id TEXT NOT NULL REFERENCES devices(id),access_expires INTEGER NOT NULL,refresh_expires INTEGER NOT NULL,consumed INTEGER NOT NULL DEFAULT 0)`,
@@ -78,7 +90,8 @@ func (s *Store) initialize() error {
 		`CREATE INDEX changes_vault_sequence ON changes(vault,sequence)`,
 		`CREATE TABLE operations(vault TEXT NOT NULL,op_id TEXT NOT NULL,digest TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(vault,op_id))`,
 		`CREATE INDEX sessions_device ON sessions(device_id)`,
-		`PRAGMA user_version=1`,
+		`CREATE TABLE retired_vaults(vault TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),retired_at INTEGER NOT NULL)`,
+		`PRAGMA user_version=2`,
 	}
 	for _, q := range statements {
 		if _, err = tx.Exec(q); err != nil {

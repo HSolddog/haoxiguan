@@ -1,0 +1,5 @@
+# Replace this hostname with your own DNS name. Caddy handles HTTPS renewal.
+# Run Caddy on the host; the application container is published on loopback only.
+sync.example.com {
+    reverse_proxy 127.0.0.1:8787
+}

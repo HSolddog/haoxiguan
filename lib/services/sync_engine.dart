@@ -29,6 +29,7 @@ class SyncEngine {
 
   Map<String, dynamic> _fresh(String epoch) => {
     'version': 1,
+    'reviewAll': settings.initialReview,
     'binding': settings.id,
     'epoch': epoch,
     'cursor': '',
@@ -74,7 +75,11 @@ class SyncEngine {
     var frame = await repository.readSyncFrame();
     _checkLocal(frame);
     if (frame.state == null || frame.state!['binding'] != settings.id) {
-      await repository.commitSyncFrame(frame, _fresh(caps['epoch'] as String));
+      final fresh = _fresh(caps['epoch'] as String);
+      if (frame.state == null && SyncEntities.encode(frame.snapshot).isEmpty) {
+        fresh['reviewAll'] = false;
+      }
+      await repository.commitSyncFrame(frame, fresh);
     } else if (_state(frame)['epoch'] != caps['epoch']) {
       // A restored server may have forgotten previously acknowledged writes or
       // deletions. Never treat its older state as a new ordinary remote edit.
@@ -350,6 +355,43 @@ class SyncEngine {
       snapshot: frame.snapshot,
       protect: true,
     );
+  }
+
+  /// Read-only preparation allows frozen outboxes to be reconciled without
+  /// submitting their old ciphertext. Local unsent intentions stay in facts.
+  Future<SyncOutcome> prepareRotation() async {
+    final before = await session.request('GET', '/v1/vault');
+    if (before['readOnly'] != true ||
+        before['vaultId'] != settings.keys.vault) {
+      throw const FormatException('请先让管理员冻结此空间的写入，再准备密钥轮换');
+    }
+    await _pull();
+    final after = await session.request('GET', '/v1/vault');
+    if (after['readOnly'] != true ||
+        after['vaultId'] != before['vaultId'] ||
+        after['highWater'] != before['highWater']) {
+      throw const FormatException('准备期间远端基线发生变化，未确认完成，请重新核对');
+    }
+    final frame = await repository.readSyncFrame();
+    final state = _state(frame);
+    final decision = _decision(frame, state);
+    if (decision.conflicts.isNotEmpty) {
+      state['conflicts'] = decision.conflicts.toList()..sort();
+      await repository.commitSyncFrame(frame, state);
+      return SyncOutcome(conflicts: decision.conflicts.toList());
+    }
+    final snapshot = SyncEntities.assemble(frame.snapshot, decision.entities);
+    state['base'] = _payloads(state);
+    state['pending'] = <dynamic>[];
+    state['conflicts'] = <dynamic>[];
+    state['rotationPrepared'] = DateTime.now().toUtc().toIso8601String();
+    await repository.commitSyncFrame(
+      frame,
+      state,
+      snapshot: snapshot,
+      protect: true,
+    );
+    return const SyncOutcome(complete: true);
   }
 
   Future<MergeDecision> conflicts() async {

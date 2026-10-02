@@ -163,6 +163,7 @@ class _SyncScreenState extends State<SyncScreen> {
         keys: keys,
         tokens: tokens,
         recoveryExported: _join,
+        initialReview: _join,
       );
       await _store.save(settings);
       _settings = settings;
@@ -390,6 +391,14 @@ class _SyncScreenState extends State<SyncScreen> {
     _message = '基线已准备，请点击立即同步。';
   });
 
+  Future<void> _prepareRotation() => _run(() async {
+    final result = await _withEngine((engine) => engine.prepareRotation());
+    await _readStatus();
+    _message = result.complete
+        ? '轮换前核对完成，本机包含完整远端内容和本机未发送记录。请返回数据页导出并验证完整加密备份，再让管理员轮换空间。'
+        : '轮换前发现冲突，请先处理冲突，再次执行只读核对。';
+  });
+
   Future<void> _devices() => _run(() async {
     final response = await _withEngine(
       (engine) => engine.session.request('GET', '/v1/devices'),
@@ -407,7 +416,7 @@ class _SyncScreenState extends State<SyncScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  '撤销会阻止未来的服务器访问，无法擦除设备已经下载的数据。内容密钥轮换仍在验证，当前同步仅供实验验收。',
+                  '撤销会阻止未来的服务器访问，无法擦除设备已经下载的数据。需要更新未来内容的密钥时，请由管理员执行维护式空间轮换。当前同步仍属实验验收版本。',
                 ),
                 for (final device in devices)
                   ListTile(
@@ -496,6 +505,28 @@ class _SyncScreenState extends State<SyncScreen> {
     );
   });
 
+  Future<void> _deleteRemoteAccount() => _run(() async {
+    if (!await _confirm(
+      '永久删除远端账户？',
+      '将删除该服务器上此账户的全部密文、同步历史和轮换归档，并撤销所有设备。不会删除本机习惯。管理员离线备份仍按其保存政策处理。此操作不能撤销。',
+      '永久删除远端账户',
+    )) {
+      return;
+    }
+    await _withEngine(
+      (engine) => engine.session.request(
+        'DELETE',
+        '/v1/account',
+        headers: {'X-Confirm-Delete': 'delete-remote-account'},
+      ),
+    );
+    await _store.disconnect();
+    _settings?.keys.dispose();
+    _settings = null;
+    await _readStatus();
+    _message = '远端账户及在线密文已删除，本机记录仍完整保留。';
+  });
+
   Future<void> _disconnect() => _run(() async {
     if (!await _confirm(
       '断开本机同步？',
@@ -541,7 +572,9 @@ class _SyncScreenState extends State<SyncScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           const Text('实验性同步', style: TextStyle(fontWeight: FontWeight.bold)),
-          const Text('所有习惯先保存在本机，手动同步到你指定的服务器。当前仍在验证密钥轮换和服务恢复，请同时保留独立加密备份。'),
+          const Text(
+            '所有习惯先保存在本机，手动同步到你指定的服务器。支持维护式密钥轮换，仍在进行规模和系统验收；请同时保留独立加密备份。',
+          ),
           const SizedBox(height: 16),
           if (_busy) const LinearProgressIndicator(),
           if (_message != null)
@@ -635,6 +668,10 @@ class _SyncScreenState extends State<SyncScreen> {
                   onPressed: _busy ? null : _resetBaseline,
                   child: const Text('重新核对基线'),
                 ),
+                TextButton(
+                  onPressed: _busy ? null : _prepareRotation,
+                  child: const Text('轮换前只读核对'),
+                ),
               ],
             ),
             TextButton(
@@ -644,6 +681,10 @@ class _SyncScreenState extends State<SyncScreen> {
             TextButton(
               onPressed: _busy ? null : _disconnect,
               child: const Text('断开本机同步'),
+            ),
+            TextButton(
+              onPressed: _busy ? null : _deleteRemoteAccount,
+              child: const Text('删除远端账户'),
             ),
           ],
         ],

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:haoxiguan/services/backup_codec.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +20,11 @@ void main() {
   const endpoint = String.fromEnvironment('TEST_SYNC_ENDPOINT');
   const certificate = String.fromEnvironment('TEST_SYNC_CERT');
   const invitesFile = String.fromEnvironment('TEST_SYNC_INVITES_FILE');
+  const operator = String.fromEnvironment('TEST_SYNC_OPERATOR');
+  const database = String.fromEnvironment('TEST_SYNC_DB');
+  const tlsKey = String.fromEnvironment('TEST_SYNC_KEY');
+  const serverPid = String.fromEnvironment('TEST_SYNC_SERVER_PID');
+  const listen = String.fromEnvironment('TEST_SYNC_LISTEN');
   test(
     'real HTTPS Go relay: encrypted recovery, two devices, conflict, revoke and remote deletion',
     () async {
@@ -42,6 +49,7 @@ void main() {
       ];
       final controllers = [for (final r in repositories) HabitController(r)];
       final keys = <SyncKeyring>[];
+      Process? replacementServer;
       try {
         final engines = <SyncEngine>[];
         for (var i = 0; i < 2; i++) {
@@ -139,6 +147,207 @@ void main() {
             isA<SyncApiException>().having((e) => e.status, 'status', 401),
           ),
         );
+        if (operator.isNotEmpty) {
+          final user =
+              jsonDecode(await File(invitesFile).readAsString())['userId']
+                  as String;
+          Future<void> admin(List<String> arguments) async {
+            final result = await Process.run(operator, [
+              ...arguments,
+              '--db',
+              database,
+            ]);
+            expect(result.exitCode, 0, reason: result.stderr.toString());
+          }
+
+          await admin(['freeze-user', '--user', user]);
+          await a.addValue(id, today, 30);
+          await expectLater(
+            engines[0].run(),
+            throwsA(
+              isA<SyncApiException>().having(
+                (e) => e.code,
+                'code',
+                'maintenance_read_only',
+              ),
+            ),
+          );
+          expect((await engines[0].prepareRotation()).complete, true);
+          await a.load();
+          expect(a.habits.single.entries.length, 3);
+          final prepared = a.exportJson();
+          final dataBackup = await BackupCodec.encrypt(
+            prepared,
+            'public synthetic data backup password',
+          );
+          final recovered = await BackupCodec.decrypt(
+            dataBackup,
+            'public synthetic data backup password',
+          );
+          expect(SyncEntities.encode(recovered), SyncEntities.encode(prepared));
+          expect(
+            Process.killPid(int.parse(serverPid), ProcessSignal.sigterm),
+            true,
+          );
+          final rotationFile = '${root.path}/rotated-invite.json';
+          for (var attempt = 0; attempt < 50; attempt++) {
+            final result = await Process.run(operator, [
+              'rotate-vault',
+              '--db',
+              database,
+              '--user',
+              user,
+              '--prepared',
+              '--out',
+              rotationFile,
+            ]);
+            if (result.exitCode == 0) break;
+            if (!result.stderr.toString().contains(
+                  'server is already running',
+                ) ||
+                attempt == 49) {
+              fail('rotation maintenance failed: ${result.stderr}');
+            }
+            await Future<void>.delayed(const Duration(milliseconds: 100));
+          }
+          final rotation =
+              jsonDecode(await File(rotationFile).readAsString()) as Map;
+          replacementServer = await Process.start(operator, [
+            'serve',
+            '--db',
+            database,
+            '--listen',
+            listen,
+            '--tls-cert',
+            certificate,
+            '--tls-key',
+            tlsKey,
+          ]);
+          for (var attempt = 0; attempt < 50; attempt++) {
+            try {
+              await transports[0].request('GET', '/v1/capabilities');
+              break;
+            } on SocketException {
+              if (attempt == 49) rethrow;
+              await Future<void>.delayed(const Duration(milliseconds: 100));
+            } on HttpException {
+              if (attempt == 49) rethrow;
+              await Future<void>.delayed(const Duration(milliseconds: 100));
+            }
+          }
+          await expectLater(
+            engines[0].session.request('GET', '/v1/devices'),
+            throwsA(
+              isA<SyncApiException>().having((e) => e.status, 'status', 401),
+            ),
+          );
+          final oldVault = keys.first.vault;
+          final token = await transports[0].request(
+            'POST',
+            '/v1/auth/enroll',
+            body: {
+              'invite': rotation['invite'],
+              'deviceName': 'rotated trusted phone',
+            },
+          );
+          final nextKeys = await SyncKeyring.create(token['vaultId'] as String);
+          keys.add(nextKeys);
+          expect(nextKeys.vault, isNot(oldVault));
+          expect(nextKeys.idKey, isNot(keys.first.idKey));
+          final newSettings = SyncSettings(
+            id: const Uuid().v4(),
+            endpoint: endpoint,
+            localVault: jsonDecode(a.exportJson())['vaultId'] as String,
+            keys: nextKeys,
+            tokens: token,
+            recoveryExported: true,
+          );
+          engines[0] = SyncEngine(
+            repositories[0],
+            SyncSession(
+              newSettings,
+              SyncSettingsStore(MemorySecrets()),
+              transports[0],
+            ),
+          );
+          expect((await sync(0)).complete, true);
+          expect(
+            SyncEntities.encode(a.exportJson()),
+            SyncEntities.encode(prepared),
+          );
+          final page = await engines[0].session.request(
+            'GET',
+            '/v1/pull?epoch=${token['epoch']}&limit=20',
+          );
+          final object = (page['objects'] as List).first as Map;
+          final attackerKeys = SyncKeyring(
+            vault: nextKeys.vault,
+            idKey: Uint8List.fromList(keys.first.idKey),
+            currentGeneration: 1,
+            contentKeys: {1: Uint8List.fromList(keys.first.contentKeys[1]!)},
+          );
+          await expectLater(
+            SyncCrypto.decrypt(
+              attackerKeys,
+              SyncObjectContext(
+                vault: nextKeys.vault,
+                epoch: object['encryptionEpoch'] as String,
+                entityId: object['entityId'] as String,
+                baseRevision: object['baseRevision'] as int,
+                deleted: object['deleted'] as bool,
+              ),
+              object['ciphertext'] as String,
+            ),
+            throwsFormatException,
+          );
+          attackerKeys.dispose();
+          final newInviteFile = '${root.path}/new-device-invite.json';
+          await admin(['invite', '--user', user, '--out', newInviteFile]);
+          final invited =
+              jsonDecode(await File(newInviteFile).readAsString()) as Map;
+          final secondTokens = await transports[1].request(
+            'POST',
+            '/v1/auth/enroll',
+            body: {
+              'invite': invited['invite'],
+              'deviceName': 'rejoined second phone',
+            },
+          );
+          final recoveryFile = await SyncRecoveryCodec.encrypt(
+            nextKeys,
+            'public new recovery file password',
+          );
+          final secondKeys = await SyncRecoveryCodec.decrypt(
+            recoveryFile,
+            'public new recovery file password',
+          );
+          keys.add(secondKeys);
+          final rejoined = SyncSettings(
+            id: const Uuid().v4(),
+            endpoint: endpoint,
+            localVault: jsonDecode(b.exportJson())['vaultId'] as String,
+            keys: secondKeys,
+            tokens: secondTokens,
+            recoveryExported: true,
+            initialReview: true,
+          );
+          engines[1] = SyncEngine(
+            repositories[1],
+            SyncSession(
+              rejoined,
+              SyncSettingsStore(MemorySecrets()),
+              transports[1],
+            ),
+          );
+          expect((await sync(1)).conflicts, [id]);
+          await engines[1].resolve({id: true});
+          await b.load();
+          await sync(1);
+          expect(
+            SyncEntities.encode(b.exportJson()),
+            SyncEntities.encode(prepared),
+          );
+        }
         final before = a.exportJson();
         await engines[0].session.request(
           'DELETE',
@@ -151,6 +360,8 @@ void main() {
           SyncEntities.encode(before),
         );
       } finally {
+        replacementServer?.kill(ProcessSignal.sigterm);
+        if (replacementServer != null) await replacementServer.exitCode;
         for (final c in controllers) {
           c.dispose();
         }

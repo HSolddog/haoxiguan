@@ -14,7 +14,7 @@ An MIT-licensed, offline-first habit tracker. Your records commit locally; encry
 - SQLite/Drift WAL + FULL 事务，提交后确认；旧数据幂等迁移、原文保护、损坏时停止写入而不清空。
 - Argon2id + XChaCha20-Poly1305 加密文件备份、读回验证、预览恢复；可读 JSON 导出。
 - 自选 HTTPS WebDAV，不可变加密快照、后台尝试、保留清理和换机恢复。
-- 实验性自有同步服务：Go + SQLite、不透明密文、设备邀请、加密恢复文件、手动同步和冲突处理。密钥轮换与规模门禁仍待完成，见[同步实现与验收](docs/同步实现与验收.md)。
+- 实验性自有同步服务：Go + SQLite、不透明密文、设备邀请、加密恢复文件、手动同步和冲突处理。支持维护式新空间密钥轮换；规模和完整原生联网门禁仍待完成，见[同步实现与验收](docs/同步实现与验收.md)。
 
 ## 开发与验证
 

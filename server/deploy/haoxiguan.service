@@ -1,0 +1,22 @@
+[Unit]
+Description=Haoxiguan encrypted sync relay
+After=network.target
+
+[Service]
+User=haoxiguan
+Group=haoxiguan
+StateDirectory=haoxiguan
+UMask=0077
+ExecStart=/usr/local/bin/haoxiguan-server serve --db /var/lib/haoxiguan/data.sqlite --listen 127.0.0.1:8787
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/haoxiguan
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

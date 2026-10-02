@@ -309,4 +309,92 @@ void main() {
       wrongKeys.dispose();
     },
   );
+  test(
+    'rejoining with stale local data reviews deletions instead of silently resurrecting them',
+    () async {
+      final id = await a.add();
+      await a.sync();
+      await b.sync();
+      await a.controller.deleteHabit(id);
+      await a.controller.permanentlyDeleteHabit(id);
+      await a.sync();
+      final before = relay.changes.length;
+      final settings = SyncSettings(
+        id: const Uuid().v4(),
+        endpoint: b.settings.endpoint,
+        localVault: b.settings.localVault,
+        keys: keys,
+        tokens: b.settings.tokens,
+        initialReview: true,
+      );
+      final engine = SyncEngine(
+        b.repository,
+        SyncSession(settings, SyncSettingsStore(MemorySecrets()), relay),
+      );
+      expect((await engine.run()).conflicts, [id]);
+      expect(relay.changes.length, before);
+      expect(b.controller.habitById(id), isNotNull);
+    },
+  );
+
+  test(
+    'frozen-space preparation keeps unsent intentions and saves exact previous outbox',
+    () async {
+      final id = await a.add();
+      await a.sync();
+      await b.sync();
+      await a.controller.addValue(id, today, 10);
+      await a.sync();
+      await b.controller.addValue(id, today, 20);
+      relay.readOnly = true;
+      await expectLater(
+        b.engine.run(),
+        throwsA(
+          isA<SyncApiException>().having(
+            (e) => e.code,
+            'code',
+            'maintenance_read_only',
+          ),
+        ),
+      );
+      final before = (await b.repository.readSyncFrame()).state!['pending'];
+      expect(before, isNotEmpty);
+      expect((await b.engine.prepareRotation()).complete, true);
+      await b.controller.load();
+      expect(b.controller.habitById(id)!.entries.map((e) => e.value).toSet(), {
+        10,
+        20,
+      });
+      final frame = await b.repository.readSyncFrame();
+      expect(frame.state!['pending'], isEmpty);
+      final archives = await b.repository.database
+          .customSelect('SELECT payload FROM sync_protections')
+          .get();
+      expect(
+        jsonDecode(archives.last.read<String>('payload'))['pending'],
+        before,
+      );
+    },
+  );
+
+  test(
+    'maintenance state changing during preparation prevents a false completion',
+    () async {
+      final id = await a.add();
+      await a.sync();
+      await b.sync();
+      await a.controller.addValue(id, today, 10);
+      await a.sync();
+      relay.readOnly = true;
+      relay.afterNextPull = () async {
+        relay.readOnly = false;
+      };
+      await expectLater(b.engine.prepareRotation(), throwsFormatException);
+      expect(b.controller.habitById(id)!.entries, isEmpty);
+      expect(
+        (await b.repository.readSyncFrame()).state!['rotationPrepared'],
+        isNull,
+      );
+    },
+  );
 }

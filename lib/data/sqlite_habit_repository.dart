@@ -354,7 +354,7 @@ class SqliteHabitRepository implements HabitRepository {
       final metadata = await _metadata();
       final current = metadata?.read<int>('revision');
       final sync = await database
-          .customSelect('SELECT revision FROM sync_state WHERE id=1')
+          .customSelect('SELECT revision,payload FROM sync_state WHERE id=1')
           .getSingleOrNull();
       if (current != frame.businessRevision ||
           (sync?.read<int>('revision') ?? 0) != frame.stateRevision) {
@@ -364,11 +364,11 @@ class SqliteHabitRepository implements HabitRepository {
       if (snapshot != null) {
         SnapshotCodec.decode(snapshot);
         if (protect) {
-          if (frame.state != null) {
+          if (sync != null) {
             await database.customStatement(
               'INSERT INTO sync_protections(payload,created_at) VALUES(?,?)',
               [
-                jsonEncode(frame.state),
+                sync.read<String>('payload'),
                 DateTime.now().toUtc().toIso8601String(),
               ],
             );

@@ -16,6 +16,7 @@ class SyncApiException implements Exception {
     'unauthorized' => '设备授权失效，请申请新邀请；本地记录和密钥仍保留。',
     'epoch_changed' => '服务器已恢复到另一代数据，需要重新授权并核对本地与远端内容。',
     'device_stale' => '此设备离线超过服务端保留期，需要重新核对同步基线。',
+    'maintenance_read_only' => '服务器正在维护，暂停写入。本机仍可记录；可使用“轮换前只读核对”接收远端内容。',
     'quota_exceeded' => '服务器存储额度不足，本地记录已保留。',
     'rate_limited' => '服务器请求过于频繁，请稍后重试。',
     _ => '同步请求未完成，请检查网络和服务器后重试（$status）。',
@@ -127,11 +128,13 @@ class SyncSettings {
     required this.keys,
     required this.tokens,
     this.recoveryExported = false,
+    this.initialReview = false,
   });
   final String id, endpoint, localVault;
   final SyncKeyring keys;
   Map<String, dynamic> tokens;
   bool recoveryExported;
+  final bool initialReview;
   Map<String, Object?> toJson() => {
     'version': 1,
     'id': id,
@@ -140,9 +143,12 @@ class SyncSettings {
     'keys': keys.toJson(),
     'tokens': tokens,
     'recoveryExported': recoveryExported,
+    'initialReview': initialReview,
   };
   factory SyncSettings.fromJson(Map<String, dynamic> raw) {
-    if (raw['version'] is! int || raw['version'] != 1 || raw.length != 7) {
+    if (raw['version'] is! int ||
+        raw['version'] != 1 ||
+        (raw.length != 7 && raw.length != 8)) {
       throw const FormatException('同步配置版本不支持');
     }
     final settings = SyncSettings(
@@ -152,6 +158,7 @@ class SyncSettings {
       keys: SyncKeyring.fromJson(raw['keys'] as Map<String, dynamic>),
       tokens: Map<String, dynamic>.from(raw['tokens'] as Map),
       recoveryExported: raw['recoveryExported'] as bool,
+      initialReview: raw['initialReview'] as bool? ?? true,
     );
     HttpSyncTransport.validateEndpoint(settings.endpoint);
     validateTokens(settings.tokens);

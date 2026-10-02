@@ -1,0 +1,217 @@
+openapi: 3.1.0
+info:
+  title: Haoxiguan opaque encrypted sync
+  version: 1.0.0-experimental
+  description: >-
+    MIT single-instance relay. Clients encrypt all entity payloads. Operators
+    create invitations, freeze writes, rotate vaults and restore epochs locally.
+    See docs/同步实现与验收.md for exact authenticated encodings and maintenance.
+servers:
+  - url: https://sync.example.com
+security:
+  - bearer: []
+paths:
+  /healthz:
+    get:
+      security: []
+      responses:
+        '200': {description: Process and HTTP handler available}
+  /v1/capabilities:
+    get:
+      security: []
+      responses:
+        '200':
+          description: protocol=1, epoch, maxObjectBytes, maxBatch, historyRetention, encryptionSuite
+  /v1/auth/enroll:
+    post:
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [invite, deviceName]
+              properties:
+                invite: {type: string, minLength: 43, maxLength: 43}
+                deviceName: {type: string, minLength: 1, maxLength: 80, description: Maximum 80 UTF-8 bytes}
+      responses:
+        '201': {$ref: '#/components/responses/Tokens'}
+        '401': {$ref: '#/components/responses/Error'}
+  /v1/auth/refresh:
+    post:
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [refreshToken]
+              properties:
+                refreshToken: {type: string, minLength: 43, maxLength: 43}
+      responses:
+        '200': {$ref: '#/components/responses/Tokens'}
+        '401': {$ref: '#/components/responses/Error'}
+  /v1/push:
+    post:
+      description: Maximum JSON body 2 MiB; one atomic batch with per-operation CAS results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [epoch, operations]
+              properties:
+                epoch: {type: string}
+                operations:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items: {$ref: '#/components/schemas/Operation'}
+      responses:
+        '200':
+          description: Ordered results; accepted revision=base+1 or conflict with current encrypted object. Cached by opId and exact body digest.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [results]
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [opId, status]
+                      properties:
+                        opId: {type: string}
+                        status: {type: string, enum: [accepted, conflict]}
+                        revision: {type: integer, minimum: 1}
+                        current: {$ref: '#/components/schemas/Object'}
+        '409': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+  /v1/pull:
+    get:
+      parameters:
+        - {$ref: '#/components/parameters/Epoch'}
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/HighWater'}
+        - {$ref: '#/components/parameters/Limit'}
+      responses:
+        '200': {$ref: '#/components/responses/Page'}
+        '409': {$ref: '#/components/responses/Error'}
+  /v1/bootstrap:
+    get:
+      description: Replay retained changes to a stable highWater. Server validates bootstrap continuation; stale devices must complete it before pushing.
+      parameters:
+        - {$ref: '#/components/parameters/Epoch'}
+        - {$ref: '#/components/parameters/Cursor'}
+        - {$ref: '#/components/parameters/HighWater'}
+        - {$ref: '#/components/parameters/Limit'}
+      responses:
+        '200': {$ref: '#/components/responses/Page'}
+        '409': {$ref: '#/components/responses/Error'}
+  /v1/vault:
+    get:
+      responses:
+        '200':
+          description: Authenticated current vaultId, readOnly flag, opaque object count and own highWater; used for maintenance reconciliation.
+  /v1/devices:
+    get:
+      responses:
+        '200':
+          description: devices array with id, name, revoked and lastSeen (UTC Unix seconds).
+  /v1/devices/{device}/revoke:
+    post:
+      parameters:
+        - name: device
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {description: Future access revoked; downloaded plaintext cannot be erased.}
+        '401': {$ref: '#/components/responses/Error'}
+  /v1/account:
+    delete:
+      parameters:
+        - name: X-Confirm-Delete
+          in: header
+          required: true
+          schema: {type: string, const: delete-remote-account}
+      responses:
+        '200': {description: Online current/retired ciphertext and history deleted; devices revoked. Offline backups follow operator retention policy.}
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer}
+  parameters:
+    Epoch: {name: epoch, in: query, required: true, schema: {type: string}}
+    Cursor: {name: cursor, in: query, schema: {type: string}, description: Opaque continuation; initially omit or empty.}
+    HighWater: {name: highWater, in: query, schema: {type: string}, description: Keep response highWater until more=false.}
+    Limit: {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 100}}
+  schemas:
+    Operation:
+      type: object
+      additionalProperties: false
+      required: [opId, entityId, baseRevision, ciphertext, deleted]
+      properties:
+        opId: {type: string, pattern: '^[A-Za-z0-9_-]{16,128}$'}
+        entityId: {type: string, pattern: '^[A-Za-z0-9_-]{16,128}$'}
+        baseRevision: {type: integer, minimum: 0}
+        ciphertext: {type: string, contentEncoding: base64, description: Canonical standard Base64; decoded bytes from 40 to 262144.}
+        deleted: {type: boolean}
+    Object:
+      type: object
+      required: [entityId, revision, encryptionEpoch, baseRevision, ciphertext, deleted]
+      properties:
+        entityId: {type: string}
+        revision: {type: integer, minimum: 1}
+        encryptionEpoch: {type: string}
+        baseRevision: {type: integer, minimum: 0}
+        ciphertext: {type: string, contentEncoding: base64}
+        deleted: {type: boolean}
+    Tokens:
+      type: object
+      required: [accessToken, refreshToken, accessExpiresAt, deviceId, vaultId, epoch]
+      properties:
+        accessToken: {type: string}
+        refreshToken: {type: string}
+        accessExpiresAt: {type: integer, description: UTC Unix seconds; access lasts 15 minutes, refresh 30 days.}
+        deviceId: {type: string}
+        vaultId: {type: string}
+        epoch: {type: string}
+  responses:
+    Tokens:
+      description: Single-use rotating token pair; replay of consumed refresh revokes this device family.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Tokens'}
+    Page:
+      description: Commit-ordered page. Persist decrypted shadow and cursor atomically before advancing.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [epoch, cursor, highWater, more, objects]
+            properties:
+              epoch: {type: string}
+              cursor: {type: string}
+              highWater: {type: string}
+              more: {type: boolean}
+              objects: {type: array, items: {$ref: '#/components/schemas/Object'}}
+    Error:
+      description: >-
+        Generic JSON error. Codes include invalid_request (400), unauthorized
+        (401), op_id_reused/epoch_changed/device_stale/maintenance_read_only (409),
+        quota_exceeded (413), rate_limited (429, Retry-After 30), internal_error
+        (500). Responses never return credentials, SQL or request bodies.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error: {type: string}

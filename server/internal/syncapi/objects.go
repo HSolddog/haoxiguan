@@ -112,6 +112,13 @@ func (s *Store) Push(ctx context.Context, id Identity, epoch string, ops []Opera
 	if err = checkEpoch(ctx, tx, epoch); err != nil {
 		return nil, err
 	}
+	var readOnly bool
+	if err = tx.QueryRowContext(ctx, "SELECT read_only FROM users WHERE id=?", id.User).Scan(&readOnly); err != nil {
+		return nil, err
+	}
+	if readOnly {
+		return nil, ErrReadOnly
+	}
 	var lastSeen int64
 	if err = tx.QueryRowContext(ctx, "SELECT last_seen FROM devices WHERE id=?", id.Device).Scan(&lastSeen); err != nil {
 		return nil, err
@@ -292,9 +299,12 @@ func (s *Store) DeleteAccount(ctx context.Context, id Identity) error {
 		return err
 	}
 	for _, table := range []string{"objects", "changes", "operations"} {
-		if _, err = tx.ExecContext(ctx, "DELETE FROM "+table+" WHERE vault=?", id.Vault); err != nil {
+		if _, err = tx.ExecContext(ctx, "DELETE FROM "+table+" WHERE vault=? OR vault IN (SELECT vault FROM retired_vaults WHERE user_id=?)", id.Vault, id.User); err != nil {
 			return err
 		}
+	}
+	if _, err = tx.ExecContext(ctx, "DELETE FROM retired_vaults WHERE user_id=?", id.User); err != nil {
+		return err
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE devices SET revoked=1 WHERE user_id=?", id.User); err != nil {
 		return err

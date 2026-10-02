@@ -268,17 +268,35 @@ class LocalReminderService implements ReminderScheduler {
 
   @override
   Future<void> snooze(Habit habit, {DateTime? forDate}) => _enqueue(() async {
-    if (habit.archived || habit.inTrash || habit.isPaused) return;
+    var current = habit;
+    // The callback may have waited behind a newer completion/pause or a
+    // background scheduler. Read committed facts only after taking the lock.
+    if (Platform.isAndroid) {
+      final repository = await SqliteHabitRepository.open();
+      try {
+        final raw = await repository.load();
+        if (raw == null) return;
+        final latest = (SnapshotCodec.decode(raw)['habits'] as List)
+            .map((h) => Habit.fromJson((h as Map).cast<String, Object?>()))
+            .where((h) => h.id == habit.id)
+            .firstOrNull;
+        if (latest == null) return;
+        current = latest;
+      } finally {
+        await repository.close();
+      }
+    }
+    if (current.archived || current.inTrash || current.isPaused) return;
     await _ensureInitialized();
     await _refreshTimezone();
     final date = dateKey(forDate ?? DateTime.now());
-    if (habit.isCompletedOn(DateTime.parse(date))) return;
+    if (current.isCompletedOn(DateTime.parse(date))) return;
     final pending = await _plugin.pendingNotificationRequests();
     final ids = pending.map((r) => r.id).toSet();
     for (final item in pending) {
       try {
         final payload = jsonDecode(item.payload ?? '') as Map;
-        if (payload['habitId'] == habit.id &&
+        if (payload['habitId'] == current.id &&
             payload['date'] == date &&
             payload['snoozeAt'] != null) {
           await _plugin.cancel(id: item.id);
@@ -294,7 +312,7 @@ class LocalReminderService implements ReminderScheduler {
     }
     await _scheduleSnooze(
       id,
-      habit,
+      current,
       date,
       DateTime.now().add(const Duration(minutes: 10)),
     );

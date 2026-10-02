@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -24,24 +25,30 @@ func main() {
 }
 func run() error {
 	if len(os.Args) < 2 {
-		return fmt.Errorf("usage: haoxiguan-server serve|create-user|invite|rotate-epoch|backup [flags]")
+		return fmt.Errorf("usage: haoxiguan-server serve|create-user|invite|freeze-user|unfreeze-user|rotate-vault|rotate-epoch|backup [flags]")
 	}
 	command := os.Args[1]
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	path := flags.String("db", "./data/haoxiguan.sqlite", "SQLite database on a local persistent volume")
 	address := flags.String("listen", "127.0.0.1:8787", "HTTP address, put HTTPS reverse proxy in front")
 	name := flags.String("name", "", "account display name")
+	certFile := flags.String("tls-cert", "", "optional PEM TLS certificate for direct HTTPS")
+	keyFile := flags.String("tls-key", "", "PEM private key paired with --tls-cert")
 	user := flags.String("user", "", "operator-known account ID")
 	output := flags.String("out", "", "new file to write, must not exist")
+	prepared := flags.Bool("prepared", false, "trusted device has completed read-only reconciliation and saved a verified encrypted data backup")
 	if err := flags.Parse(os.Args[2:]); err != nil {
 		return err
+	}
+	if (*certFile == "") != (*keyFile == "") {
+		return fmt.Errorf("--tls-cert and --tls-key must be supplied together")
 	}
 	if err := os.MkdirAll(filepath.Dir(*path), 0700); err != nil {
 		return err
 	}
 	// serve and maintenance commands exclude each other across processes. No
 	// destructive restore command is exposed; restore an offline consistent file.
-	if command == "serve" || command == "rotate-epoch" || command == "backup" {
+	if command == "serve" || command == "rotate-epoch" || command == "backup" || command == "rotate-vault" {
 		lock, err := os.OpenFile(*path+".process.lock", os.O_CREATE|os.O_RDWR, 0600)
 		if err != nil {
 			return err
@@ -98,6 +105,25 @@ func run() error {
 			return err
 		}
 		return file.Sync()
+	case "freeze-user", "unfreeze-user":
+		return store.SetReadOnly(ctx, *user, command == "freeze-user")
+	case "rotate-vault":
+		if !*prepared || *output == "" {
+			return fmt.Errorf("--prepared and --out are required; complete read-only client reconciliation first")
+		}
+		file, err := os.OpenFile(*output, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		vault, invite, err := store.RotateVault(ctx, *user)
+		if err != nil {
+			return err
+		}
+		if err = json.NewEncoder(file).Encode(map[string]string{"userId": *user, "vaultId": vault, "invite": invite}); err != nil {
+			return err
+		}
+		return file.Sync()
 	case "rotate-epoch":
 		return store.RotateEpoch(ctx)
 	case "backup":
@@ -107,7 +133,7 @@ func run() error {
 		return store.Backup(ctx, *output)
 	case "serve":
 		server := &http.Server{Addr: *address, Handler: syncapi.Handler(store), ReadHeaderTimeout: 5 * time.Second,
-			ReadTimeout: 30 * time.Second, WriteTimeout: 60 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024}
+			ReadTimeout: 30 * time.Second, WriteTimeout: 60 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}}
 		stopping, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
 		done := make(chan struct{})
@@ -119,7 +145,12 @@ func run() error {
 			_ = server.Shutdown(ctx)
 		}()
 		log.Printf("haoxiguan sync protocol %d listening on %s", syncapi.ProtocolVersion, *address)
-		err := server.ListenAndServe()
+		var err error
+		if *certFile != "" {
+			err = server.ListenAndServeTLS(*certFile, *keyFile)
+		} else {
+			err = server.ListenAndServe()
+		}
 		stop()
 		<-done
 		if err == http.ErrServerClosed {

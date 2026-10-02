@@ -26,6 +26,7 @@ class TestSyncRelay implements SyncTransport {
   final requests = <String, String>{};
   final changes = <Map<String, dynamic>>[];
   bool loseNextPushResponse = false;
+  bool readOnly = false;
   Future<void> Function()? afterNextPull;
   @override
   Future<Map<String, dynamic>> request(
@@ -37,7 +38,16 @@ class TestSyncRelay implements SyncTransport {
   }) async {
     final uri = Uri.parse(path);
     if (uri.path == '/v1/capabilities') return {'protocol': 1, 'epoch': epoch};
+    if (uri.path == '/v1/vault') {
+      return {
+        'vaultId': vault,
+        'readOnly': readOnly,
+        'objects': objects.length,
+        'highWater': '${changes.length}',
+      };
+    }
     if (uri.path == '/v1/push') {
+      if (readOnly) throw const SyncApiException('maintenance_read_only', 409);
       final results = <dynamic>[];
       for (final op in body!['operations']! as List) {
         final id = op['opId'] as String, entity = op['entityId'] as String;

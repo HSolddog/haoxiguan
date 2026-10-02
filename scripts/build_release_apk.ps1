@@ -40,44 +40,25 @@ if (-not $env:JAVA_HOME) {
 }
 
 $expectedUpdateCertSha256 = 'AF7E2D6497746AD29960EBC3BC6097781B6F4D42E22D6CE330E8A52636848EBD'
-$keystoreCandidates = @()
-if ($env:HAOXIGUAN_UPDATE_KEYSTORE) {
-    $keystoreCandidates += Get-Item `
-        -LiteralPath $env:HAOXIGUAN_UPDATE_KEYSTORE `
-        -ErrorAction SilentlyContinue
-}
-$keystoreCandidates += Get-ChildItem `
-    -Path 'C:\Users\*\.android\debug.keystore' `
-    -File `
-    -ErrorAction SilentlyContinue
-
-$keytool = Join-Path $env:JAVA_HOME 'bin\keytool.exe'
-$matchingKeystore = $null
-foreach ($candidate in ($keystoreCandidates | Select-Object -Unique)) {
-    $certificateInfo = & $keytool `
-        -list `
-        -v `
-        -keystore $candidate.FullName `
-        -alias androiddebugkey `
-        -storepass android `
-        -keypass android 2>$null
-    $fingerprintMatch = [regex]::Match(
-        ($certificateInfo -join "`n"),
-        'SHA256:\s*([0-9A-F:]+)'
-    )
-    if ($fingerprintMatch.Success) {
-        $fingerprint = $fingerprintMatch.Groups[1].Value.Replace(':', '')
-        if ($fingerprint -eq $expectedUpdateCertSha256) {
-            $matchingKeystore = $candidate
-            break
-        }
+# The operator selects a known keystore explicitly. Never search other users'
+# private directories or silently substitute a newly generated debug key.
+foreach ($variable in @('HAOXIGUAN_UPDATE_KEYSTORE', 'HAOXIGUAN_UPDATE_STORE_PASSWORD',
+                        'HAOXIGUAN_UPDATE_KEY_ALIAS', 'HAOXIGUAN_UPDATE_KEY_PASSWORD')) {
+    if (-not [Environment]::GetEnvironmentVariable($variable)) {
+        throw "Missing release signing setting: $variable"
     }
 }
-
-if (-not $matchingKeystore) {
-    throw 'Cannot find the established Android update signing certificate.'
+$matchingKeystore = Get-Item -LiteralPath $env:HAOXIGUAN_UPDATE_KEYSTORE -ErrorAction Stop
+$keytool = Join-Path $env:JAVA_HOME 'bin\keytool.exe'
+$certificateInfo = & $keytool -list -v -keystore $matchingKeystore.FullName `
+    -alias $env:HAOXIGUAN_UPDATE_KEY_ALIAS `
+    -storepass:env HAOXIGUAN_UPDATE_STORE_PASSWORD 2>$null
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the explicitly selected update certificate.' }
+$fingerprintMatch = [regex]::Match(($certificateInfo -join "`n"), 'SHA256:\s*([0-9A-F:]+)')
+if (-not $fingerprintMatch.Success -or
+    $fingerprintMatch.Groups[1].Value.Replace(':', '') -ne $expectedUpdateCertSha256) {
+    throw 'Selected certificate does not match the established internal-test update certificate.'
 }
-$env:HAOXIGUAN_UPDATE_KEYSTORE = $matchingKeystore.FullName
 
 $env:FLUTTER_SUPPRESS_ANALYTICS = 'true'
 Push-Location $projectRoot

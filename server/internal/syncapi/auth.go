@@ -13,6 +13,7 @@ var ErrEpoch = errors.New("epoch_changed")
 var ErrStale = errors.New("device_stale")
 var ErrInvalid = errors.New("invalid_request")
 var ErrQuota = errors.New("quota_exceeded")
+var ErrReadOnly = errors.New("maintenance_read_only")
 
 type Tokens struct {
 	Access  string `json:"accessToken"`

@@ -98,6 +98,14 @@ func Handler(store *Store) http.Handler {
 			respond(w, 200, page)
 		}))
 	}
+	mux.HandleFunc("GET /v1/vault", api.authorized(func(w http.ResponseWriter, r *http.Request, id Identity) {
+		state, err := store.VaultState(r.Context(), id)
+		if err != nil {
+			failure(w, err)
+			return
+		}
+		respond(w, 200, state)
+	}))
 	mux.HandleFunc("GET /v1/devices", api.authorized(func(w http.ResponseWriter, r *http.Request, id Identity) {
 		devices, err := store.Devices(r.Context(), id)
 		if err != nil {
@@ -218,6 +226,8 @@ func failure(w http.ResponseWriter, err error) {
 		code, status = "epoch_changed", 409
 	case errors.Is(err, ErrStale):
 		code, status = "device_stale", 409
+	case errors.Is(err, ErrReadOnly):
+		code, status = "maintenance_read_only", 409
 	case errors.Is(err, ErrQuota):
 		code, status = "quota_exceeded", 413
 	}
