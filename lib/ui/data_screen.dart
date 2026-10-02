@@ -341,6 +341,41 @@ class _DataScreenState extends State<DataScreen> {
                     }
                   },
                 ),
+                ListTile(
+                  leading: const Icon(Icons.privacy_tip_outlined),
+                  title: const Text('隐私与数据'),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('你的数据由你掌握'),
+                      content: const SingleChildScrollView(
+                        child: Text(
+                          '默认不注册、不上传习惯，也没有广告或使用分析。数据保存在应用私有空间，依赖系统存储保护。\n\n'
+                          '主动启用 WebDAV 或同步后，所选服务可见账户、设备、连接和密文大小等信息；习惯与备注的传输内容由客户端加密。\n\n'
+                          'JSON 和 CSV 导出是明文。加密备份密码和同步恢复文件请自行保管，找回账户不能代替解密材料。\n\n'
+                          '断开服务保留本机记录；回收站不会自动清理。普通覆盖更新保留数据，卸载或系统清除存储不属于普通更新。\n\n'
+                          '提醒可能在锁屏显示名称，可在系统设置中隐藏敏感内容。',
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('知道了'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: const Text('开源许可证'),
+                  subtitle: const Text('好习惯采用 MIT；查看第三方许可'),
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: '好习惯',
+                    applicationLegalese: 'Haoxiguan · MIT License',
+                  ),
+                ),
               ],
             ),
           ),

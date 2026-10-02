@@ -621,7 +621,7 @@ class HabitDatabase extends GeneratedDatabase {
     return switch (table) {
       'records' => (
         sql:
-            'INSERT INTO records(id,habit_id,local_date,value,deleted,payload) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,deleted=excluded.deleted,payload=excluded.payload',
+            'INSERT INTO records(id,habit_id,local_date,value,deleted,payload) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET local_date=excluded.local_date,value=excluded.value,deleted=excluded.deleted,payload=excluded.payload',
         args: [
           id,
           habitId,

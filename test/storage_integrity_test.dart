@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:haoxiguan/data/habit_repository.dart';
 import 'package:haoxiguan/data/snapshot_codec.dart';
@@ -357,6 +358,29 @@ void main() {
         SnapshotCodec.decode((await repository.load())!)['habits'],
         isEmpty,
       );
+    });
+
+    test('显式恢复更正记录日期后，索引日期与事实载荷一致', () async {
+      final controller = HabitController(repository, clock: () => _now);
+      await controller.load();
+      final document =
+          jsonDecode(controller.exportJson()) as Map<String, dynamic>;
+      final entry = (document['habits'][0]['entries'] as List).first as Map;
+      final id = entry['id'] as String;
+      entry['date'] = dateKey(_now);
+      expect(await controller.importJson(jsonEncode(document)), true);
+      final row = await repository.database
+          .customSelect(
+            'SELECT local_date,payload FROM records WHERE id=?',
+            variables: [drift.Variable(id)],
+          )
+          .getSingle();
+      expect(row.read<String>('local_date'), dateKey(_now));
+      expect(
+        jsonDecode(row.read<String>('payload'))['date'],
+        row.read<String>('local_date'),
+      );
+      controller.dispose();
     });
 
     test('损坏旧源不被自动覆盖，显式恢复保留双源', () async {

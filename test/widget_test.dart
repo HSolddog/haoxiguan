@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:haoxiguan/data/habit_repository.dart';
 import 'package:haoxiguan/state/habit_controller.dart';
 import 'package:haoxiguan/ui/habit_app.dart';
+import 'package:haoxiguan/ui/record_editor.dart';
 
 void main() {
   late HabitController controller;
@@ -54,6 +55,54 @@ void main() {
     await tester.tap(find.byKey(const Key('complete-seed-reading-true')));
     await tester.pumpAndSettle();
     expect(find.text('0/2'), findsOneWidget);
+  });
+
+  testWidgets('记录明细只撤销选中的一条，保留其他数值和备注', (tester) async {
+    await controller.addHabit(
+      title: '喝水',
+      emoji: '🌱',
+      colorValue: 0xff000000,
+      weekdays: {1, 2, 3, 4, 5, 6, 7},
+      recordType: 'count',
+      dailyTarget: 8,
+    );
+    final id = controller.habits.last.id;
+    await controller.addValue(id, controller.today, 2);
+    await controller.addValue(id, controller.today, 3);
+    await controller.setNote(id, controller.today, '备注保留');
+    final removedId = controller.habitById(id)!.entries.first.id;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showRecordEditor(
+                context,
+                controller,
+                controller.habitById(id)!,
+                controller.today,
+              ),
+              child: const Text('记录'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('记录'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('record-facts')));
+    await tester.pumpAndSettle();
+    final undo = find.byKey(Key('delete-entry-$removedId'));
+    await tester.ensureVisible(undo);
+    await tester.tap(undo);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '撤销这条记录'));
+    await tester.pumpAndSettle();
+    expect(controller.habitById(id)!.valueOn(controller.today), 3);
+    expect(controller.habitById(id)!.noteOn(controller.today), '备注保留');
+    expect(find.text('目前 3 次'), findsOneWidget);
+    expect(find.byKey(Key('delete-entry-$removedId')), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('保存失败保留创建输入，重试后才关闭面板', (tester) async {

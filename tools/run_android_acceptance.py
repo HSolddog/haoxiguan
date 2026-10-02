@@ -33,11 +33,24 @@ def shell(*values, timeout=90):
     return command(adb, 'shell', *values, timeout=timeout).stdout.decode()
 
 oversize_ready = set()
+background_requested = set()
 
 def drive_document_picker(value):
     # Only the isolated fixture's requested picker is driven. Never tap the app
     # or a permission prompt by approximate screen coordinates.
     stage = value.get('stage')
+    if stage == 'awaitingBackgroundReschedule':
+        if value['runId'] not in background_requested:
+            jobs = shell('dumpsys', 'jobscheduler')
+            matches = re.findall(r'JOB #[^/\s]+/(\d+):[^\n]*' + re.escape(package) +
+                                 r'/androidx\.work\.impl\.background\.systemjob\.SystemJobService', jobs)
+            (args.output/'workmanager-jobs.txt').write_text('\n'.join(
+                line for line in jobs.splitlines() if package in line))
+            if matches:
+                for job in set(matches):
+                    command(adb, 'shell', 'cmd', 'jobscheduler', 'run', '-f', '-u', '0', package, job, check=False)
+                background_requested.add(value['runId'])
+        return
     if stage not in ('awaitingDocumentSave', 'awaitingDocumentOpen', 'awaitingOversizeSave', 'awaitingOversizeOpen'):
         return
     if stage == 'awaitingOversizeOpen' and value['runId'] not in oversize_ready:
@@ -96,7 +109,8 @@ def start_and_wait(build, phase, previous=None):
                     assert value['phase'] == phase, value
                     assert value['schema'] == (2 if build == 10001 else 3), value
                     if build == 10002:
-                        assert all(value[k] for k in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit')), value
+                        assert all(value[k] for k in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
+                                                     'nativeReminderScheduling', 'workManagerRenewal')), value
                     return value
                 drive_document_picker(value)
         except (json.JSONDecodeError, UnicodeDecodeError):
@@ -141,6 +155,8 @@ try:
         apk = args.apks/f'acceptance-{build}.apk'
         assert apk.exists(), apk
         command(adb, 'install', '-r', str(apk), timeout=180)
+        if args.api >= 33:
+            shell('pm', 'grant', package, 'android.permission.POST_NOTIFICATIONS')
         info = shell('dumpsys', 'package', package)
         assert f'versionCode={build} ' in info, 'OS package version did not change'
         value = start_and_wait(build, 'create' if build == 10001 else 'reopen',

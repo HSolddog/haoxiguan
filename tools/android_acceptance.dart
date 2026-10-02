@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:haoxiguan/data/sqlite_habit_repository.dart';
 import 'package:haoxiguan/services/backup_codec.dart';
 import 'package:haoxiguan/services/backup_files.dart';
+import 'package:haoxiguan/services/background_tasks.dart';
+import 'package:haoxiguan/services/reminder_service.dart';
 import 'package:haoxiguan/state/habit_controller.dart';
 
 // Built ONLY with a separate acceptance application ID by the CI workflow.
@@ -55,6 +58,7 @@ Future<void> main() async {
             colorValue: 0xff5f8068,
             weekdays: {1, 2, 3, 4, 5, 6, 7},
             recordType: type,
+            reminderTime: type == 'boolean' ? '23:59' : null,
             scale: type == 'count' ? 1000 : 1,
             dailyTarget: type == 'count'
                 ? 300
@@ -172,6 +176,45 @@ Future<void> main() async {
         'failed file import left application data unchanged',
       );
       result['safSizeLimit'] = true;
+      final reminders = LocalReminderService(handleLaunchActions: false);
+      await reminders.syncAll(controller.habits);
+      final notifications = FlutterLocalNotificationsPlugin();
+      check(
+        await notifications
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >()!
+                .areNotificationsEnabled() ==
+            true,
+        'native notification permission',
+      );
+      final scheduled = await notifications.pendingNotificationRequests();
+      check(scheduled.isNotEmpty, 'native notification schedule');
+      for (final item in scheduled) {
+        final payload = jsonDecode(item.payload!) as Map;
+        check(
+          payload['v'] == 1 &&
+              payload['habitId'] == habits.first.id &&
+              DateTime.tryParse(payload['date'] as String) != null,
+          'native reminders carry an explicit behavior date',
+        );
+      }
+      result['nativeReminderScheduling'] = true;
+      await initializeBackgroundTasks();
+      await notifications.cancelAll();
+      result['stage'] = 'awaitingBackgroundReschedule';
+      await report.writeAsString(jsonEncode(result), flush: true);
+      final deadline = DateTime.now().add(const Duration(seconds: 75));
+      var renewed = false;
+      while (DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        if ((await notifications.pendingNotificationRequests()).isNotEmpty) {
+          renewed = true;
+          break;
+        }
+      }
+      check(renewed, 'real WorkManager isolate rebuilt pending reminders');
+      result['workManagerRenewal'] = true;
       result.remove('stage');
     }
     final version = await repository.database

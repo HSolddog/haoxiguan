@@ -41,10 +41,41 @@ class _RecordEditorState extends State<_RecordEditor> {
     super.dispose();
   }
 
+  Future<void> _delete(Habit habit, RecordEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('撤销这条 ${habit.valueLabel(entry.value)}？'),
+        content: const Text('只撤销这次记录，当天的其他记录和备注保留。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('撤销这条记录'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    setState(() => _saving = true);
+    final saved = await widget.controller.deleteEntry(habit.id, entry.id);
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      _error = saved ? null : '撤销未保存，请重试。';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final habit = widget.habit;
+    final habit = widget.controller.habitById(widget.habit.id) ?? widget.habit;
     final duration = habit.recordType == 'duration';
+    final entries = habit.entries
+        .where((e) => !e.deleted && e.date == dateKey(widget.date))
+        .toList();
     return AlertDialog(
       title: Text('${habit.title} · ${dateKey(widget.date)}'),
       content: SingleChildScrollView(
@@ -86,6 +117,28 @@ class _RecordEditorState extends State<_RecordEditor> {
               const Padding(
                 padding: EdgeInsets.only(top: 12),
                 child: Text('将更正当天的总量，备注和其他日期不变。'),
+              ),
+            if (entries.isNotEmpty)
+              ExpansionTile(
+                key: const Key('record-facts'),
+                title: Text('当天记录（${entries.length}）'),
+                children: [
+                  for (final entry in entries.reversed)
+                    ListTile(
+                      title: Text(habit.valueLabel(entry.value)),
+                      subtitle: Text(
+                        entry.recordedAtUtc == null
+                            ? '旧版记录 · 原始时间 ${entry.legacyTimestamp}'
+                            : '录入时间（UTC）\n${entry.recordedAtUtc}${entry.recordedLocalDate != entry.date ? '\n补记' : ''}',
+                      ),
+                      trailing: IconButton(
+                        key: Key('delete-entry-${entry.id}'),
+                        tooltip: '撤销这条记录',
+                        icon: const Icon(Icons.undo),
+                        onPressed: _saving ? null : () => _delete(habit, entry),
+                      ),
+                    ),
+                ],
               ),
           ],
         ),
@@ -130,7 +183,10 @@ class _RecordEditorState extends State<_RecordEditor> {
                   if (saved) {
                     Navigator.pop(context);
                   } else {
-                    setState(() => _saving = false);
+                    setState(() {
+                      _saving = false;
+                      _error = '保存未完成，请重试。';
+                    });
                   }
                 },
           child: Text(_saving ? '正在保存' : '保存'),
