@@ -51,6 +51,7 @@ class HabitController extends ChangeNotifier {
   String? _recoveryBackup;
   Map<String, Object?> _extensions = {};
   Future<void>? _writeQueue;
+  final _snapshotSizes = Expando<int>();
 
   bool get loading => _loading || (!_loaded && _loadError == null);
   String? get loadError => _loadError;
@@ -119,8 +120,7 @@ class HabitController extends ChangeNotifier {
         await _repository.save(empty);
         _restore(empty);
       } else {
-        _restore(raw);
-        final source = SnapshotCodec.decode(raw);
+        final source = _restore(raw);
         if ((source['version'] as int? ?? 1) < SnapshotCodec.currentVersion ||
             source['vaultId'] == null) {
           await _repository.save(exportJson());
@@ -770,32 +770,70 @@ class HabitController extends ChangeNotifier {
   Future<bool> _mutate(void Function() change, {bool replace = false}) {
     Future<bool> perform() async {
       if (!_loaded) return false;
-      final before = exportJson();
-      late String candidate;
+      final before = _capture();
+      late _ControllerSnapshot candidate;
+      late String serialized;
+      final incremental = !replace && _repository is IncrementalHabitRepository;
       try {
         change();
-        candidate = exportJson();
-        SnapshotCodec.decode(candidate);
+        final previous = {for (final h in before.habits) h.id: h};
+        for (var index = 0; index < _habits.length; index++) {
+          if (!identical(previous[_habits[index].id], _habits[index])) {
+            _habits[index] = _normalizeHabit(_habits[index]);
+          }
+        }
+        candidate = _capture();
+        final changed = incremental
+            ? candidate.habits
+                  .where((h) => !identical(previous[h.id], h))
+                  .toList()
+            : candidate.habits;
+        serialized = jsonEncode({
+          ...candidate.settings,
+          'habits': changed.map((h) => h.toJson()).toList(),
+        });
+        SnapshotCodec.decode(serialized);
+        // Count the full export, including unchanged history, without serializing
+        // every unchanged habit again. Values are immutable and cached by identity.
+        var size = utf8
+            .encode(jsonEncode({...candidate.settings, 'habits': []}))
+            .length;
+        for (final habit in candidate.habits) {
+          size +=
+              (_snapshotSizes[habit] ??= utf8
+                  .encode(jsonEncode(habit.toJson()))
+                  .length) +
+              1;
+        }
+        if (size > SnapshotCodec.maxBytes || candidate.habits.length > 10000) {
+          throw const FormatException('数据超过文件格式上限');
+        }
       } on Object {
-        _restore(before);
+        _install(before);
         _saveError = '输入无效，未保存。原数据未修改。';
         notifyListeners();
         return false;
       }
       // No uncommitted state is observable while the asynchronous I/O runs.
-      _restore(before);
+      _install(before);
       try {
         if (replace) {
-          await _repository.replace(candidate);
+          await _repository.replace(serialized);
+        } else if (incremental) {
+          await (_repository as IncrementalHabitRepository).saveDelta(
+            serialized,
+            candidate.habits.map((h) => h.id).toList(),
+            candidate.encode,
+          );
         } else {
-          await _repository.save(candidate);
+          await _repository.save(serialized);
         }
       } on Object {
         _saveError = '保存未完成。原数据未修改，请检查存储空间后重试。';
         notifyListeners();
         return false;
       }
-      _restore(candidate);
+      _install(candidate);
       _saveError = null;
       notifyListeners();
       unawaited(_syncAllReminders());
@@ -873,7 +911,7 @@ class HabitController extends ChangeNotifier {
     super.dispose();
   }
 
-  Map<String, Object?> _stateJson() => <String, Object?>{
+  Map<String, Object?> _settingsJson() => <String, Object?>{
     ..._extensions,
     'version': SnapshotCodec.currentVersion,
     'darkMode': _darkMode,
@@ -881,14 +919,52 @@ class HabitController extends ChangeNotifier {
     'reviewDays': _reviewDays,
     'collapsedTodayCategories': _collapsedTodayCategories.toList()..sort(),
     'collapsedHabitCategories': _collapsedHabitCategories.toList()..sort(),
+  };
+
+  Map<String, Object?> _stateJson() => {
+    ..._settingsJson(),
     'habits': _habits.map((habit) => habit.toJson()).toList(),
   };
 
-  void _restore(String raw) {
+  _ControllerSnapshot _capture() =>
+      _ControllerSnapshot(List.of(_habits), _settingsJson());
+
+  Habit _normalizeHabit(Habit h) {
+    if (h.plans.isNotEmpty &&
+        (!h.archived || h.archivedAt != null) &&
+        (h.legacyRewardBalance != null ||
+            (!h.effortEnabled && !h.wishEnabled))) {
+      return h;
+    }
+    return h.copyWith(
+      plans: h.effectivePlans,
+      archivedAt: h.archived && h.archivedAt == null
+          ? calendarDay(today, 1)
+          : h.archivedAt,
+      legacyRewardBalance:
+          h.legacyRewardBalance ??
+          (h.effortEnabled || h.wishEnabled ? _legacyEffortPoints(h) : null),
+    );
+  }
+
+  Map<String, Object?> _restore(String raw) {
     final decoded = SnapshotCodec.decode(raw);
-    final items = (decoded['habits']! as List<Object?>)
-        .cast<Map<String, Object?>>();
-    final restoredHabits = items.map(Habit.fromJson).toList(growable: false);
+    final habits = (decoded['habits']! as List)
+        .map(
+          (h) => _normalizeHabit(
+            Habit.fromJson((h as Map).cast<String, Object?>()),
+          ),
+        )
+        .toList();
+    for (final h in habits) {
+      _snapshotSizes[h] = utf8.encode(jsonEncode(h.toJson())).length;
+    }
+    _install(_ControllerSnapshot(habits, decoded));
+    return decoded;
+  }
+
+  void _install(_ControllerSnapshot snapshot) {
+    final decoded = snapshot.settings;
     final restoredDarkMode = decoded['darkMode'] as bool? ?? false;
     final restoredThemeColor = decoded['themeColorValue'] as int? ?? 0xFF5F8068;
     final restoredReviewDays = decoded['reviewDays'] as int? ?? 30;
@@ -900,28 +976,14 @@ class HabitController extends ChangeNotifier {
         (decoded['collapsedHabitCategories'] as List<Object?>? ?? const [])
             .cast<String>()
             .toSet();
-    _extensions = Map<String, Object?>.from(decoded);
+    _extensions = Map<String, Object?>.from(decoded)..remove('habits');
     _extensions['vaultId'] ??= const Uuid().v4();
     _extensions['appearanceMode'] ??= decoded.containsKey('darkMode')
         ? (restoredDarkMode ? 'dark' : 'light')
         : 'system';
     _habits
       ..clear()
-      ..addAll(
-        restoredHabits.map(
-          (h) => h.copyWith(
-            plans: h.effectivePlans,
-            archivedAt: h.archived && h.archivedAt == null
-                ? calendarDay(today, 1)
-                : h.archivedAt,
-            legacyRewardBalance:
-                h.legacyRewardBalance ??
-                (h.effortEnabled || h.wishEnabled
-                    ? _legacyEffortPoints(h)
-                    : null),
-          ),
-        ),
-      );
+      ..addAll(snapshot.habits);
     _darkMode = restoredDarkMode;
     _themeColorValue = restoredThemeColor;
     _reviewDays = const <int>{7, 30, 90, 365}.contains(restoredReviewDays)
@@ -934,4 +996,16 @@ class HabitController extends ChangeNotifier {
       ..clear()
       ..addAll(restoredHabitCategories);
   }
+}
+
+// Immutable model objects make rollback independent of history length. Neither
+// candidate habits nor settings become observable until storage has committed.
+class _ControllerSnapshot {
+  const _ControllerSnapshot(this.habits, this.settings);
+  final List<Habit> habits;
+  final Map<String, Object?> settings;
+  String encode() => jsonEncode({
+    ...settings,
+    'habits': habits.map((h) => h.toJson()).toList(),
+  });
 }

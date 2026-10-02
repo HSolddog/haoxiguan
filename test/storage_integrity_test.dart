@@ -250,6 +250,94 @@ void main() {
       }
     });
 
+    test('增量保存提交前不可见，磁盘失败不丢历史，重试只新增本次事实', () async {
+      final controller = HabitController(repository, clock: () => _now);
+      await controller.load();
+      final before = controller.exportJson();
+      final gate = Completer<void>();
+      repository.database.beforeCommit = () => gate.future;
+      final operation = controller.markCompleted('seed-reading', _now);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(controller.exportJson(), before);
+      gate.completeError(const FileSystemException('disk full'));
+      expect(await operation, false);
+      expect(controller.exportJson(), before);
+      repository.database.beforeCommit = null;
+      expect(await controller.markCompleted('seed-reading', _now), true);
+      expect(await controller.markCompleted('seed-reading', _now), true);
+      final opened = HabitController(repository, clock: () => _now);
+      await opened.load();
+      expect(opened.habits.length, controller.habits.length);
+      expect(opened.habitById('seed-reading')!.isCompletedOn(_now), true);
+      expect(
+        opened.habitById('seed-water')!.toJson(),
+        controller.habitById('seed-water')!.toJson(),
+      );
+      controller.dispose();
+      opened.dispose();
+    });
+
+    test('增量不能挪用未修改习惯的记录或计划 ID，整个事务回滚', () async {
+      final controller = HabitController(repository, clock: () => _now);
+      await controller.load();
+      await controller.markCompleted('seed-reading', _now);
+      await controller.addHabit(
+        title: '计数',
+        emoji: '🌱',
+        colorValue: 0xff000000,
+        weekdays: {1, 2, 3, 4, 5, 6, 7},
+        recordType: 'count',
+        dailyTarget: 2,
+      );
+      final id = controller.habits.last.id;
+      final occupied = controller.habitById('seed-reading')!.entries.first.id;
+      final before = controller.exportJson();
+      expect(await controller.addValue(id, _now, 1, entryId: occupied), false);
+      expect(controller.exportJson(), before);
+      final document = jsonDecode(before) as Map<String, dynamic>;
+      final changed = controller.habits.last.toJson();
+      (changed['plans'] as List).single['id'] =
+          controller.habits.first.plans.first.id;
+      document['habits'] = [changed];
+      await expectLater(
+        repository.saveDelta(
+          jsonEncode(document),
+          controller.habits.map((h) => h.id).toList(),
+          () => before,
+        ),
+        throwsA(isA<FormatException>()),
+      );
+      await controller.load();
+      expect(
+        _canonical(jsonDecode(controller.exportJson())),
+        _canonical(jsonDecode(before)),
+      );
+      controller.dispose();
+    });
+
+    test('增量排序、回收站删除与陈旧连接仍受同一事务约束', () async {
+      final first = HabitController(repository, clock: () => _now);
+      await first.load();
+      final otherRepository = SqliteHabitRepository(_open(file));
+      final stale = HabitController(otherRepository, clock: () => _now);
+      try {
+        await stale.load();
+        await first.reorderActive(0, 2);
+        expect(await stale.setDarkMode(true), false);
+        final removed = first.habits.first.id;
+        expect(await first.deleteHabit(removed), true);
+        expect(await first.permanentlyDeleteHabit(removed), true);
+        final expected = first.habits.map((h) => h.id).toList();
+        await first.load();
+        expect(first.habits.map((h) => h.id), expected);
+        expect(first.habitById(removed), isNull);
+      } finally {
+        first.dispose();
+        stale.dispose();
+        await otherRepository.close();
+      }
+    });
+
     test('替换保护原内容，恢复失败连保护记录一同回滚', () async {
       final first = (await repository.load())!;
       repository.database.beforeCommit = () async =>

@@ -8,7 +8,18 @@ abstract class HabitRepository {
   Future<Map<String, String>> rawSources();
 }
 
-class LazyHabitRepository implements HabitRepository {
+/// Optional fast path: unchanged habits are already validated immutable values.
+/// Repositories still check the revision, changed data, IDs and transaction.
+abstract interface class IncrementalHabitRepository {
+  Future<void> saveDelta(
+    String changedSnapshot,
+    List<String> habitOrder,
+    String Function() completeSnapshot,
+  );
+}
+
+class LazyHabitRepository
+    implements HabitRepository, IncrementalHabitRepository {
   LazyHabitRepository(this.open);
   final Future<HabitRepository> Function() open;
   HabitRepository? _repository;
@@ -23,6 +34,23 @@ class LazyHabitRepository implements HabitRepository {
   Future<void> replace(String value) async => (await _get()).replace(value);
   @override
   Future<Map<String, String>> rawSources() async => (await _get()).rawSources();
+  @override
+  Future<void> saveDelta(
+    String changedSnapshot,
+    List<String> habitOrder,
+    String Function() completeSnapshot,
+  ) async {
+    final repository = await _get();
+    if (repository is IncrementalHabitRepository) {
+      await (repository as IncrementalHabitRepository).saveDelta(
+        changedSnapshot,
+        habitOrder,
+        completeSnapshot,
+      );
+    } else {
+      await repository.save(completeSnapshot());
+    }
+  }
 }
 
 class SharedPreferencesHabitRepository implements HabitRepository {

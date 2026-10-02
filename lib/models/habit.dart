@@ -400,9 +400,47 @@ class Habit {
           ? null
           : DateTime.parse(json['deletedAt']! as String),
       legacyRewardBalance: json['legacyRewardBalance'] as int?,
-      extensions: Map<String, Object?>.from(json),
+      extensions: Map<String, Object?>.from(json)
+        ..removeWhere((key, _) => _knownFields.contains(key)),
     );
   }
+
+  // Unknown fields round-trip, but never retain a second frozen copy of all
+  // records/plans under extensions. copyWith must not clone the entire history.
+  static const _knownFields = {
+    'id',
+    'title',
+    'emoji',
+    'colorValue',
+    'weekdays',
+    'createdAt',
+    'reminderTime',
+    'completions',
+    'notes',
+    'exemptions',
+    'pausedAt',
+    'archived',
+    'category',
+    'effortEnabled',
+    'rewardPoints',
+    'penaltyPoints',
+    'targetCount',
+    'rewardPeriod',
+    'wishEnabled',
+    'wishTitle',
+    'wishTarget',
+    'scheduleType',
+    'scheduleCount',
+    'recordType',
+    'unit',
+    'scale',
+    'dailyTarget',
+    'entries',
+    'plans',
+    'archivedAt',
+    'deletedAt',
+    'legacyRewardBalance',
+  };
 }
 
 DateTime dateOnly(DateTime value) =>

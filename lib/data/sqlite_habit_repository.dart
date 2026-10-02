@@ -14,7 +14,8 @@ import 'habit_repository.dart';
 import 'snapshot_codec.dart';
 
 /// SQLite owns the commit boundary. Preferences are only a legacy import source.
-class SqliteHabitRepository implements HabitRepository {
+class SqliteHabitRepository
+    implements HabitRepository, IncrementalHabitRepository {
   SqliteHabitRepository(this.database, {this.legacy});
 
   static Future<SqliteHabitRepository> open() async {
@@ -153,7 +154,7 @@ class SqliteHabitRepository implements HabitRepository {
         for (final r in notes)
           r.read<String>('local_date'): r.read<String>('content'),
       };
-      assembled.add(Habit.fromJson(habit).toJson());
+      assembled.add(habit);
     }
     return jsonEncode({...settings, 'habits': assembled});
   }
@@ -174,11 +175,28 @@ class SqliteHabitRepository implements HabitRepository {
 
   @override
   Future<void> save(String value) async {
-    SnapshotCodec.decode(value);
     final expected = _revision;
     if (expected == null) throw StateError('必须先打开并验证数据');
     final next = await database.transaction(
       () => _write(value, expectedRevision: expected),
+    );
+    _revision = next;
+  }
+
+  @override
+  Future<void> saveDelta(
+    String changedSnapshot,
+    List<String> habitOrder,
+    String Function() completeSnapshot,
+  ) async {
+    final expected = _revision;
+    if (expected == null) throw StateError('必须先打开并验证数据');
+    final next = await database.transaction(
+      () => _write(
+        changedSnapshot,
+        expectedRevision: expected,
+        habitOrder: habitOrder,
+      ),
     );
     _revision = next;
   }
@@ -210,7 +228,11 @@ class SqliteHabitRepository implements HabitRepository {
     await _markInitialized();
   }
 
-  Future<int> _write(String raw, {required int expectedRevision}) async {
+  Future<int> _write(
+    String raw, {
+    required int expectedRevision,
+    List<String>? habitOrder,
+  }) async {
     final document = SnapshotCodec.decode(raw);
     final row = await _metadata();
     final current = row?.read<int>('revision') ?? 0;
@@ -223,8 +245,31 @@ class SqliteHabitRepository implements HabitRepository {
         .customSelect('SELECT id, payload, position FROM habits')
         .get();
     final old = {for (final r in existing) r.read<String>('id'): r};
-    for (var index = 0; index < incoming.length; index++) {
-      final full = incoming[index];
+    final changed = {for (final h in incoming) h['id'] as String: h};
+    final order = habitOrder ?? changed.keys.toList();
+    if (order.length > 10000 ||
+        order.toSet().length != order.length ||
+        changed.keys.any((id) => !order.contains(id))) {
+      throw const FormatException('习惯顺序无效');
+    }
+    for (var index = 0; index < order.length; index++) {
+      final full = changed[order[index]];
+      if (full == null) {
+        final previous = old.remove(order[index]);
+        if (previous == null) throw const FormatException('增量缺少新习惯');
+        if (previous.read<int>('position') != index) {
+          await database.customStatement(
+            'UPDATE habits SET position=? WHERE id=?',
+            [index, order[index]],
+          );
+          await _log(
+            'habit:${order[index]}',
+            previous.read<String>('payload'),
+            current + 1,
+          );
+        }
+        continue;
+      }
       final habit = Habit.fromJson(full);
       final id = habit.id;
       final metadata = Map<String, Object?>.from(full)
@@ -289,15 +334,41 @@ class SqliteHabitRepository implements HabitRepository {
     final old = {
       for (final r in existing) r.read<String>('id'): r.read<String>('payload'),
     };
-    for (final id in old.keys.where((id) => !incoming.containsKey(id))) {
-      await database.customStatement('DELETE FROM $table WHERE id = ?', [id]);
-      await _log('$table:$id', null, revision);
+    final newIds = incoming.keys.where((id) => !old.containsKey(id)).toList();
+    for (var offset = 0; offset < newIds.length; offset += 400) {
+      final end = offset + 400 < newIds.length ? offset + 400 : newIds.length;
+      final ids = newIds.sublist(offset, end);
+      final owners = await database
+          .customSelect(
+            'SELECT habit_id FROM $table WHERE id IN (${List.filled(ids.length, '?').join(',')})',
+            variables: ids.map(Variable.new).toList(),
+          )
+          .get();
+      if (owners.any((r) => r.read<String>('habit_id') != habitId)) {
+        throw const FormatException('记录或计划 ID 已属于其他习惯');
+      }
     }
-    for (final entry in incoming.entries) {
-      if (old[entry.key] == entry.value) continue;
-      await database.putChild(table, habitId, entry.key, entry.value);
-      await _log('$table:${entry.key}', entry.value, revision);
-    }
+    await database.batch((batch) {
+      void log(String id, String? payload) => batch.customStatement(
+        'INSERT INTO local_changes(op_id, entity_id, payload, local_revision) VALUES (?, ?, ?, ?)',
+        [const Uuid().v4(), '$table:$id', payload, revision],
+      );
+      for (final id in old.keys.where((id) => !incoming.containsKey(id))) {
+        batch.customStatement('DELETE FROM $table WHERE id = ?', [id]);
+        log(id, null);
+      }
+      for (final entry in incoming.entries) {
+        if (old[entry.key] == entry.value) continue;
+        final statement = database.childStatement(
+          table,
+          habitId,
+          entry.key,
+          entry.value,
+        );
+        batch.customStatement(statement.sql, statement.args);
+        log(entry.key, entry.value);
+      }
+    });
   }
 
   Future<void> _log(
@@ -535,12 +606,23 @@ class HabitDatabase extends GeneratedDatabase {
     String habitId,
     String id,
     String payload,
-  ) async {
+  ) {
+    final statement = childStatement(table, habitId, id, payload);
+    return customStatement(statement.sql, statement.args);
+  }
+
+  ({String sql, List<Object?> args}) childStatement(
+    String table,
+    String habitId,
+    String id,
+    String payload,
+  ) {
     final value = jsonDecode(payload) as Map<String, dynamic>;
-    if (table == 'records') {
-      await customStatement(
-        'INSERT INTO records(id,habit_id,local_date,value,deleted,payload) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,deleted=excluded.deleted,payload=excluded.payload',
-        [
+    return switch (table) {
+      'records' => (
+        sql:
+            'INSERT INTO records(id,habit_id,local_date,value,deleted,payload) VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,deleted=excluded.deleted,payload=excluded.payload',
+        args: [
           id,
           habitId,
           value['date'],
@@ -548,20 +630,19 @@ class HabitDatabase extends GeneratedDatabase {
           value['deleted'] == true ? 1 : 0,
           payload,
         ],
-      );
-    } else if (table == 'plans') {
-      await customStatement(
-        'INSERT INTO plans(id,habit_id,effective_from,daily_target,payload) VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET effective_from=excluded.effective_from,daily_target=excluded.daily_target,payload=excluded.payload',
-        [id, habitId, value['from'], value['dailyTarget'], payload],
-      );
-    } else if (table == 'daily_notes') {
-      await customStatement(
-        'INSERT INTO daily_notes(id,habit_id,local_date,content,payload) VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content,payload=excluded.payload',
-        [id, habitId, value['date'], value['text'], payload],
-      );
-    } else {
-      throw ArgumentError.value(table);
-    }
+      ),
+      'plans' => (
+        sql:
+            'INSERT INTO plans(id,habit_id,effective_from,daily_target,payload) VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET effective_from=excluded.effective_from,daily_target=excluded.daily_target,payload=excluded.payload',
+        args: [id, habitId, value['from'], value['dailyTarget'], payload],
+      ),
+      'daily_notes' => (
+        sql:
+            'INSERT INTO daily_notes(id,habit_id,local_date,content,payload) VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content,payload=excluded.payload',
+        args: [id, habitId, value['date'], value['text'], payload],
+      ),
+      _ => throw ArgumentError.value(table),
+    };
   }
 }
 

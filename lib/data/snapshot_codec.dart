@@ -94,6 +94,8 @@ class SnapshotCodec {
                 (entry.source != 'legacy' || entry.legacyTimestamp == null)) ||
             (entry.recordedAtUtc != null &&
                 DateTime.tryParse(entry.recordedAtUtc!)?.isUtc != true) ||
+            (entry.legacyTimestamp != null &&
+                DateTime.tryParse(entry.legacyTimestamp!) == null) ||
             (entry.utcOffsetMinutes != null &&
                 entry.utcOffsetMinutes!.abs() > 24 * 60)) {
           throw const FormatException('记录数据无效或重复');
@@ -123,18 +125,12 @@ class SnapshotCodec {
           ).hasMatch(habit.reminderTime!)) {
         throw const FormatException('提醒时间无效');
       }
-      for (final day in {
-        ...habit.completions.keys,
-        ...habit.notes.keys,
-        ...habit.exemptions,
-      }) {
+      for (final day in {...habit.notes.keys, ...habit.exemptions}) {
         requireDate(day);
       }
-      for (final timestamp in habit.completions.values) {
-        if (DateTime.tryParse(timestamp) == null) {
-          throw const FormatException('记录时间无效');
-        }
-      }
+      // Legacy completions are converted to entries by Habit.fromJson and are
+      // checked above. Rebuilding the completion projection twice here repeats
+      // calendar calculations for the full history without validating new facts.
     }
     if (value['appearanceMode'] != null &&
         !const {'system', 'light', 'dark'}.contains(value['appearanceMode'])) {

@@ -32,12 +32,22 @@ def command(*values, timeout=90, check=True, **kwargs):
 def shell(*values, timeout=90):
     return command(adb, 'shell', *values, timeout=timeout).stdout.decode()
 
+oversize_ready = set()
+
 def drive_document_picker(value):
     # Only the isolated fixture's requested picker is driven. Never tap the app
     # or a permission prompt by approximate screen coordinates.
     stage = value.get('stage')
-    if stage not in ('awaitingDocumentSave', 'awaitingDocumentOpen', 'awaitingOversizeOpen'):
+    if stage not in ('awaitingDocumentSave', 'awaitingDocumentOpen', 'awaitingOversizeSave', 'awaitingOversizeOpen'):
         return
+    if stage == 'awaitingOversizeOpen' and value['runId'] not in oversize_ready:
+        name = value['documentName']
+        assert re.fullmatch(r'hgw-oversize-\d+\.hgb', name)
+        path = '/sdcard/Download/' + name
+        assert shell('stat', '-c', '%s', path).strip().isdigit(), 'SAF fixture must exist first'
+        shell('dd', 'if=/dev/zero', 'of=' + path, 'bs=1048576', 'count=51')
+        assert shell('stat', '-c', '%s', path).strip() == str(51*1024*1024)
+        oversize_ready.add(value['runId'])
     shell('uiautomator', 'dump', '/sdcard/acceptance-ui.xml', timeout=25)
     xml = shell('cat', '/sdcard/acceptance-ui.xml')
     (args.output/'document-picker.xml').write_text(xml)
@@ -52,7 +62,7 @@ def drive_document_picker(value):
             shell('input', 'tap', str((bounds[0]+bounds[2])//2), str((bounds[1]+bounds[3])//2))
             return True
         return False
-    if stage == 'awaitingDocumentSave':
+    if stage in ('awaitingDocumentSave', 'awaitingOversizeSave'):
         for node in nodes:
             if node.get('text', '').upper() == 'SAVE' and tap(node):
                 return
@@ -78,6 +88,7 @@ def start_and_wait(build, phase, previous=None):
                          'files/acceptance-report.json', check=False, timeout=15)
         try:
             value = json.loads(report.stdout)
+            (args.output/'last-report.json').write_text(json.dumps(value, ensure_ascii=False, indent=2))
             if value.get('runId') != previous and value.get('build') == str(build):
                 if value.get('status') == 'failed':
                     raise RuntimeError(json.dumps(value, ensure_ascii=False))
@@ -125,8 +136,6 @@ try:
     shell('input', 'keyevent', '82')
     for setting in ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']:
         shell('settings', 'put', 'global', setting, '0')
-    shell('mkdir', '-p', '/sdcard/Download')
-    shell('dd', 'if=/dev/zero', 'of=/sdcard/Download/hgw-oversize.hgb', 'bs=1048576', 'count=51')
     results = []
     for build in (10001, 10002):
         apk = args.apks/f'acceptance-{build}.apk'

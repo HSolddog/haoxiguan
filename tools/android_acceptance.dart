@@ -142,12 +142,22 @@ Future<void> main() async {
         canonical(jsonDecode(fromDocument)) == canonical(jsonDecode(raw)),
         'SAF opened backup decrypted to the complete original data',
       );
+      final oversizedName = 'hgw-oversize-${result['runId']}.hgb';
       result.addAll({
         'safExportReadback': true,
         'safOpenDecrypt': true,
-        'stage': 'awaitingOversizeOpen',
-        'documentName': 'hgw-oversize.hgb',
+        'stage': 'awaitingOversizeSave',
+        'documentName': oversizedName,
       });
+      await report.writeAsString(jsonEncode(result), flush: true);
+      // Register the synthetic document through SAF even on Android 7, whose
+      // Downloads provider does not list arbitrary adb-created files. The driver
+      // then expands the same file without trusting the provider's old SIZE.
+      check(
+        await files.save(encrypted, oversizedName),
+        'SAF oversized fixture placeholder',
+      );
+      result['stage'] = 'awaitingOversizeOpen';
       await report.writeAsString(jsonEncode(result), flush: true);
       var rejected = false;
       try {
