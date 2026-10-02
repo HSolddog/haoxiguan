@@ -1,3 +1,4 @@
+import 'support/legacy_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:haoxiguan/data/habit_repository.dart';
@@ -9,7 +10,7 @@ void main() {
 
   setUp(() async {
     controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(DateTime(2026, 7, 15, 10, 30))),
       clock: () => DateTime(2026, 7, 15, 10, 30),
     );
     await controller.load();
@@ -31,6 +32,50 @@ void main() {
     await tester.tap(find.byKey(const Key('complete-seed-reading-true')));
     await tester.pumpAndSettle();
     expect(find.text('0/3'), findsOneWidget);
+  });
+
+  testWidgets('保存失败保留创建输入，重试后才关闭面板', (tester) async {
+    final repository = _FailOnceRepository(
+      legacyFixture(DateTime(2026, 7, 15)),
+    );
+    final local = HabitController(
+      repository,
+      clock: () => DateTime(2026, 7, 15),
+    );
+    await local.load();
+    await tester.pumpWidget(HabitApp(controller: local));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-habit-button')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('habit-title-field')),
+      '不能丢失的输入',
+    );
+    repository.failNext = true;
+    final save = find.byKey(const Key('save-habit-button'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('habit-title-field')), findsOneWidget);
+    expect(find.text('不能丢失的输入'), findsOneWidget);
+    expect(local.habits.any((h) => h.title == '不能丢失的输入'), isFalse);
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('habit-title-field')), findsNothing);
+    expect(local.habits.where((h) => h.title == '不能丢失的输入'), hasLength(1));
+  });
+
+  testWidgets('损坏启动进入恢复界面且不自动清空', (tester) async {
+    final repository = MemoryHabitRepository('{broken');
+    final local = HabitController(repository);
+    await local.load();
+    await tester.pumpWidget(HabitApp(controller: local));
+    await tester.pumpAndSettle();
+    expect(find.text('重新检查'), findsOneWidget);
+    expect(find.text('查看原始数据'), findsOneWidget);
+    expect(find.byKey(const Key('add-habit-button')), findsNothing);
+    expect(repository.value, '{broken');
   });
 
   testWidgets('可以通过底部面板创建新习惯', (tester) async {
@@ -129,4 +174,17 @@ void main() {
       findsOneWidget,
     );
   });
+}
+
+class _FailOnceRepository extends MemoryHabitRepository {
+  _FailOnceRepository(super.value);
+  bool failNext = false;
+  @override
+  Future<void> save(String value) async {
+    if (failNext) {
+      failNext = false;
+      throw StateError('simulated disk full');
+    }
+    await super.save(value);
+  }
 }

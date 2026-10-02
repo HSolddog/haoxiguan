@@ -30,11 +30,134 @@ class HabitApp extends StatelessWidget {
           themeMode: controller.darkMode ? ThemeMode.dark : ThemeMode.light,
           theme: _theme(Brightness.light, Color(controller.themeColorValue)),
           darkTheme: _theme(Brightness.dark, Color(controller.themeColorValue)),
-          home: HomeShell(controller: controller),
+          builder: (context, child) => Column(
+            children: [
+              if (controller.saveError != null)
+                Material(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(controller.saveError!)),
+                          TextButton(
+                            onPressed: controller.dismissSaveError,
+                            child: const Text('知道了'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              Expanded(child: child ?? const SizedBox.shrink()),
+            ],
+          ),
+          home: controller.loaded
+              ? HomeShell(controller: controller)
+              : _RecoveryScreen(controller: controller),
         );
       },
     );
   }
+}
+
+class _RecoveryScreen extends StatelessWidget {
+  const _RecoveryScreen({required this.controller});
+  final HabitController controller;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('好习惯')),
+    body: Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (controller.loading)
+              const CircularProgressIndicator()
+            else ...[
+              const Icon(Icons.shield_outlined, size: 56),
+              const SizedBox(height: 20),
+              Text(controller.loadError ?? '正在准备本地数据'),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: controller.load,
+                child: const Text('重新检查'),
+              ),
+              if (controller.canRecoverBackup)
+                TextButton(
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('恢复保护副本？'),
+                        content: const Text(
+                          '保护副本可能较旧，最近记录可能不在其中。恢复前会保留当前源数据；不会删除损坏的源文件。',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('取消'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('确认恢复'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) await controller.recoverBackup();
+                  },
+                  child: const Text('从保护副本恢复'),
+                ),
+              TextButton(
+                onPressed: () async {
+                  try {
+                    final sources = await controller.rawSources();
+                    if (!context.mounted) return;
+                    await showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('原始数据（包含私人记录）'),
+                        content: SizedBox(
+                          width: 600,
+                          child: SingleChildScrollView(
+                            child: SelectableText(
+                              sources.entries
+                                  .map((e) => '${e.key}\n${e.value}')
+                                  .join('\n\n'),
+                            ),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('关闭'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } on Object {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('暂时无法读取源文件。请保留应用数据，勿卸载或清除。'),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('查看原始数据'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 ThemeData _theme(Brightness brightness, Color seedColor) {
@@ -1991,11 +2114,9 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
     }
     setState(() => _saving = true);
     final reminderTime = _reminder == null ? null : _formatTime(_reminder!);
-    if (reminderTime != null) {
-      await widget.controller.requestReminderPermission();
-    }
+    bool saved;
     if (_editing) {
-      await widget.controller.updateHabit(
+      saved = await widget.controller.updateHabit(
         habitId: widget.habit!.id,
         title: title,
         emoji: _emoji,
@@ -2015,7 +2136,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
         wishTarget: _wishTarget.clamp(1, 999999).toInt(),
       );
     } else {
-      await widget.controller.addHabit(
+      saved = await widget.controller.addHabit(
         title: title,
         emoji: _emoji,
         colorValue: _color,
@@ -2034,7 +2155,15 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
         wishTarget: _wishTarget.clamp(1, 999999).toInt(),
       );
     }
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+    if (!saved) {
+      setState(() => _saving = false);
+      return;
+    }
+    Navigator.pop(context);
+    if (reminderTime != null) {
+      await widget.controller.requestReminderPermission();
+    }
   }
 }
 
@@ -2573,31 +2702,48 @@ Future<void> _showNoteDialog(
   DateTime date,
 ) async {
   final textController = TextEditingController(text: habit.noteOn(date));
-  final result = await showDialog<String>(
+  var saving = false;
+  await showDialog<void>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text('${habit.emoji} 今日备注'),
-      content: TextField(
-        controller: textController,
-        autofocus: true,
-        maxLines: 3,
-        maxLength: 120,
-        decoration: const InputDecoration(hintText: '简单记下感受或完成情况'),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: Text('${habit.emoji} ${dateKey(date)} 备注'),
+        content: TextField(
+          controller: textController,
+          autofocus: true,
+          maxLines: 3,
+          maxLength: 120,
+          decoration: const InputDecoration(hintText: '简单记下感受或完成情况'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: saving ? null : () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    final saved = await controller.setNote(
+                      habit.id,
+                      date,
+                      textController.text,
+                    );
+                    if (!context.mounted) return;
+                    if (saved) {
+                      Navigator.pop(context);
+                    } else {
+                      setState(() => saving = false);
+                    }
+                  },
+            child: Text(saving ? '正在保存' : '保存'),
+          ),
+        ],
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, textController.text),
-          child: const Text('保存'),
-        ),
-      ],
     ),
   );
-  textController.dispose();
-  if (result != null) await controller.setNote(habit.id, date, result);
+  // Dialog widgets can still be alive during their reverse transition.
 }
 
 Future<void> _showImportDialog(
@@ -2605,36 +2751,52 @@ Future<void> _showImportDialog(
   HabitController controller,
 ) async {
   final textController = TextEditingController();
-  final raw = await showDialog<String>(
+  var saving = false;
+  await showDialog<void>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('恢复数据'),
-      content: TextField(
-        controller: textController,
-        minLines: 5,
-        maxLines: 9,
-        decoration: const InputDecoration(hintText: '粘贴之前导出的 JSON 数据'),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('恢复旧 JSON 数据'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('这会替换当前数据。确认恢复前会自动保留当前数据保护副本。'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: textController,
+                maxLines: 6,
+                decoration: const InputDecoration(hintText: '粘贴完整的旧版 JSON'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: saving ? null : () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    final saved = await controller.importJson(
+                      textController.text,
+                    );
+                    if (!context.mounted) return;
+                    if (saved) {
+                      Navigator.pop(context);
+                    } else {
+                      setState(() => saving = false);
+                    }
+                  },
+            child: Text(saving ? '正在恢复' : '确认替换并恢复'),
+          ),
+        ],
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, textController.text),
-          child: const Text('恢复'),
-        ),
-      ],
     ),
   );
-  textController.dispose();
-  if (raw == null || !context.mounted) return;
-  final success = await controller.importJson(raw);
-  if (context.mounted) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(success ? '数据恢复成功' : '无法识别这份备份')));
-  }
 }
 
 Future<void> _confirmDeleteHabit(

@@ -1,3 +1,4 @@
+import 'support/legacy_fixture.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -12,7 +13,7 @@ void main() {
 
   test('补记会保留实际记录时间并更新统计', () async {
     final controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(now)),
       clock: () => now,
     );
     await controller.load();
@@ -27,7 +28,10 @@ void main() {
   });
 
   test('导出的数据可以恢复到新的控制器', () async {
-    final source = HabitController(MemoryHabitRepository(), clock: () => now);
+    final source = HabitController(
+      MemoryHabitRepository(legacyFixture(now)),
+      clock: () => now,
+    );
     await source.load();
     await source.addHabit(
       title: '冥想 5 分钟',
@@ -36,7 +40,10 @@ void main() {
       weekdays: const <int>{1, 2, 3, 4, 5, 6, 7},
     );
 
-    final target = HabitController(MemoryHabitRepository(), clock: () => now);
+    final target = HabitController(
+      MemoryHabitRepository(legacyFixture(now)),
+      clock: () => now,
+    );
     await target.load();
     final success = await target.importJson(source.exportJson());
 
@@ -46,7 +53,7 @@ void main() {
 
   test('暂停后的日期不会计入计划，恢复后会记录为豁免', () async {
     final controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(now)),
       clock: () => now,
     );
     await controller.load();
@@ -58,13 +65,14 @@ void main() {
 
     final restored = controller.habitById(id)!;
     expect(restored.isPaused, isFalse);
-    expect(restored.exemptions, contains(dateKey(now)));
+    expect(restored.exemptions, isNot(contains(dateKey(now))));
+    expect(restored.isScheduledOn(now), isTrue);
   });
 
   test('编辑习惯会更新内容并重新同步提醒', () async {
     final reminders = _FakeReminderScheduler();
     final controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(now)),
       clock: () => now,
       reminderScheduler: reminders,
     );
@@ -83,12 +91,15 @@ void main() {
     expect(updated.title, '阅读 30 分钟');
     expect(updated.weekdays, <int>{1, 3, 5});
     expect(updated.reminderTime, '20:00');
-    expect(reminders.syncedHabits.last.title, '阅读 30 分钟');
+    expect(
+      reminders.syncedHabits.lastWhere((h) => h.id == 'seed-reading').title,
+      '阅读 30 分钟',
+    );
   });
 
   test('习惯可以调整顺序且归档项保持在末尾', () async {
     final controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(now)),
       clock: () => now,
     );
     await controller.load();
@@ -107,7 +118,7 @@ void main() {
   test('通知操作可以直接完成和稍后提醒', () async {
     final reminders = _FakeReminderScheduler();
     final controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(now)),
       clock: () => now,
       reminderScheduler: reminders,
     );
@@ -128,7 +139,7 @@ void main() {
 
   test('未来日期不能打卡，每周频次可在任意日期完成', () async {
     final controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(now)),
       clock: () => now,
     );
     await controller.load();
@@ -170,12 +181,12 @@ void main() {
     await controller.toggleCompletion('flex-week', DateTime(2026, 7, 15));
 
     final updated = controller.habitById('flex-week')!;
-    expect(updated.completions.length, 2);
-    expect(updated.isScheduledOn(now), isFalse);
+    expect(updated.completions.length, 3);
+    expect(updated.isScheduledOn(now), isTrue);
     expect(executionLabel(updated), '每周任意 2 天');
   });
 
-  test('旧版固定周几数据自动迁移为每周任意天频次', () {
+  test('旧版固定周几数据保留原有固定星期语义', () {
     final habit = Habit.fromJson(<String, Object?>{
       'id': 'legacy',
       'title': '旧习惯',
@@ -185,9 +196,9 @@ void main() {
       'createdAt': '2026-07-01T00:00:00',
     });
 
-    expect(habit.scheduleType, 'week');
+    expect(habit.scheduleType, 'weekdays');
     expect(habit.scheduleCount, 3);
-    expect(executionLabel(habit), '每周任意 3 天');
+    expect(executionLabel(habit), '周一、三、五');
     expect(habit.effortEnabled, isFalse);
     expect(habit.wishEnabled, isFalse);
   });
@@ -211,17 +222,21 @@ void main() {
 
     await controller.load();
 
+    expect(controller.loaded, isFalse);
+    expect(repository.value, '{broken json');
+    expect(await controller.recoverBackup(), isTrue);
+    expect(repository.protectedSources, contains('{broken json'));
     expect(controller.habitById('backed-up')?.title, '备份里的习惯');
     expect(
       controller.habitById('backed-up')?.noteOn(DateTime(2026, 7, 14)),
       '今天状态不错',
     );
-    expect(jsonDecode(repository.value!)['version'], 5);
+    expect(jsonDecode(repository.value!)['version'], 1);
   });
 
   test('习惯支持分类、自定义奖惩和心愿', () async {
     final controller = HabitController(
-      MemoryHabitRepository(),
+      MemoryHabitRepository(legacyFixture(now)),
       clock: () => now,
     );
     await controller.load();
@@ -283,7 +298,7 @@ void main() {
   });
 
   test('默认习惯也可以永久删除，主题与回顾周期会持久化', () async {
-    final repository = MemoryHabitRepository();
+    final repository = MemoryHabitRepository(legacyFixture(now));
     final controller = HabitController(repository, clock: () => now);
     await controller.load();
 
@@ -299,7 +314,7 @@ void main() {
   });
 
   test('今日和习惯页的分类折叠状态分别持久化', () async {
-    final repository = MemoryHabitRepository();
+    final repository = MemoryHabitRepository(legacyFixture(now));
     final controller = HabitController(repository, clock: () => now);
     await controller.load();
 

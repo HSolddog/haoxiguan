@@ -1,15 +1,15 @@
 class Habit {
-  const Habit({
+  Habit({
     required this.id,
     required this.title,
     required this.emoji,
     required this.colorValue,
-    required this.weekdays,
+    required Set<int> weekdays,
     required this.createdAt,
     this.reminderTime,
-    this.completions = const <String, String>{},
-    this.notes = const <String, String>{},
-    this.exemptions = const <String>{},
+    Map<String, String> completions = const <String, String>{},
+    Map<String, String> notes = const <String, String>{},
+    Set<String> exemptions = const <String>{},
     this.pausedAt,
     this.archived = false,
     this.category = '未分类',
@@ -23,7 +23,12 @@ class Habit {
     this.wishTarget = 100,
     this.scheduleType = 'daily',
     this.scheduleCount = 1,
-  });
+    Map<String, Object?> extensions = const <String, Object?>{},
+  }) : weekdays = Set.unmodifiable(weekdays),
+       completions = Map.unmodifiable(completions),
+       notes = Map.unmodifiable(notes),
+       exemptions = Set.unmodifiable(exemptions),
+       extensions = _freeze(extensions) as Map<String, Object?>;
 
   final String id;
   final String title;
@@ -48,6 +53,8 @@ class Habit {
   final int wishTarget;
   final String scheduleType;
   final int scheduleCount;
+  // Preserve fields from supported legacy documents that this UI does not edit.
+  final Map<String, Object?> extensions;
 
   bool get isPaused => pausedAt != null;
 
@@ -63,6 +70,7 @@ class Habit {
     final day = dateOnly(date);
     if (!isActiveOn(day)) return false;
     if (scheduleType == 'daily') return true;
+    if (scheduleType == 'weekdays') return weekdays.contains(day.weekday);
     if (isCompletedOn(day)) return true;
     return completionsInPeriod(day) < scheduleCount;
   }
@@ -158,10 +166,12 @@ class Habit {
       wishTarget: wishTarget ?? this.wishTarget,
       scheduleType: scheduleType ?? this.scheduleType,
       scheduleCount: scheduleCount ?? this.scheduleCount,
+      extensions: extensions,
     );
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
+    ...extensions,
     'id': id,
     'title': title,
     'emoji': emoji,
@@ -227,10 +237,11 @@ class Habit {
       wishTarget: json['wishTarget'] as int? ?? 100,
       scheduleType:
           json['scheduleType'] as String? ??
-          (legacyWeekdays.length == 7 ? 'daily' : 'week'),
+          (legacyWeekdays.length == 7 ? 'daily' : 'weekdays'),
       scheduleCount:
           json['scheduleCount'] as int? ??
           (legacyWeekdays.length == 7 ? 1 : legacyWeekdays.length),
+      extensions: Map<String, Object?>.from(json),
     );
   }
 }
@@ -258,7 +269,18 @@ String scheduleLabel(Set<int> weekdays) {
 }
 
 String executionLabel(Habit habit) => switch (habit.scheduleType) {
+  'weekdays' => scheduleLabel(habit.weekdays),
   'week' => '每周任意 ${habit.scheduleCount} 天',
   'month' => '每月任意 ${habit.scheduleCount} 天',
   _ => '每天',
 };
+
+Object? _freeze(Object? value) {
+  if (value is Map<String, Object?>) {
+    return Map<String, Object?>.unmodifiable(
+      value.map((k, v) => MapEntry(k, _freeze(v))),
+    );
+  }
+  if (value is List) return List<Object?>.unmodifiable(value.map(_freeze));
+  return value;
+}

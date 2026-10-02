@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
+
+import '../data/snapshot_codec.dart';
 
 import '../data/habit_repository.dart';
 import '../models/habit.dart';
@@ -28,6 +31,25 @@ class HabitController extends ChangeNotifier {
   final Set<String> _collapsedTodayCategories = <String>{};
   final Set<String> _collapsedHabitCategories = <String>{};
   bool _loaded = false;
+  bool _loading = false;
+  String? _loadError;
+  String? _saveError;
+  String? _reminderError;
+  String? _recoveryBackup;
+  Map<String, Object?> _extensions = {};
+  Future<void>? _writeQueue;
+
+  bool get loading => _loading;
+  String? get loadError => _loadError;
+  String? get saveError => _saveError;
+  String? get reminderError => _reminderError;
+  bool get canRecoverBackup => _recoveryBackup != null;
+  void dismissSaveError() {
+    _saveError = null;
+    notifyListeners();
+  }
+
+  Future<Map<String, String>> rawSources() => _repository.rawSources();
 
   bool get loaded => _loaded;
   bool get darkMode => _darkMode;
@@ -55,23 +77,69 @@ class HabitController extends ChangeNotifier {
       _collapsedHabitCategories.contains(category);
 
   Future<void> load() async {
-    final raw = await _repository.load();
-    if (raw == null || raw.isEmpty) {
-      _habits.addAll(_seedHabits());
-      await _persist();
-    } else {
-      try {
-        _restore(raw);
-      } on Object {
-        final backup = await _repository.loadBackup();
-        if (backup == null || backup.isEmpty) rethrow;
-        _restore(backup);
-        await _persist();
-      }
-    }
-    _loaded = true;
+    if (_loading) return;
+    _loading = true;
+    _loaded = false;
+    _loadError = null;
+    _recoveryBackup = null;
     notifyListeners();
-    unawaited(_syncAllReminders());
+    try {
+      final raw = await _repository.load();
+      if (raw == null) {
+        final backup = await _repository.loadBackup();
+        if (backup != null) {
+          throw const DataRecoveryRequired('主数据缺失，检测到保护副本。请检查后确认恢复。');
+        }
+        final empty = SnapshotCodec.empty();
+        await _repository.save(empty);
+        _restore(empty);
+      } else {
+        _restore(raw);
+      }
+      _loaded = true;
+      unawaited(_syncAllReminders());
+    } on Object catch (error) {
+      _loadError = error is UnsupportedSnapshotVersion
+          ? error.toString()
+          : '无法安全打开数据。原数据已保留，请释放存储空间或检查数据后重试。';
+      if (error is! UnsupportedSnapshotVersion) {
+        try {
+          final backup = await _repository.loadBackup();
+          if (backup != null) {
+            SnapshotCodec.decode(backup);
+            _recoveryBackup = backup;
+          }
+        } on Object {
+          /* Recovery must not replace the original failure. */
+        }
+      }
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> recoverBackup() async {
+    final raw = _recoveryBackup;
+    if (raw == null || _loading) return false;
+    _loading = true;
+    notifyListeners();
+    try {
+      SnapshotCodec.decode(raw);
+      await _repository.replace(raw);
+      _restore(raw);
+      _loaded = true;
+      _loadError = null;
+      _recoveryBackup = null;
+      unawaited(_syncAllReminders());
+      return true;
+    } on Object {
+      _loadError = '恢复未完成，原数据已保留。请检查可用存储后重试。';
+      return false;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 
   Habit? habitById(String id) {
@@ -81,7 +149,7 @@ class HabitController extends ChangeNotifier {
     return null;
   }
 
-  Future<void> addHabit({
+  Future<bool> addHabit({
     required String title,
     required String emoji,
     required int colorValue,
@@ -98,10 +166,10 @@ class HabitController extends ChangeNotifier {
     int wishTarget = 100,
     String scheduleType = 'daily',
     int scheduleCount = 1,
-  }) async {
+  }) => _mutate(() {
     _habits.add(
       Habit(
-        id: _clock().microsecondsSinceEpoch.toString(),
+        id: const Uuid().v4(),
         title: title.trim(),
         emoji: emoji,
         colorValue: colorValue,
@@ -121,11 +189,9 @@ class HabitController extends ChangeNotifier {
         scheduleCount: scheduleCount,
       ),
     );
-    await _changed();
-    await _reminders.syncHabit(_habits.last);
-  }
+  });
 
-  Future<void> updateHabit({
+  Future<bool> updateHabit({
     required String habitId,
     required String title,
     required String emoji,
@@ -143,7 +209,7 @@ class HabitController extends ChangeNotifier {
     int? wishTarget,
     String? scheduleType,
     int? scheduleCount,
-  }) async {
+  }) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
@@ -166,11 +232,9 @@ class HabitController extends ChangeNotifier {
       scheduleType: scheduleType,
       scheduleCount: scheduleCount,
     );
-    await _changed();
-    await _reminders.syncHabit(_habits[index]);
-  }
+  });
 
-  Future<void> reorderActive(int oldIndex, int newIndex) async {
+  Future<bool> reorderActive(int oldIndex, int newIndex) => _mutate(() {
     final active = activeHabits.toList();
     if (oldIndex < 0 || oldIndex >= active.length) return;
     if (newIndex > oldIndex) newIndex--;
@@ -182,17 +246,24 @@ class HabitController extends ChangeNotifier {
       ..clear()
       ..addAll(active)
       ..addAll(archived);
-    await _changed();
+  });
+
+  Future<bool> requestReminderPermission() async {
+    try {
+      return await _reminders.requestPermission();
+    } on Object {
+      _reminderError = '无法申请通知权限，记录仍可正常保存。';
+      notifyListeners();
+      return false;
+    }
   }
 
-  Future<bool> requestReminderPermission() => _reminders.requestPermission();
-
-  Future<void> toggleCompletion(String habitId, DateTime date) async {
+  Future<bool> toggleCompletion(String habitId, DateTime date) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
     final day = dateOnly(date);
-    if (day.isAfter(today) || !habit.isScheduledOn(day)) return;
+    if (day.isAfter(today) || day.isBefore(dateOnly(habit.createdAt))) return;
     final key = dateKey(day);
     final completions = Map<String, String>.from(habit.completions);
     if (completions.containsKey(key)) {
@@ -201,39 +272,37 @@ class HabitController extends ChangeNotifier {
       completions[key] = _clock().toIso8601String();
     }
     _habits[index] = habit.copyWith(completions: completions);
-    await _changed();
-  }
+  });
 
-  Future<void> markCompleted(String habitId, DateTime date) async {
+  Future<bool> markCompleted(String habitId, DateTime date) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
     final day = dateOnly(date);
-    if (day.isAfter(today) || !habit.isScheduledOn(day)) return;
+    if (day.isAfter(today) || day.isBefore(dateOnly(habit.createdAt))) return;
     final key = dateKey(day);
     if (habit.completions.containsKey(key)) return;
     final completions = Map<String, String>.from(habit.completions)
       ..[key] = _clock().toIso8601String();
     _habits[index] = habit.copyWith(completions: completions);
-    await _changed();
-  }
+  });
 
-  Future<void> setNote(String habitId, DateTime date, String value) async {
-    final index = _habits.indexWhere((habit) => habit.id == habitId);
-    if (index < 0) return;
-    final habit = _habits[index];
-    final notes = Map<String, String>.from(habit.notes);
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      notes.remove(dateKey(date));
-    } else {
-      notes[dateKey(date)] = trimmed;
-    }
-    _habits[index] = habit.copyWith(notes: notes);
-    await _changed();
-  }
+  Future<bool> setNote(String habitId, DateTime date, String value) =>
+      _mutate(() {
+        final index = _habits.indexWhere((habit) => habit.id == habitId);
+        if (index < 0) return;
+        final habit = _habits[index];
+        final notes = Map<String, String>.from(habit.notes);
+        final trimmed = value.trim();
+        if (trimmed.isEmpty) {
+          notes.remove(dateKey(date));
+        } else {
+          notes[dateKey(date)] = trimmed;
+        }
+        _habits[index] = habit.copyWith(notes: notes);
+      });
 
-  Future<void> togglePaused(String habitId) async {
+  Future<bool> togglePaused(String habitId) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
@@ -242,63 +311,52 @@ class HabitController extends ChangeNotifier {
     } else {
       final exemptions = Set<String>.from(habit.exemptions);
       var cursor = dateOnly(habit.pausedAt!);
-      while (!cursor.isAfter(today)) {
+      while (cursor.isBefore(today)) {
         exemptions.add(dateKey(cursor));
-        cursor = cursor.add(const Duration(days: 1));
+        cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
       }
       _habits[index] = habit.copyWith(
         exemptions: exemptions,
         clearPausedAt: true,
       );
     }
-    await _changed();
-    await _reminders.syncHabit(_habits[index]);
-  }
+  });
 
-  Future<void> toggleArchived(String habitId) async {
+  Future<bool> toggleArchived(String habitId) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
     _habits[index] = habit.copyWith(archived: !habit.archived);
-    await _changed();
-    await _reminders.syncHabit(_habits[index]);
-  }
+  });
 
-  Future<void> deleteHabit(String habitId) async {
+  Future<bool> deleteHabit(String habitId) => _mutate(() {
     _habits.removeWhere((habit) => habit.id == habitId);
-    await _changed();
-    await _syncAllReminders();
-  }
+  });
 
-  Future<void> setDarkMode(bool value) async {
+  Future<bool> setDarkMode(bool value) => _mutate(() {
     _darkMode = value;
-    await _changed();
-  }
+  });
 
-  Future<void> setThemeColor(int value) async {
+  Future<bool> setThemeColor(int value) => _mutate(() {
     _themeColorValue = value;
-    await _changed();
-  }
+  });
 
-  Future<void> setReviewDays(int value) async {
+  Future<bool> setReviewDays(int value) => _mutate(() {
     if (!const <int>{7, 30, 90, 365}.contains(value)) return;
     _reviewDays = value;
-    await _changed();
-  }
+  });
 
-  Future<void> toggleTodayCategory(String category) async {
+  Future<bool> toggleTodayCategory(String category) => _mutate(() {
     if (!_collapsedTodayCategories.add(category)) {
       _collapsedTodayCategories.remove(category);
     }
-    await _changed();
-  }
+  });
 
-  Future<void> toggleHabitCategory(String category) async {
+  Future<bool> toggleHabitCategory(String category) => _mutate(() {
     if (!_collapsedHabitCategories.add(category)) {
       _collapsedHabitCategories.remove(category);
     }
-    await _changed();
-  }
+  });
 
   int completedCount(DateTime date) => activeHabits
       .where((habit) => habit.isActiveOn(date) && habit.isCompletedOn(date))
@@ -407,7 +465,7 @@ class HabitController extends ChangeNotifier {
           scheduled++;
           if (habit.isCompletedOn(cursor)) completedInPeriod++;
         }
-        cursor = cursor.add(const Duration(days: 1));
+        cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
       }
       final required = habit.targetCount < scheduled
           ? habit.targetCount
@@ -490,7 +548,7 @@ class HabitController extends ChangeNotifier {
           current = 0;
         }
       }
-      cursor = cursor.add(const Duration(days: 1));
+      cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
     }
     return best;
   }
@@ -525,48 +583,73 @@ class HabitController extends ChangeNotifier {
 
   Future<bool> importJson(String raw) async {
     try {
-      final decoded = jsonDecode(raw) as Map<String, Object?>;
-      final items = (decoded['habits']! as List<Object?>)
-          .cast<Map<String, Object?>>();
-      final restored = items.map(Habit.fromJson).toList();
-      _habits
-        ..clear()
-        ..addAll(restored);
-      _darkMode = decoded['darkMode'] as bool? ?? false;
-      _themeColorValue = decoded['themeColorValue'] as int? ?? 0xFF5F8068;
-      _reviewDays = decoded['reviewDays'] as int? ?? 30;
-      _collapsedTodayCategories
-        ..clear()
-        ..addAll(
-          (decoded['collapsedTodayCategories'] as List<Object?>? ?? const [])
-              .cast<String>(),
-        );
-      _collapsedHabitCategories
-        ..clear()
-        ..addAll(
-          (decoded['collapsedHabitCategories'] as List<Object?>? ?? const [])
-              .cast<String>(),
-        );
-      await _changed();
-      await _syncAllReminders();
-      return true;
+      SnapshotCodec.decode(raw);
     } on Object {
+      _saveError = '无法识别或不支持这份数据。原数据未修改。';
+      notifyListeners();
       return false;
     }
+    return _mutate(() => _restore(raw), replace: true);
   }
 
-  Future<void> _changed() async {
-    notifyListeners();
-    await _persist();
-  }
+  Future<bool> _mutate(void Function() change, {bool replace = false}) {
+    Future<bool> perform() async {
+      if (!_loaded) return false;
+      final before = exportJson();
+      late String candidate;
+      try {
+        change();
+        candidate = exportJson();
+        SnapshotCodec.decode(candidate);
+      } on Object {
+        _restore(before);
+        _saveError = '输入无效，未保存。原数据未修改。';
+        notifyListeners();
+        return false;
+      }
+      // No uncommitted state is observable while the asynchronous I/O runs.
+      _restore(before);
+      try {
+        if (replace) {
+          await _repository.replace(candidate);
+        } else {
+          await _repository.save(candidate);
+        }
+      } on Object {
+        _saveError = '保存未完成。原数据未修改，请检查存储空间后重试。';
+        notifyListeners();
+        return false;
+      }
+      _restore(candidate);
+      _saveError = null;
+      notifyListeners();
+      unawaited(_syncAllReminders());
+      return true;
+    }
 
-  Future<void> _persist() => _repository.save(exportJson());
+    final prior = _writeQueue;
+    final result = prior == null
+        ? Future<bool>.sync(perform)
+        : prior.then((_) => perform());
+    late Future<void> tail;
+    void release() {
+      if (identical(_writeQueue, tail)) _writeQueue = null;
+    }
+
+    tail = result.then<void>(
+      (_) => release(),
+      onError: (Object _, StackTrace _) => release(),
+    );
+    _writeQueue = tail;
+    return result;
+  }
 
   Future<void> _syncAllReminders() async {
     try {
       await _reminders.syncAll(_habits);
+      _reminderError = null;
     } on Object {
-      // 持久化数据仍可正常使用；通知初始化失败不应阻塞应用启动。
+      _reminderError = '提醒未能更新，记录已保存。可在系统通知设置中检查权限。';
     }
   }
 
@@ -587,7 +670,8 @@ class HabitController extends ChangeNotifier {
   }
 
   Map<String, Object?> _stateJson() => <String, Object?>{
-    'version': 5,
+    ..._extensions,
+    'version': SnapshotCodec.currentVersion,
     'darkMode': _darkMode,
     'themeColorValue': _themeColorValue,
     'reviewDays': _reviewDays,
@@ -597,7 +681,7 @@ class HabitController extends ChangeNotifier {
   };
 
   void _restore(String raw) {
-    final decoded = jsonDecode(raw) as Map<String, Object?>;
+    final decoded = SnapshotCodec.decode(raw);
     final items = (decoded['habits']! as List<Object?>)
         .cast<Map<String, Object?>>();
     final restoredHabits = items.map(Habit.fromJson).toList(growable: false);
@@ -612,6 +696,7 @@ class HabitController extends ChangeNotifier {
         (decoded['collapsedHabitCategories'] as List<Object?>? ?? const [])
             .cast<String>()
             .toSet();
+    _extensions = Map<String, Object?>.from(decoded);
     _habits
       ..clear()
       ..addAll(restoredHabits);
@@ -626,65 +711,5 @@ class HabitController extends ChangeNotifier {
     _collapsedHabitCategories
       ..clear()
       ..addAll(restoredHabitCategories);
-  }
-
-  List<Habit> _seedHabits() {
-    final now = _clock();
-    final start = today.subtract(const Duration(days: 12));
-    final yesterday = today.subtract(const Duration(days: 1));
-    final twoDaysAgo = today.subtract(const Duration(days: 2));
-    return <Habit>[
-      Habit(
-        id: 'seed-reading',
-        title: '阅读 20 分钟',
-        emoji: '📖',
-        colorValue: 0xFF5F8068,
-        weekdays: const <int>{1, 2, 3, 4, 5, 6, 7},
-        createdAt: start,
-        reminderTime: '21:30',
-        category: '学习',
-        effortEnabled: true,
-        wishEnabled: true,
-        wishTitle: '买一本期待已久的新书',
-        wishTarget: 120,
-        completions: <String, String>{
-          dateKey(twoDaysAgo): now
-              .subtract(const Duration(days: 2))
-              .toIso8601String(),
-          dateKey(yesterday): now
-              .subtract(const Duration(days: 1))
-              .toIso8601String(),
-        },
-      ),
-      Habit(
-        id: 'seed-water',
-        title: '喝够 8 杯水',
-        emoji: '💧',
-        colorValue: 0xFF4D7C91,
-        weekdays: const <int>{1, 2, 3, 4, 5, 6, 7},
-        createdAt: start,
-        reminderTime: '09:00',
-        category: '健康',
-        effortEnabled: true,
-        completions: <String, String>{
-          dateKey(yesterday): now
-              .subtract(const Duration(days: 1))
-              .toIso8601String(),
-        },
-      ),
-      Habit(
-        id: 'seed-stretch',
-        title: '伸展一下',
-        emoji: '🌿',
-        colorValue: 0xFFD1815C,
-        weekdays: const <int>{1, 2, 3, 4, 5},
-        scheduleType: 'week',
-        scheduleCount: 5,
-        createdAt: start,
-        reminderTime: '16:00',
-        category: '健康',
-        effortEnabled: true,
-      ),
-    ];
   }
 }
