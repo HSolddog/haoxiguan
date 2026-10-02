@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:haoxiguan/data/sqlite_habit_repository.dart';
 import 'package:haoxiguan/services/backup_codec.dart';
+import 'package:haoxiguan/services/backup_files.dart';
 import 'package:haoxiguan/state/habit_controller.dart';
 
 // Built ONLY with a separate acceptance application ID by the CI workflow.
@@ -123,6 +124,46 @@ Future<void> main() async {
       canonical(jsonDecode(restored)) == canonical(jsonDecode(raw)),
       'native crypto round trip',
     );
+    if (result['build'] == '10002') {
+      final name = 'hgw-${result['runId']}.hgb';
+      final files = PlatformBackupFiles();
+      result.addAll({'stage': 'awaitingDocumentSave', 'documentName': name});
+      await report.writeAsString(jsonEncode(result), flush: true);
+      check(await files.save(encrypted, name), 'SAF export and readback');
+      result['stage'] = 'awaitingDocumentOpen';
+      await report.writeAsString(jsonEncode(result), flush: true);
+      final picked = await files.open();
+      check(picked != null, 'SAF selected encrypted backup');
+      final fromDocument = await BackupCodec.decrypt(
+        picked!,
+        'public synthetic native test password',
+      );
+      check(
+        canonical(jsonDecode(fromDocument)) == canonical(jsonDecode(raw)),
+        'SAF opened backup decrypted to the complete original data',
+      );
+      result.addAll({
+        'safExportReadback': true,
+        'safOpenDecrypt': true,
+        'stage': 'awaitingOversizeOpen',
+        'documentName': 'hgw-oversize.hgb',
+      });
+      await report.writeAsString(jsonEncode(result), flush: true);
+      var rejected = false;
+      try {
+        await files.open();
+      } on FormatException catch (error) {
+        rejected = error.message == '文件超过 50 MiB';
+      }
+      check(rejected, 'oversized SAF document rejected before Dart allocation');
+      check(
+        canonical(jsonDecode(controller.exportJson())) ==
+            canonical(jsonDecode(raw)),
+        'failed file import left application data unchanged',
+      );
+      result['safSizeLimit'] = true;
+      result.remove('stage');
+    }
     final version = await repository.database
         .customSelect('PRAGMA user_version')
         .getSingle();

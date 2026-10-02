@@ -43,7 +43,11 @@ class HabitApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          themeMode: controller.darkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: switch (controller.appearanceMode) {
+            'dark' => ThemeMode.dark,
+            'light' => ThemeMode.light,
+            _ => ThemeMode.system,
+          },
           theme: _theme(Brightness.light, Color(controller.themeColorValue)),
           darkTheme: _theme(Brightness.dark, Color(controller.themeColorValue)),
           builder: (context, child) => Column(

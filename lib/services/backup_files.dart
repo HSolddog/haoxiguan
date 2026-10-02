@@ -51,6 +51,33 @@ class PlatformBackupFiles implements BackupFiles {
 
   @override
   Future<Uint8List?> open() async {
+    if (Platform.isAndroid) {
+      String? path;
+      try {
+        path = await _channel.invokeMethod<String>('open');
+      } on PlatformException catch (error) {
+        if (error.code == 'too_large') {
+          throw const FormatException('文件超过 50 MiB');
+        }
+        rethrow;
+      }
+      if (path == null) return null;
+      final file = File(path);
+      final cache = await getTemporaryDirectory();
+      if (!(await file.resolveSymbolicLinks()).startsWith(
+        '${await cache.resolveSymbolicLinks()}${Platform.pathSeparator}',
+      )) {
+        throw const FileSystemException('导入临时文件位置无效');
+      }
+      try {
+        if (await file.length() > BackupCodec.maxFileBytes) {
+          throw const FormatException('文件超过 50 MiB');
+        }
+        return await file.readAsBytes();
+      } finally {
+        if (await file.exists()) await file.delete();
+      }
+    }
     final file = await openFile(
       acceptedTypeGroups: const [
         XTypeGroup(

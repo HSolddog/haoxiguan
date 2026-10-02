@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../data/snapshot_codec.dart';
 import '../models/habit.dart';
 import '../services/backup_codec.dart';
+import '../services/csv_export.dart';
 import '../services/backup_files.dart';
 import '../state/habit_controller.dart';
 
@@ -100,6 +101,34 @@ class _DataScreenState extends State<DataScreen> {
       'haoxiguan-${DateTime.now().toUtc().millisecondsSinceEpoch}.json',
     );
     return saved ? 'JSON 已保存，并已读回校验。' : null;
+  });
+
+  Future<void> _exportCsv() => _run(() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('导出可读 CSV？'),
+        content: const Text(
+          'CSV 包含明文习惯、事实和备注，适合表格分析，不能完整恢复计划与设置。完整恢复请使用加密备份。以公式符号开头的文字会加单引号，避免表格软件执行公式。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('导出明文 CSV'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return null;
+    final saved = await _files.save(
+      CsvExport.encode(widget.controller.exportJson()),
+      'haoxiguan-${DateTime.now().toUtc().millisecondsSinceEpoch}.csv',
+    );
+    return saved ? 'CSV 已保存并读回校验。' : null;
   });
 
   Future<void> _restore() => _run(() async {
@@ -223,6 +252,12 @@ class _DataScreenState extends State<DataScreen> {
                   onTap: _busy ? null : _exportPlain,
                 ),
                 ListTile(
+                  leading: const Icon(Icons.table_chart_outlined),
+                  title: const Text('导出可读 CSV'),
+                  subtitle: const Text('习惯、事实与备注表格；不能替代完整备份'),
+                  onTap: _busy ? null : _exportCsv,
+                ),
+                ListTile(
                   leading: const Icon(Icons.cloud_outlined),
                   title: const Text('自己的 WebDAV 备份'),
                   subtitle: const Text('远端加密快照、自动尝试和换机恢复'),
@@ -259,10 +294,24 @@ class _DataScreenState extends State<DataScreen> {
           Card(
             child: Column(
               children: [
-                SwitchListTile(
-                  title: const Text('深色模式'),
-                  value: controller.darkMode,
-                  onChanged: controller.setDarkMode,
+                ListTile(
+                  title: const Text('外观'),
+                  leading: const Icon(Icons.contrast),
+                  subtitle: Text(switch (controller.appearanceMode) {
+                    'dark' => '深色',
+                    'light' => '浅色',
+                    _ => '跟随系统',
+                  }),
+                  trailing: PopupMenuButton<String>(
+                    tooltip: '选择外观',
+                    initialValue: controller.appearanceMode,
+                    onSelected: controller.setAppearanceMode,
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'system', child: Text('跟随系统')),
+                      PopupMenuItem(value: 'light', child: Text('浅色')),
+                      PopupMenuItem(value: 'dark', child: Text('深色')),
+                    ],
+                  ),
                 ),
                 ListTile(
                   title: const Text('主题颜色'),

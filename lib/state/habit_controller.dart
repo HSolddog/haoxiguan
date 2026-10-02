@@ -66,6 +66,8 @@ class HabitController extends ChangeNotifier {
 
   bool get loaded => _loaded;
   bool get darkMode => _darkMode;
+  String get appearanceMode =>
+      _extensions['appearanceMode'] as String? ?? 'system';
   int get themeColorValue => _themeColorValue;
   int get reviewDays => _reviewDays;
   DateTime get today => dateOnly(_clock());
@@ -541,6 +543,15 @@ class HabitController extends ChangeNotifier {
 
   Future<bool> setDarkMode(bool value) => _mutate(() {
     _darkMode = value;
+    _extensions['appearanceMode'] = value ? 'dark' : 'light';
+  });
+
+  Future<bool> setAppearanceMode(String value) => _mutate(() {
+    if (!const {'system', 'light', 'dark'}.contains(value)) {
+      throw const FormatException('外观设置无效');
+    }
+    _extensions['appearanceMode'] = value;
+    if (value != 'system') _darkMode = value == 'dark';
   });
 
   Future<bool> setThemeColor(int value) => _mutate(() {
@@ -891,6 +902,9 @@ class HabitController extends ChangeNotifier {
             .toSet();
     _extensions = Map<String, Object?>.from(decoded);
     _extensions['vaultId'] ??= const Uuid().v4();
+    _extensions['appearanceMode'] ??= decoded.containsKey('darkMode')
+        ? (restoredDarkMode ? 'dark' : 'light')
+        : 'system';
     _habits
       ..clear()
       ..addAll(

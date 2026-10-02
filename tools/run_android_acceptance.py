@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 import time
+import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--api', type=int, required=True)
@@ -31,6 +32,44 @@ def command(*values, timeout=90, check=True, **kwargs):
 def shell(*values, timeout=90):
     return command(adb, 'shell', *values, timeout=timeout).stdout.decode()
 
+def drive_document_picker(value):
+    # Only the isolated fixture's requested picker is driven. Never tap the app
+    # or a permission prompt by approximate screen coordinates.
+    stage = value.get('stage')
+    if stage not in ('awaitingDocumentSave', 'awaitingDocumentOpen', 'awaitingOversizeOpen'):
+        return
+    shell('uiautomator', 'dump', '/sdcard/acceptance-ui.xml', timeout=25)
+    xml = shell('cat', '/sdcard/acceptance-ui.xml')
+    (args.output/'document-picker.xml').write_text(xml)
+    try:
+        nodes = [n for n in ET.fromstring(xml).iter('node')
+                 if 'documentsui' in n.get('package', '') and n.get('enabled') == 'true']
+    except ET.ParseError:
+        return
+    def tap(node):
+        bounds = [int(x) for x in re.findall(r'\d+', node.get('bounds', ''))]
+        if len(bounds) == 4 and bounds[2] > bounds[0] and bounds[3] > bounds[1]:
+            shell('input', 'tap', str((bounds[0]+bounds[2])//2), str((bounds[1]+bounds[3])//2))
+            return True
+        return False
+    if stage == 'awaitingDocumentSave':
+        for node in nodes:
+            if node.get('text', '').upper() == 'SAVE' and tap(node):
+                return
+    else:
+        for node in nodes:
+            if node.get('text') == value['documentName'] and tap(node):
+                return
+        for node in nodes:
+            if node.get('text', '').upper() == 'OPEN' and tap(node):
+                return
+    for node in nodes:
+        if node.get('text') == 'Downloads' and tap(node):
+            return
+    for node in nodes:
+        if node.get('content-desc') in ('Show roots', 'Show navigation drawer') and tap(node):
+            return
+
 def start_and_wait(build, phase, previous=None):
     shell('am', 'start', '-n', activity)
     deadline = time.monotonic() + 240
@@ -45,7 +84,10 @@ def start_and_wait(build, phase, previous=None):
                 if value.get('status') == 'passed':
                     assert value['phase'] == phase, value
                     assert value['schema'] == (2 if build == 10001 else 3), value
+                    if build == 10002:
+                        assert all(value[k] for k in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit')), value
                     return value
+                drive_document_picker(value)
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass
         time.sleep(2)
@@ -83,6 +125,8 @@ try:
     shell('input', 'keyevent', '82')
     for setting in ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']:
         shell('settings', 'put', 'global', setting, '0')
+    shell('mkdir', '-p', '/sdcard/Download')
+    shell('dd', 'if=/dev/zero', 'of=/sdcard/Download/hgw-oversize.hgb', 'bs=1048576', 'count=51')
     results = []
     for build in (10001, 10002):
         apk = args.apks/f'acceptance-{build}.apk'
@@ -99,13 +143,17 @@ try:
     (args.output/'results.json').write_text(json.dumps(results, ensure_ascii=False, indent=2)+'\n')
     screenshot = command(adb, 'exec-out', 'screencap', '-p')
     (args.output/'result.png').write_bytes(screenshot.stdout)
-    print(f'API {args.api}: native SQLite, crypto, Keystore, process reopen and version upgrade passed')
+    print(f'API {args.api}: SQLite, crypto, Keystore, process reopen, schema upgrade and bounded SAF save/open passed')
 finally:
     try:
         diagnostic = command(adb, 'logcat', '-d', '-s', 'flutter', 'AndroidRuntime', check=False, timeout=15)
         (args.output/'runtime.log').write_bytes(diagnostic.stdout)
     except subprocess.TimeoutExpired:
         (args.output/'runtime.log').write_text('adb logcat timed out; inspect emulator.log')
+    try:
+        (args.output/'last-screen.png').write_bytes(command(adb, 'exec-out', 'screencap', '-p', timeout=15).stdout)
+    except subprocess.TimeoutExpired:
+        pass
     process.terminate()
     try:
         process.wait(timeout=30)

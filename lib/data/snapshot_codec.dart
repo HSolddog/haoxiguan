@@ -136,6 +136,10 @@ class SnapshotCodec {
         }
       }
     }
+    if (value['appearanceMode'] != null &&
+        !const {'system', 'light', 'dark'}.contains(value['appearanceMode'])) {
+      throw const FormatException('外观设置无效');
+    }
     for (final key in ['darkMode']) {
       if (value[key] != null && value[key] is! bool) {
         throw FormatException('$key 设置无效');
