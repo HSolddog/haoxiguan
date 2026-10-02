@@ -34,6 +34,7 @@ def shell(*values, timeout=90):
 
 oversize_ready = set()
 background_requested = set()
+environment_events = []
 
 def drive_document_picker(value):
     # Only the isolated fixture's requested picker is driven. Never tap the app
@@ -42,20 +43,9 @@ def drive_document_picker(value):
     if stage == 'awaitingBackgroundReschedule':
         if value['runId'] not in background_requested:
             jobs = shell('dumpsys', 'jobscheduler')
-            matches = re.findall(r'^\s*JOB (?:(\S+?):|#)?[^/\s]+/(\d+):[^\n]*' + re.escape(package) +
-                                 r'/androidx\.work\.impl\.background\.systemjob\.SystemJobService', jobs,
-                                 flags=re.MULTILINE)
             (args.output/'workmanager-jobs.txt').write_text('\n'.join(
                 line for line in jobs.splitlines() if package in line))
-            if matches:
-                for namespace, job in set(matches):
-                    selector = ['-n', namespace] if namespace else []
-                    forced = command(adb, 'shell', 'cmd', 'jobscheduler', 'run', '-f', '-u', '0',
-                                     *selector, package, job, check=False)
-                    with (args.output/'workmanager-forced.txt').open('ab') as evidence:
-                        evidence.write(forced.stdout + forced.stderr)
-                    assert forced.returncode == 0, 'JobScheduler rejected isolated fixture job'
-                background_requested.add(value['runId'])
+            background_requested.add(value['runId'])
         return
     if stage not in ('awaitingDocumentSave', 'awaitingDocumentOpen', 'awaitingOversizeSave', 'awaitingOversizeOpen'):
         return
@@ -71,19 +61,9 @@ def drive_document_picker(value):
     xml = shell('cat', '/sdcard/acceptance-ui.xml')
     (args.output/'document-picker.xml').write_text(xml)
     try:
-        nodes = [n for n in ET.fromstring(xml).iter('node')
-                 if 'documentsui' in n.get('package', '') and n.get('enabled') == 'true']
+        all_nodes = list(ET.fromstring(xml).iter('node'))
     except ET.ParseError:
         return
-    # API 24 can expose obscured controls in its accessibility tree while the
-    # IME still consumes their screen coordinates. Dismiss only a visible IME
-    # owned by DocumentsUI; an unconditional Back would cancel the picker.
-    if nodes:
-        ime = shell('dumpsys', 'input_method')
-        # mIsInputViewShown remains true on API 24 even after its window hides.
-        if re.search(r'\bmInputShown=true\b', ime):
-            shell('input', 'keyevent', '4')
-            return
     def tap(node, hold=False):
         bounds = [int(x) for x in re.findall(r'\d+', node.get('bounds', ''))]
         if len(bounds) == 4 and bounds[2] > bounds[0] and bounds[3] > bounds[1]:
@@ -94,6 +74,30 @@ def drive_document_picker(value):
                 shell('input', 'tap', x, y)
             return True
         return False
+    # AOSP's launcher occasionally ANRs during a fresh headless boot. Record
+    # and close that exact system dialog once; never dismiss an app/other ANR.
+    if any(n.get('resource-id') == 'android:id/alertTitle' and
+           n.get('text') == "Quickstep isn't responding" for n in all_nodes):
+        if environment_events:
+            raise RuntimeError('repeated AOSP launcher ANR; emulator is unhealthy')
+        (args.output/'launcher-anr.xml').write_text(xml)
+        (args.output/'launcher-anr.png').write_bytes(command(adb, 'exec-out', 'screencap', '-p').stdout)
+        for node in all_nodes:
+            if node.get('resource-id') == 'android:id/aerr_close' and tap(node):
+                environment_events.append({'event': 'closed AOSP Quickstep ANR', 'runId': value['runId']})
+                (args.output/'environment-events.json').write_text(json.dumps(environment_events, indent=2))
+                print('Recorded and closed one AOSP Quickstep ANR in disposable AVD', flush=True)
+                return
+    nodes = [n for n in all_nodes if 'documentsui' in n.get('package', '') and n.get('enabled') == 'true']
+    # API 24 can expose obscured controls in its accessibility tree while the
+    # IME still consumes their screen coordinates. Dismiss only a visible IME
+    # owned by DocumentsUI; an unconditional Back would cancel the picker.
+    if nodes:
+        ime = shell('dumpsys', 'input_method')
+        # mIsInputViewShown remains true on API 24 even after its window hides.
+        if re.search(r'\bmInputShown=true\b', ime):
+            shell('input', 'keyevent', '4')
+            return
     if stage in ('awaitingDocumentSave', 'awaitingOversizeSave'):
         for node in nodes:
             if node.get('text', '').upper() == 'SAVE' and tap(node):
@@ -136,7 +140,8 @@ def start_and_wait(build, phase, previous=None):
                     assert value['schema'] == (2 if build == 10001 else 3), value
                     if build == 10002:
                         assert all(value[k] for k in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
-                                                     'nativeReminderScheduling', 'workManagerRenewal')), value
+                                                     'nativeReminderScheduling', 'workManagerRenewal',
+                                                     'periodicTasksRegistered')), value
                     return value
                 drive_document_picker(value)
         except (json.JSONDecodeError, UnicodeDecodeError):
@@ -200,7 +205,8 @@ try:
     print(f'API {args.api}: SQLite, crypto, Keystore, process reopen, schema upgrade and bounded SAF save/open passed')
 finally:
     try:
-        diagnostic = command(adb, 'logcat', '-d', '-s', 'flutter', 'AndroidRuntime', check=False, timeout=15)
+        diagnostic = command(adb, 'logcat', '-d', '-s', 'flutter', 'AndroidRuntime',
+                             'WM-WorkerWrapper', 'WM-SystemJobService', check=False, timeout=15)
         (args.output/'runtime.log').write_bytes(diagnostic.stdout)
     except subprocess.TimeoutExpired:
         (args.output/'runtime.log').write_text('adb logcat timed out; inspect emulator.log')

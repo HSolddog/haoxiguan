@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:workmanager/workmanager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:haoxiguan/data/sqlite_habit_repository.dart';
 import 'package:haoxiguan/services/backup_codec.dart';
 import 'package:haoxiguan/services/backup_files.dart';
 import 'package:haoxiguan/services/background_tasks.dart';
+import 'package:haoxiguan/services/device_task_lock.dart';
 import 'package:haoxiguan/services/reminder_service.dart';
 import 'package:haoxiguan/state/habit_controller.dart';
 
@@ -200,10 +202,26 @@ Future<void> main() async {
         );
       }
       result['nativeReminderScheduling'] = true;
-      await initializeBackgroundTasks();
-      await notifications.cancelAll();
+      await Workmanager().initialize(backgroundDispatcher);
+      // A forced JobScheduler job cannot bypass WorkManager's own periodic
+      // clock. Use a real one-off system task with the production dispatcher.
+      // Cancel the isolated fixture's previous work before clearing reminders.
+      await Workmanager().cancelAll();
+      final cancelled = DateTime.now().add(const Duration(seconds: 10));
+      while (await Workmanager().isScheduledByUniqueName(
+            'haoxiguan-reminders-v1',
+          ) ||
+          await Workmanager().isScheduledByUniqueName('haoxiguan-backup-v1')) {
+        check(DateTime.now().isBefore(cancelled), 'fixture work cancelled');
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+      await DeviceTaskLock.run('reminders', notifications.cancelAll);
       result['stage'] = 'awaitingBackgroundReschedule';
       await report.writeAsString(jsonEncode(result), flush: true);
+      await Workmanager().registerOneOffTask(
+        'acceptance-reminders-${result['runId']}',
+        'reminders',
+      );
       final deadline = DateTime.now().add(const Duration(seconds: 75));
       var renewed = false;
       while (DateTime.now().isBefore(deadline)) {
@@ -215,6 +233,18 @@ Future<void> main() async {
       }
       check(renewed, 'real WorkManager isolate rebuilt pending reminders');
       result['workManagerRenewal'] = true;
+      await initializeBackgroundTasks();
+      final registered = DateTime.now().add(const Duration(seconds: 10));
+      while (!(await Workmanager().isScheduledByUniqueName(
+            'haoxiguan-reminders-v1',
+          )) ||
+          !(await Workmanager().isScheduledByUniqueName(
+            'haoxiguan-backup-v1',
+          ))) {
+        check(DateTime.now().isBefore(registered), 'periodic tasks registered');
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+      result['periodicTasksRegistered'] = true;
       result.remove('stage');
     }
     final version = await repository.database
