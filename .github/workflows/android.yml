@@ -17,12 +17,13 @@ concurrency:
 
 env:
   FLUTTER_SUPPRESS_ANALYTICS: 'true'
-  PUB_CACHE: ${{ runner.temp }}/haoxiguan-pub-cache
 
 jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      PUB_CACHE: ${{ runner.temp }}/haoxiguan-pub-cache
     steps:
       - name: Check out project
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
