@@ -80,6 +80,11 @@ def drive_document_picker(value):
             if node.get('text', '').upper() == 'SAVE' and tap(node):
                 return
     else:
+        # Android 7 defaults to a grid whose nameplate is not the item's open
+        # target. Use the document list before selecting an exact filename.
+        for node in nodes:
+            if node.get('content-desc') == 'List view' and tap(node):
+                return
         for node in nodes:
             if node.get('text') == value['documentName'] and tap(node):
                 return

@@ -1,0 +1,58 @@
+[
+  {
+    "build": "10001",
+    "status": "passed",
+    "runId": "1790935315025802",
+    "phase": "create",
+    "habits": 3,
+    "schema": 2,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  },
+  {
+    "build": "10001",
+    "status": "passed",
+    "runId": "1790935320617996",
+    "phase": "reopen",
+    "habits": 3,
+    "schema": 2,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  },
+  {
+    "build": "10002",
+    "status": "passed",
+    "runId": "1790935327460680",
+    "phase": "reopen",
+    "documentName": "hgw-oversize-1790935327460680.hgb",
+    "safExportReadback": true,
+    "safOpenDecrypt": true,
+    "safSizeLimit": true,
+    "habits": 3,
+    "schema": 3,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  },
+  {
+    "build": "10002",
+    "status": "passed",
+    "runId": "1790935350049528",
+    "phase": "reopen",
+    "documentName": "hgw-oversize-1790935350049528.hgb",
+    "safExportReadback": true,
+    "safOpenDecrypt": true,
+    "safSizeLimit": true,
+    "habits": 3,
+    "schema": 3,
+    "nativeCrypto": true,
+    "keystore": true,
+    "backupConfigured": false,
+    "syncConfigured": false
+  }
+]
