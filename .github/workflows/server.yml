@@ -6,6 +6,8 @@ on:
       - '.github/workflows/server.yml'
       - 'tools/container_smoke.py'
       - 'tools/generate_server_notices.py'
+      - 'tools/server_https_capacity.py'
+      - 'tools/sync_test_certificate.go'
   push:
     branches: [main]
     paths:
@@ -13,6 +15,8 @@ on:
       - '.github/workflows/server.yml'
       - 'tools/container_smoke.py'
       - 'tools/generate_server_notices.py'
+      - 'tools/server_https_capacity.py'
+      - 'tools/sync_test_certificate.go'
   workflow_dispatch:
 permissions:
   contents: read
@@ -52,4 +56,38 @@ jobs:
         with:
           name: sync-server-${{ github.sha }}
           path: server/dist/
+          retention-days: 14
+
+  capacity:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: sync-server-${{ github.sha }}
+          path: server/dist/
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: server/go.sum
+      - name: Build the same unprivileged server image
+        working-directory: server
+        run: |
+          sha256sum --check dist/SHA256SUMS
+          docker build --build-arg TARGETARCH=amd64 -t haoxiguan-sync:capacity .
+      - name: C07 isolated HTTPS capacity and interrupted recovery
+        run: |
+          python3 -m py_compile tools/server_https_capacity.py
+          python3 tools/server_https_capacity.py --image haoxiguan-sync:capacity --output build/server-https-capacity/report.json
+      - name: Preserve capacity observations and verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: server-https-capacity-${{ github.sha }}
+          path: build/server-https-capacity/report.json
+          if-no-files-found: warn
           retention-days: 14
