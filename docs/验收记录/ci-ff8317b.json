@@ -1,0 +1,276 @@
+{
+  "observedAtUtc": "2026-10-03T10:57:06.737524+00:00",
+  "headCommit": "ff8317ba1f1b79a561028f6462f27cee7ef33f46",
+  "pullRequestMergeCommit": "e33ec3badd6d848a1405551e2814d47439d55cfd",
+  "android": {
+    "run": 37116729856,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37116729856",
+    "verifyJob": 111184877791,
+    "status": "completed_failure_api24_driver",
+    "format": "success",
+    "analyze": "success",
+    "normalTests": {
+      "step": "success",
+      "passed": 242,
+      "skipped": 3,
+      "failed": 0
+    },
+    "realHttps": {
+      "step": "success",
+      "testCount": 2
+    },
+    "build": "success",
+    "upgradeFixtureBuild": "success",
+    "nativeApi24": {
+      "job": 111186438101,
+      "status": "failure",
+      "artifactId": 11272491858,
+      "artifactSha256": "17ed61c0318bac0d862fe8bcb309a6264379ab2ed19a674105b7ac98d7b24e6f",
+      "reports": [
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791024224755958",
+          "phase": "create",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791024230238501",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10002",
+          "status": "passed",
+          "runId": "1791024240078726",
+          "phase": "reopen",
+          "documentName": "hgw-oversize-1791024240078726.hgb",
+          "safExportReadback": true,
+          "safOpenDecrypt": true,
+          "safSizeLimit": true,
+          "nativeReminderScheduling": true,
+          "workManagerRenewal": true,
+          "periodicTasksRegistered": true,
+          "habits": 3,
+          "schema": 3,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        }
+      ],
+      "completedPhases": 3,
+      "failure": {
+        "type": "ValueError",
+        "message": "process list contains an incomplete row",
+        "emulatorExit": null,
+        "stage": "pre-force-stop process snapshot after successful schema3 upgrade, before fourth-phase launch"
+      },
+      "diagnosis": "Over-strict process parser can reject legal Android 7 empty WCHAN or spaced NAME. Raw failing row was not captured, so its exact shape is unknown. Add raw evidence, compatible strict parsing and bounded read retries, then rerun; no acceptance pass is inferred.",
+      "parserSource": "https://android.googlesource.com/platform/system/core/+/android-7.0.0_r1/toolbox/ps.c",
+      "artifactCreatedAtUtc": "2026-10-03T10:44:45Z"
+    },
+    "nativeApi35": {
+      "job": 111186438059,
+      "status": "success",
+      "artifactId": 11271867858,
+      "artifactSha256": "d98714b60943ac7c724c72258bdae144ff9c9927f3efa71a962ac76d63e6322f",
+      "reports": [
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791024227320919",
+          "phase": "create",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791024233510926",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10002",
+          "status": "passed",
+          "runId": "1791024238940418",
+          "phase": "reopen",
+          "documentName": "hgw-oversize-1791024238940418.hgb",
+          "safExportReadback": true,
+          "safOpenDecrypt": true,
+          "safSizeLimit": true,
+          "nativeReminderScheduling": true,
+          "workManagerRenewal": true,
+          "periodicTasksRegistered": true,
+          "habits": 3,
+          "schema": 3,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10002",
+          "status": "passed",
+          "runId": "1791024267703634",
+          "phase": "reopen",
+          "documentName": "hgw-oversize-1791024267703634.hgb",
+          "safExportReadback": true,
+          "safOpenDecrypt": true,
+          "safSizeLimit": true,
+          "nativeReminderScheduling": true,
+          "workManagerRenewal": true,
+          "periodicTasksRegistered": true,
+          "habits": 3,
+          "schema": 3,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        }
+      ],
+      "completedPhases": 4,
+      "artifactCreatedAtUtc": "2026-10-03T10:44:51Z"
+    },
+    "nativeApi36": {
+      "job": 111186438072,
+      "status": "success",
+      "artifactId": 11272246386,
+      "artifactSha256": "17463a12328072cf7fae1e0820221c98509a3d6b2f89f049bc31b3db93ef69b9",
+      "reports": [
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791024246836364",
+          "phase": "create",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791024254777080",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10002",
+          "status": "passed",
+          "runId": "1791024260675633",
+          "phase": "reopen",
+          "documentName": "hgw-oversize-1791024260675633.hgb",
+          "safExportReadback": true,
+          "safOpenDecrypt": true,
+          "safSizeLimit": true,
+          "nativeReminderScheduling": true,
+          "workManagerRenewal": true,
+          "periodicTasksRegistered": true,
+          "habits": 3,
+          "schema": 3,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        },
+        {
+          "build": "10002",
+          "status": "passed",
+          "runId": "1791024289951919",
+          "phase": "reopen",
+          "documentName": "hgw-oversize-1791024289951919.hgb",
+          "safExportReadback": true,
+          "safOpenDecrypt": true,
+          "safSizeLimit": true,
+          "nativeReminderScheduling": true,
+          "workManagerRenewal": true,
+          "periodicTasksRegistered": true,
+          "habits": 3,
+          "schema": 3,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false
+        }
+      ],
+      "completedPhases": 4,
+      "artifactCreatedAtUtc": "2026-10-03T10:45:13Z"
+    },
+    "verifyConclusion": "success",
+    "debugArtifact": {
+      "id": 11271383731,
+      "name": "haoxiguan-debug-e33ec3badd6d848a1405551e2814d47439d55cfd",
+      "sha256": "sha256:74c7625e7397b009569ef5fca97933fea94907d1db286c0891625484eb94786e",
+      "sizeInBytes": 89326640
+    },
+    "upgradeFixtureArtifact": {
+      "id": 11272291102,
+      "name": "android-acceptance-e33ec3badd6d848a1405551e2814d47439d55cfd",
+      "sha256": "sha256:7a6c49a12608985c59cc23e12af2237a4f8cbc16b88c18183b3776948091c266",
+      "sizeInBytes": 106071558
+    },
+    "rawEvidence": [
+      "2026-10-03T10:34:44.7997456Z 🎉 242 tests passed, 3 skipped.",
+      "2026-10-03T10:35:25.8741049Z ##[group]✅ real HTTPS Go relay: encrypted recovery, two devices, conflict, revoke and remote deletion",
+      "2026-10-03T10:35:26.6965619Z ##[group]✅ two independent HTTPS services: verified backup restore and fresh pairing migration",
+      "2026-10-03T10:35:26.7207314Z 🎉 2 tests passed.",
+      "2026-10-03T10:35:42.8964519Z 00:01 +1: All tests passed!",
+      "2026-10-03T10:41:19.5743248Z ✓ Built build/app/outputs/flutter-apk/app-debug.apk",
+      "2026-10-03T10:41:52.3550625Z ✓ Built build/app/outputs/flutter-apk/app-debug.apk",
+      "2026-10-03T10:42:15.5290527Z ✓ Built build/app/outputs/flutter-apk/app-debug.apk"
+    ]
+  },
+  "webdav": {
+    "startedAtUtc": "2026-10-03T10:35:31.685004+00:00",
+    "sourceCommit": "e33ec3badd6d848a1405551e2814d47439d55cfd",
+    "service": {
+      "WsgiDAV": "4.3.3",
+      "cheroot": "11.1.2"
+    },
+    "listen": "IPv4 loopback only",
+    "tls": "generated certificate trusted by test clients only",
+    "testFile": "test/webdav_integration_test.dart",
+    "testExecuted": true,
+    "result": "passed",
+    "exitCode": 0,
+    "finishedAtUtc": "2026-10-03T10:35:42.900130+00:00",
+    "artifactId": 11271642395,
+    "artifactSha256": "05da3882cb1d68e6c77a38992fe449aa86b51be3e79757b90d5d50010424bbda",
+    "testCount": 1,
+    "rawEvidence": [
+      "00:00 +0: 真实 TLS WebDAV：上传读回、跨设备恢复、完整元信息预览与保护原库",
+      "00:01 +1: All tests passed!"
+    ]
+  },
+  "scope": "Verify: 242 passed / 3 skipped; real HTTPS 2 and WebDAV 1 passed. Native API35/36 each completed all four phases. API24 completed three phases, then driver process parsing failed before force-stop/fourth launch. Notification denial/channel recovery and restore-dialog UI additions were not yet present in this commit."
+}

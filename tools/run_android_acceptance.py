@@ -31,31 +31,105 @@ def process_list_command():
     return ('ps',) if args.api < 26 else ('ps', '-A')
 
 
-def app_process_ids(output):
-    lines = [line.split() for line in output.splitlines() if line.strip()]
-    if len(lines) < 2 or lines[0].count('PID') != 1:
+def process_identities(output):
+    if re.search(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', output):
+        raise ValueError('process list contains control characters')
+    lines = [line for line in output.splitlines() if line.strip()]
+    if len(lines) < 2:
         raise ValueError('process list is missing its header or process rows')
-    header = lines[0]
+    header = lines[0].split()
     # Both selected Android commands use NAME (argv[0]). Toybox CMD is the
     # possibly truncated thread name and cannot prove package PID absence.
     name_columns = [i for i, name in enumerate(header) if name == 'NAME']
-    if len(name_columns) != 1:
+    if (len(name_columns) != 1 or name_columns[0] != len(header) - 1 or
+            header.count('PID') != 1 or header.count('USER') != 1):
         raise ValueError('process list has no unambiguous name column')
-    pid_column, name_column = header.index('PID'), name_columns[0]
+    pid_column, user_column = header.index('PID'), header.index('USER')
     # AOSP Android 7 toolbox ps.c prints an unlabelled state between PC and
     # NAME. Match only that exact header; guessing the last field would accept
     # malformed/truncated rows as proof that a previous PID disappeared.
     legacy = header == ['USER', 'PID', 'PPID', 'VSIZE', 'RSS', 'WCHAN', 'PC', 'NAME']
-    pids = set()
-    for row in lines[1:]:
-        if len(row) != len(header) + (1 if legacy else 0) or not row[pid_column].isdigit():
-            raise ValueError('process list contains an incomplete row')
-        if legacy and not re.fullmatch(r'[A-Za-z]', row[name_column]):
-            raise ValueError('Android 7 process list has an invalid unlabelled state')
-        name = row[name_column + (1 if legacy else 0)]
-        if name == package or name.startswith(package + ':'):
-            pids.add(int(row[pid_column]))
-    return pids
+    if not legacy and header not in (
+            ['USER', 'PID', 'PPID', 'VSZ', 'RSS', 'WCHAN', 'ADDR', 'S', 'NAME'],
+            ['USER', 'PID', 'PPID', 'VSIZE', 'RSS', 'WCHAN', 'ADDR', 'S', 'NAME']):
+        raise ValueError('unsupported process list header')
+    identities = {}
+    for line in lines[1:]:
+        if legacy:
+            # toolbox can print an EMPTY WCHAN after /proc/PID/wchan closes.
+            # Its PC is zero-padded to at least 8 (32-bit) / 10 (64-bit)
+            # hexadecimal digits; NAME is the remaining text, including spaces.
+            row = re.fullmatch(
+                r'\s*(\S+)\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+[0-9]+\s+'
+                r'(?:\S{1,10}\s+)?(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{10,16})\s+[RSDTtXZPIxKW]\s+(\S.*)', line)
+            if row is None:
+                raise ValueError('Android 7 process list contains an incomplete or invalid row')
+            user, pid, name = row.groups()
+        else:
+            row = line.split(maxsplit=len(header) - 1)
+            if len(row) != len(header) or not re.fullmatch(r'[0-9]+', row[pid_column]):
+                raise ValueError('process list contains an incomplete row')
+            if (not all(re.fullmatch(r'[0-9]+', row[index]) for index in (2, 3, 4)) or
+                    not re.fullmatch(r'(?:[0-9a-fA-F]+|-)', row[6]) or
+                    not re.fullmatch(r'[RSDTtXZPIxKW]', row[7])):
+                raise ValueError('modern process list contains invalid structural fields')
+            user, pid, name = row[user_column], row[pid_column], row[-1]
+        if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]*', user):
+            raise ValueError('process list contains an invalid USER')
+        pid = int(pid)
+        if pid <= 0 or pid in identities:
+            raise ValueError('process list contains an invalid or duplicate PID')
+        identities[pid] = {'user': user, 'name': name}
+    return identities
+
+
+def app_process_ids(output):
+    return {pid for pid, identity in process_identities(output).items()
+            if identity['name'] == package or identity['name'].startswith(package + ':')}
+
+
+snapshot_sequence = 0
+
+
+def read_process_snapshot(label, timeout):
+    global snapshot_sequence
+    snapshot_sequence += 1
+    # Preserve the original bytes BEFORE decoding or parsing, including failures.
+    stem = args.output / f'processes-{snapshot_sequence:03d}-{label}'
+    try:
+        result = command(adb, 'shell', *process_list_command(), check=False, timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        stem.with_suffix('.txt').write_bytes(error.output or b'')
+        stem.with_suffix('.stderr.txt').write_bytes(error.stderr or b'')
+        raise
+    stem.with_suffix('.txt').write_bytes(result.stdout)
+    stem.with_suffix('.stderr.txt').write_bytes(result.stderr)
+    if result.returncode:
+        raise ValueError(f'process list exit {result.returncode}')
+    return process_identities(result.stdout.decode('utf-8'))
+
+
+def original_app_processes(timeout=15):
+    deadline = time.monotonic() + timeout
+    last_error = None
+    for attempt in range(3):
+        require_emulator('original process snapshot')
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        try:
+            identities = read_process_snapshot('before-stop', min(5, remaining))
+            original = {pid: identity['user'] for pid, identity in identities.items()
+                        if identity['name'] == package or identity['name'].startswith(package + ':')}
+            if not original:
+                raise ValueError('app process disappeared before the requested force-stop')
+            return original
+        except (subprocess.TimeoutExpired, ValueError) as error:
+            last_error = error
+            event('original-process-read-failed', attempt=attempt + 1, error=str(error))
+        if attempt < 2:
+            time.sleep(min(0.5, max(0, deadline - time.monotonic())))
+    raise RuntimeError(f'could not identify original app processes: {last_error}') from last_error
 
 
 def wait_for_reopen(previous_pids, timeout=45):
@@ -85,19 +159,22 @@ def wait_for_reopen(previous_pids, timeout=45):
         try:
             boot = read('getprop', 'sys.boot_completed')
             service = read('service', 'check', 'activity')
-            processes = read(*process_list_command())
             boot_ready = boot.returncode == 0 and boot.stdout.strip() == b'1'
             activity_ready = service.returncode == 0 and b'Service activity: found' in service.stdout
-            if processes.returncode == 0:
-                current_pids = app_process_ids(processes.stdout.decode(errors='replace'))
-            else:
-                read_error = f'process list exit {processes.returncode}'
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(failure)
+            identities = read_process_snapshot('after-stop', min(5, remaining))
+            current_pids = set(identities)
             # Android 7 can start a NEW SystemJobService process just after a
             # successful force-stop. Package stopped=true is not stable then.
             # Prove the previous process lifetime ended, allowing that new PID;
             # the next launch must still produce a new, fully passing report.
-            ready = (boot_ready and activity_ready and current_pids is not None and
-                     previous_pids.isdisjoint(current_pids))
+            # The full PID/USER table still blocks an original process if its
+            # NAME changed. A PID recycled under another USER is a new identity.
+            ready = (boot_ready and activity_ready and all(
+                pid not in identities or identities[pid]['user'] != user
+                for pid, user in previous_pids.items()))
         except (subprocess.TimeoutExpired, ValueError) as error:
             read_error = str(error)
         stable = stable + 1 if ready else 0
@@ -157,6 +234,153 @@ def shell(*values, timeout=90):
 oversize_ready = set()
 background_requested = set()
 environment_events = []
+ui_stages = {}
+device_api = None
+
+
+def verify_device_api():
+    global device_api
+    raw = shell('getprop', 'ro.build.version.sdk').strip()
+    if not re.fullmatch(r'[0-9]+', raw) or int(raw) != args.api:
+        raise RuntimeError(f'AVD SDK {raw!r} does not match requested API {args.api}')
+    device_api = int(raw)
+
+
+def tap_node(node):
+    bounds = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+    if bounds is None:
+        raise ValueError('requested UI control has no valid bounds')
+    left, top, right, bottom = map(int, bounds.groups())
+    if right <= left or bottom <= top:
+        raise ValueError('requested UI control is not visible')
+    shell('input', 'tap', str((left + right)//2), str((top + bottom)//2))
+
+
+def settings_switch(root, label):
+    parents = {child: parent for parent in root.iter() for child in parent}
+    labels = [node for node in root.iter('node')
+              if node.get('package') == 'com.android.settings' and node.get('text') == label]
+    if len(labels) != 1:
+        return None
+    scope = labels[0]
+    while scope in parents:
+        scope = parents[scope]
+        # Stop at the preference's own actionable row; never climb into the
+        # whole screen and borrow an unrelated row's sole switch.
+        if scope.get('scrollable') == 'true' or scope.get('class', '').endswith(('ListView', 'RecyclerView')):
+            return None
+        is_row = (scope.get('clickable') == 'true' or
+                  scope.get('resource-id') in ('com.android.settings:id/main_switch_bar',
+                                              'com.android.settings:id/settingslib_main_switch_bar'))
+        if not is_row:
+            continue
+        switches = [node for node in scope.iter('node')
+                    if node.get('package') == 'com.android.settings' and
+                    node.get('resource-id') == 'android:id/switch_widget' and
+                    node.get('checkable') == 'true' and node.get('class', '').endswith('Switch')]
+        if switches:
+            if len(switches) != 1:
+                raise ValueError('notification preference has ambiguous switches')
+            return switches[0]
+        return None
+    return None
+
+
+def drive_native_ui(value):
+    stage = value.get('stage')
+    notification_stages = ('awaitingNotificationDeny', 'awaitingNotificationGrant',
+                           'awaitingChannelDisable', 'awaitingChannelEnable')
+    restore_stages = ('awaitingRestoreCancel', 'awaitingRestoreConfirm')
+    if stage not in notification_stages + restore_stages:
+        return False
+    if device_api != args.api:
+        raise RuntimeError('native UI requires independently verified AVD SDK')
+    run_id = value['runId']
+    if not isinstance(run_id, str) or not re.fullmatch(r'\d+', run_id):
+        raise ValueError('native UI stage has an invalid runId')
+    state = ui_stages.setdefault((run_id, stage), {})
+    if state.get('done'):
+        return True
+    shell('uiautomator', 'dump', '/sdcard/acceptance-ui.xml', timeout=25)
+    xml = shell('cat', '/sdcard/acceptance-ui.xml')
+    (args.output/f'ui-{run_id}-{stage}.xml').write_text(xml, encoding='utf-8')
+    root = ET.fromstring(xml)
+    nodes = list(root.iter('node'))
+    if stage in restore_stages:
+        label = '取消' if stage == 'awaitingRestoreCancel' else '保护当前数据并恢复'
+        controls = [node for node in nodes if node.get('package') == package and
+                    (node.get('text') == label or node.get('content-desc') == label) and
+                    node.get('enabled') == 'true' and node.get('clickable') == 'true']
+        if len(controls) > 1:
+            raise ValueError('ambiguous restore dialog button')
+        if controls:
+            state['done'] = True  # A delivered tap is never replayed.
+            event('restore-ui-tap', runId=run_id, stage=stage, label=label)
+            tap_node(controls[0])
+        return True
+    channel = stage in ('awaitingChannelDisable', 'awaitingChannelEnable')
+    if channel and device_api < 26:
+        raise ValueError('channel stage is not available below API 26')
+    if state.get('verified'):
+        # Return along the actual Settings back stack; do not relaunch or kill
+        # the fixture. API24 has an additional App info screen in that stack.
+        if any(node.get('package') == package for node in nodes):
+            ack = json.dumps({'runId': run_id, 'stage': stage, 'apiLevel': device_api}).encode()
+            state['done'] = True
+            command(adb, 'shell', 'run-as', package, 'sh', '-c',
+                    "'cat > files/acceptance-control.json'", input=ack, timeout=15)
+            event('notification-ui-ack', runId=run_id, stage=stage, apiLevel=device_api)
+        elif any(node.get('package') == 'com.android.settings' for node in nodes):
+            if state.get('lastBackXml') != xml:
+                if state.get('backs', 0) >= 3:
+                    raise RuntimeError('Settings did not return to the fixture within three Back actions')
+                state['lastBackXml'] = xml
+                state['backs'] = state.get('backs', 0) + 1
+                shell('input', 'keyevent', '4')
+        return True
+    allowed = stage in ('awaitingNotificationGrant', 'awaitingChannelEnable')
+    label = ('Block all' if device_api < 26 else
+             'Show notifications' if channel else 'All 好习惯 notifications')
+    if device_api < 26 or channel:
+        expected_title = '习惯提醒' if channel else '好习惯'
+        if not any(node.get('package') == 'com.android.settings' and
+                   node.get('text') == expected_title for node in nodes):
+            return True
+    switch = settings_switch(root, label)
+    if switch is None:
+        if device_api < 26 and not state.get('enteredNotifications'):
+            controls = [node for node in nodes if node.get('package') == 'com.android.settings' and
+                        node.get('text') == 'Notifications' and node.get('enabled') == 'true']
+            if len(controls) == 1:
+                state['enteredNotifications'] = True
+                tap_node(controls[0])
+        return True
+    checked = switch.get('checked')
+    if checked not in ('true', 'false') or switch.get('enabled') != 'true':
+        raise ValueError('notification switch is disabled or has no checked state')
+    desired = (not allowed) if device_api < 26 else allowed
+    if (checked == 'true') == desired:
+        state['verified'] = True
+        event('notification-ui-state', runId=run_id, stage=stage, checked=desired)
+    elif not state.get('tapped'):
+        state['tapped'] = True
+        event('notification-ui-tap', runId=run_id, stage=stage, desiredChecked=desired)
+        tap_node(switch)
+    return True
+
+
+def assert_native_flags(value):
+    fields = ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
+              'nativeReminderScheduling', 'workManagerRenewal', 'periodicTasksRegistered',
+              'nativeDeniedHabitSaved', 'nativeAppPermissionDiagnosis', 'nativeAppPermissionRecovery',
+              'nativeRestorePreviewCancel', 'nativeRestoreProtection', 'nativeRestoreConfirm', 'nativeRestoreReopen')
+    assert all(value.get(key) is True for key in fields), value
+    assert type(value.get('notificationApiLevel')) is int and value['notificationApiLevel'] == device_api == args.api, value
+    for key in ('nativeChannelDiagnosis', 'nativeChannelRecovery'):
+        if device_api >= 26:
+            assert value.get(key) is True, value
+        else:
+            assert value.get(key) == 'notApplicable', value
 
 def drive_document_picker(value):
     # Only the isolated fixture's requested picker is driven. Never tap the app
@@ -259,7 +483,10 @@ def start_and_wait(build, phase, previous=None):
     require_emulator(f'{build}/{phase} launch')
     event('launch', build=build, phase=phase, previous=previous)
     shell('am', 'start', '-n', activity)
-    deadline = time.monotonic() + 240
+    # Schema3 adds four real Settings round trips and two restore dialogs to
+    # SAF and the bounded WorkManager check. Each Dart UI stage also has its
+    # own 120s limit. Schema2 keeps its original persistence-only budget.
+    deadline = time.monotonic() + (600 if build == 10002 else 240)
     while time.monotonic() < deadline:
         require_emulator(f'{build}/{phase} report')
         report = command(adb, 'exec-out', 'run-as', package, 'cat',
@@ -274,11 +501,10 @@ def start_and_wait(build, phase, previous=None):
                     assert value['phase'] == phase, value
                     assert value['schema'] == (2 if build == 10001 else 3), value
                     if build == 10002:
-                        assert all(value[k] for k in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
-                                                     'nativeReminderScheduling', 'workManagerRenewal',
-                                                     'periodicTasksRegistered')), value
+                        assert_native_flags(value)
                     return value
-                drive_document_picker(value)
+                if not drive_native_ui(value):
+                    drive_document_picker(value)
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass
         time.sleep(2)
@@ -378,6 +604,7 @@ def main(argv=None):
             time.sleep(2)
         else:
             raise TimeoutError('emulator did not boot')
+        verify_device_api()
         # Keep evidence while the guest is alive; a final logcat cannot recover
         # anything once its ADB transport or emulator has died.
         runtime_log = (args.output/'runtime-live.log').open('wb')
@@ -417,10 +644,8 @@ def main(argv=None):
                                    results[-1]['runId'] if results else None)
             results.append(value)
             (args.output/'completed-phases.json').write_text(json.dumps(results, indent=2)+'\n')
-            original_pids = app_process_ids(shell(*process_list_command()))
-            if not original_pids:
-                raise RuntimeError('app process disappeared before the requested force-stop')
-            event('force-stop', build=build, previousPids=sorted(original_pids))
+            original_pids = original_app_processes()
+            event('force-stop', build=build, previousPids=sorted(original_pids), previousUsers=original_pids)
             shell('am', 'force-stop', package)
             wait_for_reopen(original_pids)
             value = start_and_wait(build, 'reopen', value['runId'])

@@ -1,0 +1,209 @@
+{
+  "observedAtUtc": "2026-10-03T10:42:51.487737+00:00",
+  "platform": "Windows; task-isolated Flutter 3.44.6, Dart 3.12.2, Android SDK/NDK and caches",
+  "productSourceCommit": "2c86b2b42d17f4794e91d9dc332f96d8fba22f68",
+  "remoteProductCommit": "ff8317ba1f1b79a561028f6462f27cee7ef33f46",
+  "identicalSourceTree": "30d1afdb8b1f8541e22f2ae80c549e8e15542ada",
+  "finalTests": {
+    "command": "flutter test --no-pub --concurrency=1 --reporter expanded",
+    "passed": 242,
+    "skipped": 3,
+    "failed": 0,
+    "exitCode": 0,
+    "durationSeconds": 101,
+    "session": 9564,
+    "log": "full-regression-category-final.log",
+    "skippedTests": [
+      "real HTTPS Go relay",
+      "two independent HTTPS services migration",
+      "real TLS WebDAV"
+    ]
+  },
+  "format": {
+    "command": "dart format --output=none --set-exit-if-changed lib test tools",
+    "files": 89,
+    "changed": 0,
+    "exitCode": 0
+  },
+  "analyze": {
+    "command": "flutter analyze --no-pub",
+    "result": "No issues found",
+    "durationSeconds": 6.1,
+    "exitCode": 0
+  },
+  "followup": {
+    "syncRegressionPassed": 36,
+    "capacityPythonPassed": 8,
+    "androidDriverPythonPassed": 21,
+    "planPreviewPassed": 1,
+    "emptyCategoryAndRelatedRegressionPassed": 44
+  },
+  "historicalFailures": [
+    "pub.dev advisory request failed with Windows socket error 10057 before tests; locked dependencies unchanged and --no-pub tests succeeded",
+    "Added plan-preview test first failed at dropdown wrapper hit target: full run 236 passed, 3 skipped, 1 failed. Actual text interaction and IME completion fixed test; all business assertions retained.",
+    "Earlier product contrast, tap size, page overlap and ExpansionTile state bugs are preserved in the dated acceptance record."
+  ],
+  "androidDebug": {
+    "command": "flutter build apk --debug --no-pub",
+    "exitCode": 0,
+    "durationSeconds": 148.4,
+    "version": "1.2.0+6",
+    "package": "com.haoxiguan.haoxiguan",
+    "bytes": 170825861,
+    "sha256": "bca4b96b9ef2f832e3595ae5fe51d9413ac5d272ffbc76cdce09452b90b05a58",
+    "apk": "../tools/artifacts/haoxiguan-product-debug-2c86b2b.apk",
+    "signer": "Android Debug",
+    "signatureVerificationExitCode": 0,
+    "installed": false,
+    "releasePublished": false,
+    "log": "tools/android-debug-build-20261003T103236Z.log",
+    "productPathsCleanBeforeAndAfterBuild": true,
+    "originalBuildOutput": "build/app/outputs/flutter-apk/app-debug.apk",
+    "retainedArtifactNote": "Retained inside the local task workspace outside the repository before isolated acceptance fixture builds reuse the default Flutter APK output. The product SHA256 is unchanged; this file is not committed or published."
+  },
+  "logs": [
+    {
+      "file": "full-regression-final.log",
+      "bytes": 95042,
+      "sha256": "96f01d71a14fae38b9a458bf4150c782e8f02059086ce110a79cf4e5670ff2cf"
+    },
+    {
+      "file": "sync-final-followup.log",
+      "bytes": 553,
+      "sha256": "25603870aab991a1ec9e44507015ecde3fa3643dd6eb64adbb6c2a814413cf6f"
+    },
+    {
+      "file": "sync-final-followup-cached.log",
+      "bytes": 56164,
+      "sha256": "668235d13c190249cc585407af1637d8fe0754f1e8adcda5987baebe8de8806c"
+    },
+    {
+      "file": "full-regression-release-candidate.log",
+      "bytes": 102991,
+      "sha256": "5da1f546d6f51a098cdd45e96a456310c7c1d702c93c13ca4f97c8ee63197657"
+    },
+    {
+      "file": "plan-preview-final.log",
+      "bytes": 252,
+      "sha256": "be98566d0878814f9f43a35c91bca66b532ca9e183783dd0a9a903131ece6373"
+    },
+    {
+      "file": "format-complete-final.log",
+      "bytes": 49,
+      "sha256": "4ab58b590b770c672aecb253212d156dff1dfead9022af1b8cfed96c4a9241bf"
+    },
+    {
+      "file": "analyze-complete-final.log",
+      "bytes": 98,
+      "sha256": "39afa98c08c39826b0c148352d6b09b361140915ad2dba9ce13c4a01d1d87b1b"
+    },
+    {
+      "file": "full-regression-complete.log",
+      "bytes": 100079,
+      "sha256": "dc85b92bc77c0df403df8f916f647d8fd82ac88bb1886090e6bde481eeaea009"
+    },
+    {
+      "file": "category-preservation-regression.log",
+      "bytes": 66113,
+      "sha256": "bd0818c3ca25b2b1ba0e9fa93848a00424ad5973c1822e89195a7e76b150c093"
+    },
+    {
+      "file": "category-preservation-final.log",
+      "bytes": 67664,
+      "sha256": "4108fe2a40a12a3b30f681ac109e627f1fb3a61fc8df5099c2a07b0757a0a80e"
+    },
+    {
+      "file": "analyze-category-final.log",
+      "bytes": 98,
+      "sha256": "8dd368b7a413b52aca7aaa7b2dbde167eb987f1d383c2c7a4b9fc6ca9a23ef2a"
+    },
+    {
+      "file": "full-regression-category-final.log",
+      "bytes": 111061,
+      "sha256": "a7e0a0d3b6c6d87a4b98a6b833763847505e836aa2fb763e3e1cd314c1703eaf"
+    },
+    {
+      "file": "tools/android-debug-build-20261003T103236Z.log",
+      "bytes": 991,
+      "sha256": "2fbc80b94eccedafcd85435e781d64865779e6ff8ee9f7420709ccca07e8b938"
+    },
+    {
+      "file": "native-protocol-final.log",
+      "bytes": 391,
+      "sha256": "2231f3d0971cab676f46b5a68d14cde2465b4ee7d7a2a0c25653e5075fe71b1f"
+    },
+    {
+      "file": "format-native-final.log",
+      "bytes": 49,
+      "sha256": "bfef9d0012553ad842bba7fff10df2c1be750ef61d1e228ad07fbe690a8bac1b"
+    },
+    {
+      "file": "tools/android-acceptance-build-20261003T110029Z.log",
+      "bytes": 2247,
+      "sha256": "045c6c1e982683245ef9223334a63c98530eddf787d6c4c604abbffdbd874d74"
+    },
+    {
+      "file": "native-driver-final.log",
+      "bytes": 6888,
+      "sha256": "f3fc5982251aadab6ff9dedf6242d6bd90b9d817a7c01b4f172cdd411a8b40f7"
+    }
+  ],
+  "limitations": [
+    "Host widget tests do not replace physical Android/TalkBack/OEM/long-term acceptance.",
+    "Real services have separate Linux CI evidence; default skipped integrations are not passes.",
+    "Windows Defender isolated a temporary Go HTTPS test executable; cause unknown, protection not bypassed.",
+    "No release key or password was read or uploaded."
+  ],
+  "committedTestChanges": "Includes test/plan_change_preview_test.dart and five test/sync_empty_category_test.dart cases in both local and remote snapshots.",
+  "nativeAcceptanceProtocolFollowup": {
+    "passed": 3,
+    "failed": 0,
+    "exitCode": 0,
+    "testFile": "test/android_acceptance_protocol_test.dart",
+    "log": "native-protocol-final.log",
+    "sourceScope": "Acceptance-only fixture and protocol changes added after ff8317b; production lib/android files restored unchanged. Native runtime validation is pending the next CI run.",
+    "format": {
+      "files": 90,
+      "changed": 0,
+      "exitCode": 0,
+      "log": "format-native-final.log"
+    },
+    "twoSchemaBuild": {
+      "rawEvidence": "host-native-build-20261003.json",
+      "exitCode": 0,
+      "durationSeconds": 247.833,
+      "productRestoredByteForByte": true,
+      "package": "com.haoxiguan.haoxiguan.acceptance",
+      "signer": "Android Debug",
+      "signatureVerificationExitCodes": [
+        0,
+        0
+      ],
+      "sameSigningCertificate": true,
+      "apks": [
+        {
+          "build": 10001,
+          "schema": 2,
+          "bytes": 79380775,
+          "sha256": "564dd6802ddd281e3386502fdfaa22dfed9d6519eadc96d388f1b32885f1c92d"
+        },
+        {
+          "build": 10002,
+          "schema": 3,
+          "bytes": 79384899,
+          "sha256": "fe400bf75e9c89b28dacf7b8e0c1d9017f230c3dd883f8a0adb1e5d71ec70977"
+        }
+      ],
+      "installed": false,
+      "published": false
+    },
+    "driverPython": {
+      "passed": 38,
+      "failed": 0,
+      "exitCode": 0,
+      "durationSeconds": 0.276,
+      "log": "native-driver-final.log",
+      "independentReadReview": "UI scope and process-identity reviews found no remaining blocker; native execution still pending."
+    }
+  }
+}
