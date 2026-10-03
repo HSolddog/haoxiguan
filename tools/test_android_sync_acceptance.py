@@ -498,7 +498,10 @@ class NativeSyncDriverTest(unittest.TestCase):
         self.assertNotIn('SECRET', json.dumps(self.events()))
 
     def test_windows_runner_is_blocked_before_any_sdk_go_or_network_action(self):
-        with patch.object(driver.sys, 'platform', 'win32'), patch.object(driver.sys, 'stderr', io.StringIO()), patch.object(driver, 'run_owned') as run, patch.object(
+        # sys is shared with shutil: Linux Python 3.12 has no _winapi module.
+        # Isolate executable discovery too so the simulated Windows guard tests
+        # our driver without accidentally calling shutil's Windows-only code.
+        with patch.object(driver.sys, 'platform', 'win32'), patch.object(driver.shutil, 'which', return_value='synthetic-go'), patch.object(driver.sys, 'stderr', io.StringIO()), patch.object(driver, 'run_owned') as run, patch.object(
                 driver.DisposableRelay, 'start') as relay, patch.object(driver.NativeSyncDriver, 'start_emulator') as emulator:
             with self.assertRaises(SystemExit):
                 driver.main(['--api', '35', '--apks', '.', '--output', str(self.args.output)])
