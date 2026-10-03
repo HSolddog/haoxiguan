@@ -54,7 +54,20 @@ class _RecordEditorState extends State<_RecordEditor> {
   }
 
   Future<void> _delete(Habit habit, RecordEntry entry) async {
-    if (_saving) return;
+    if (!mounted || _saving) return;
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
+    var answered = false;
+    void answer(BuildContext dialogContext, bool confirmed) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, confirmed);
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -62,17 +75,19 @@ class _RecordEditorState extends State<_RecordEditor> {
         content: const Text('只撤销这次记录，当天的其他记录和备注保留。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => answer(context, false),
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => answer(context, true),
             child: const Text('撤销这条记录'),
           ),
         ],
       ),
     );
-    if (!mounted || confirmed != true || _saving) return;
+    if (!mounted || confirmed != true || _saving || route?.isCurrent != true) {
+      return;
+    }
     setState(() => _saving = true);
     final saved = await widget.controller.deleteEntry(habit.id, entry.id);
     if (!mounted) return;
@@ -173,7 +188,9 @@ class _RecordEditorState extends State<_RecordEditor> {
             onPressed: _saving
                 ? null
                 : () async {
-                    if (_saving) return;
+                    if (!mounted || _saving) return;
+                    final route = ModalRoute.of(context);
+                    if (route?.isCurrent != true) return;
                     int value;
                     try {
                       if (duration) {
@@ -200,7 +217,7 @@ class _RecordEditorState extends State<_RecordEditor> {
                       value,
                       replaceTotal: _replace,
                     );
-                    if (!context.mounted) return;
+                    if (!context.mounted || route?.isCurrent != true) return;
                     if (saved) {
                       Navigator.pop(context);
                     } else {

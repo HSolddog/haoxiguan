@@ -23,7 +23,7 @@ void main() {
     defaultValue: 'public-synthetic-test-password',
   );
   test(
-    '真实 TLS WebDAV：上传读回、跨设备恢复、完整元信息预览与保护原库',
+    '真实 TLS WebDAV：写读条件删除验证、上传读回、跨设备恢复与保护原库',
     () async {
       final context = SecurityContext(withTrustedRoots: true);
       if (cert.isNotEmpty) context.setTrustedCertificates(cert);
@@ -79,6 +79,47 @@ void main() {
       final vault = SnapshotCodec.decode(raw)['vaultId']! as String;
       final device = const Uuid().v4();
       try {
+        if (cert.isNotEmpty) {
+          // The explicitly provisioned test CA is trusted only by the client
+          // above. A normal client must reject its untrusted certificate.
+          final untrusted = WebDavClient(
+            endpoint,
+            username,
+            credential,
+            client: IOClient(
+              HttpClient(context: SecurityContext(withTrustedRoots: true)),
+            ),
+          );
+          try {
+            await expectLater(
+              untrusted.verifyAccess(vault, device),
+              throwsA(
+                isA<DavFailure>()
+                    .having(
+                      (error) => error.message,
+                      'certificate classification',
+                      contains('HTTPS 证书'),
+                    )
+                    .having(
+                      (error) => error.message,
+                      'redacted credential',
+                      isNot(contains(credential)),
+                    )
+                    .having(
+                      (error) => error.message,
+                      'redacted endpoint',
+                      isNot(contains(endpoint)),
+                    ),
+              ),
+            );
+          } finally {
+            untrusted.close();
+          }
+          expect(await client.children('haoxiguan/$vault/$device/'), isEmpty);
+        }
+        await client.verifyAccess(vault, device);
+        final afterProbe = await client.children('haoxiguan/$vault/$device/');
+        expect(afterProbe.where((name) => name.endsWith('.probe')), isEmpty);
         final item = await client.upload(raw, password, vault, device);
         final listed = await client.list(vault);
         expect(listed.map((b) => b.id), contains(item.id));

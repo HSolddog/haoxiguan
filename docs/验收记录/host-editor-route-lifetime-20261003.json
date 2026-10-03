@@ -1,0 +1,371 @@
+{
+  "publication": "Public summary of synthetic test validation. Full logs and workstation metadata remain local; no user habit data, credentials, local paths, process IDs or device identifiers are included.",
+  "fullLocalEvidenceSha256": "32ce31862abe917664e76f1997b81148a12ef50f87f9c198f2883a13a1d100f4",
+  "fullLocalEvidenceBytes": 11820,
+  "kind": "host_editor_route_lifetime_acceptance",
+  "execution": "real_flutter_widgets_HabitController_MemoryHabitRepository",
+  "baselineHead": "f047d1f6b5b76bc8709dc2a88df003080f8bf3ba",
+  "scope": [
+    "habit_create_save",
+    "habit_edit_save",
+    "note_save",
+    "theme_hex_save",
+    "theme_preset_save",
+    "related_habit_request_leave",
+    "corrupt_startup_backup_recovery_confirmation",
+    "default_review_period_selection"
+  ],
+  "repair": {
+    "submissionRequiresMountedCurrentOwnerRoute": true,
+    "lateSuccessOnlyPopsOriginalCurrentRoute": true,
+    "confirmationAndSelectionAreOneShot": true,
+    "relatedReplacementRechecksOwnerAfterDiscard": true
+  },
+  "oldSources": [
+    {
+      "repositoryPath": "lib/ui/habit_app.dart",
+      "bytes": 120753,
+      "sha256": "2adc32e865749347f40a907706a758d845b3589f4eac7eaa475c053b989f98c7"
+    },
+    {
+      "repositoryPath": "lib/ui/note_editor.dart",
+      "bytes": 3983,
+      "sha256": "8de437ec6b4e7c1533cb809bc8d80117d3df85b7ba2a3ff40c6258a68278f7cb"
+    },
+    {
+      "repositoryPath": "lib/ui/theme_color_dialog.dart",
+      "bytes": 4940,
+      "sha256": "3335dbabe38d6ee7f77bfcbf61ea84d6b1665a866f0278798ae540b926ba7c6c"
+    }
+  ],
+  "baselinePackageConfigSelfBindingVerified": true,
+  "baselineOldSourceBytesPreserved": true,
+  "sameTestBytesUsedBeforeAndAfter": true,
+  "counterfactual": {
+    "exitCode": 1,
+    "behaviorAssertionFailures": 21,
+    "passedControls": 6,
+    "durationSeconds": 11,
+    "observations": [
+      {
+        "case": "discarded_create",
+        "expected": {
+          "writes": 0,
+          "storedUnchanged": true,
+          "snapshotUnchanged": true,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "storedUnchanged": false,
+          "snapshotUnchanged": false,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "late_success_create",
+        "expected": {
+          "writes": 1,
+          "upperCurrent": true,
+          "ownerActive": true
+        },
+        "actual": {
+          "writes": 1,
+          "upperCurrent": false,
+          "ownerActive": true
+        }
+      },
+      {
+        "case": "discarded_edit",
+        "expected": {
+          "writes": 0,
+          "storedUnchanged": true,
+          "snapshotUnchanged": true,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "storedUnchanged": false,
+          "snapshotUnchanged": false,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "late_success_edit",
+        "expected": {
+          "writes": 1,
+          "upperCurrent": true,
+          "ownerActive": true
+        },
+        "actual": {
+          "writes": 1,
+          "upperCurrent": false,
+          "ownerActive": true
+        }
+      },
+      {
+        "case": "discarded_note",
+        "expected": {
+          "writes": 0,
+          "storedUnchanged": true,
+          "snapshotUnchanged": true,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "storedUnchanged": false,
+          "snapshotUnchanged": false,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "late_success_note",
+        "expected": {
+          "writes": 1,
+          "upperCurrent": true,
+          "ownerActive": true
+        },
+        "actual": {
+          "writes": 1,
+          "upperCurrent": false,
+          "ownerActive": true
+        }
+      },
+      {
+        "case": "discarded_theme",
+        "expected": {
+          "writes": 0,
+          "storedUnchanged": true,
+          "snapshotUnchanged": true,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "storedUnchanged": false,
+          "snapshotUnchanged": false,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "late_success_theme",
+        "expected": {
+          "writes": 1,
+          "upperCurrent": true,
+          "ownerActive": true
+        },
+        "actual": {
+          "writes": 1,
+          "upperCurrent": false,
+          "ownerActive": true
+        }
+      },
+      {
+        "case": "discarded_preset",
+        "expected": {
+          "writes": 0,
+          "storedUnchanged": true,
+          "snapshotUnchanged": true,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "storedUnchanged": false,
+          "snapshotUnchanged": false,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "late_success_preset",
+        "expected": {
+          "writes": 1,
+          "upperCurrent": true,
+          "ownerActive": true
+        },
+        "actual": {
+          "writes": 1,
+          "upperCurrent": false,
+          "ownerActive": true
+        }
+      },
+      {
+        "case": "clean_cancel_edit",
+        "expected": {
+          "writes": 0,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "clean_cancel_note",
+        "expected": {
+          "writes": 0,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "clean_cancel_theme",
+        "expected": {
+          "writes": 0,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "clean_cancel_preset",
+        "expected": {
+          "writes": 0,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "related_after_cancel",
+        "expected": {
+          "baseCurrent": true,
+          "newSheetCount": 0
+        },
+        "actual": {
+          "baseCurrent": false,
+          "newSheetCount": 1
+        }
+      },
+      {
+        "case": "related_after_upper",
+        "expected": {
+          "upperCurrent": true,
+          "ownerActive": true
+        },
+        "actual": {
+          "upperCurrent": false,
+          "ownerActive": true
+        }
+      },
+      {
+        "case": "review_after_cancel",
+        "expected": {
+          "writes": 0,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 0,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "review_after_upper",
+        "expected": {
+          "writes": 0,
+          "upperCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "upperCurrent": true
+        }
+      },
+      {
+        "case": "review_double_selection",
+        "expected": {
+          "writes": 1,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "baseCurrent": false
+        }
+      },
+      {
+        "case": "recovery_after_cancel",
+        "expected": {
+          "replacements": 0,
+          "upperCurrent": true,
+          "loaded": false
+        },
+        "actual": {
+          "replacements": 0,
+          "upperCurrent": false,
+          "loaded": false
+        }
+      },
+      {
+        "case": "recovery_after_upper",
+        "expected": {
+          "replacements": 0,
+          "upperCurrent": true,
+          "loaded": false
+        },
+        "actual": {
+          "replacements": 1,
+          "upperCurrent": true,
+          "loaded": true
+        }
+      }
+    ]
+  },
+  "after": {
+    "exitCode": 0,
+    "testsPassed": 27,
+    "durationSeconds": 7,
+    "same21ObservationsMatchExpected": true,
+    "normalFailedWritesRetrySuccessfully": true,
+    "oldEntryIdsAndUnchangedNotesRetained": true,
+    "MemoryRepositoryReopenVerified": true
+  },
+  "related": {
+    "exitCode": 0,
+    "testsPassed": 27,
+    "durationSeconds": 14
+  },
+  "analyze": {
+    "exitCode": 0,
+    "items": 4,
+    "durationSeconds": 2.2,
+    "issues": 0
+  },
+  "format": {
+    "exitCode": 0,
+    "changed": 0
+  },
+  "preparationExcludedFromCounterexamples": [
+    {
+      "kind": "sqlite_native_asset_network_failure",
+      "exitCode": 1,
+      "testsExecuted": 0,
+      "resolution": "reused_existing_same_version_native_hook_cache_in_baseline_own_dart_tool"
+    },
+    {
+      "kind": "native_cache_copy_windows_path_error",
+      "resolution": "existing_public_cache_partially_copied; Flutter successfully built old package without changing business sources"
+    },
+    {
+      "kind": "fixture_finder_type_error",
+      "failedCases": 4,
+      "resolution": "typed_IconButton_tooltip_Finder_then_reran_all27_against_unchanged_old_sources"
+    }
+  ],
+  "previouslyCorrectDetailRegionUnchanged": {
+    "byteExact": true,
+    "bytes": 29230,
+    "sha256": "3804c3aae271f9e705c3b020dccfcb1267145f03bce6c3e8d276f1712f947ae7"
+  },
+  "outsideAuthorizedHabitAppRegionsByteExact": true,
+  "remainingBlockers": [],
+  "testedFileSha256": {
+    "lib/ui/habit_app.dart": "f24c495c437e0daeea9a52ac13c8605b9cf6c99750a8edb05e083b73c19d64bf",
+    "lib/ui/note_editor.dart": "6c7c9a051bc16fd68896d09ab94e586b965986c0dfd04006bc4787964b36ae1a",
+    "lib/ui/theme_color_dialog.dart": "c420cd610582f6f063fe7d27ac1c70b29bbac78639b148785c80dca739fa662a",
+    "test/editor_route_lifetime_test.dart": "c10938f0af4814e7cdeb7f419247a93f0dc5ba142d904f6846891404b206a4bd"
+  }
+}

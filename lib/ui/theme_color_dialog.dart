@@ -63,7 +63,9 @@ class _ThemeColorDialogState extends State<_ThemeColorDialog> {
   }
 
   Future<void> _save({int? preset}) async {
-    if (_saving) return;
+    if (!mounted || _saving) return;
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
     final value = preset ?? _parsed;
     if (value == null) {
       setState(() => _error = '请输入 6 位十六进制色值，例如 #5F8068');
@@ -77,9 +79,9 @@ class _ThemeColorDialogState extends State<_ThemeColorDialog> {
     try {
       final saved = await widget.controller.setThemeColor(value);
       if (!mounted) return;
-      if (saved) {
+      if (saved && route?.isCurrent == true) {
         Navigator.pop(context);
-      } else {
+      } else if (!saved) {
         setState(() => _error = '主题颜色尚未保存，色值已保留。请检查存储后重试。');
       }
     } on Object {

@@ -1,0 +1,147 @@
+    // Injected only into the isolated acceptance APK, restored after each build.
+    private class AcceptanceEngineState(val engine: FlutterEngine) {
+        val id = java.util.UUID.randomUUID().toString().replace("-", "")
+        var host: String? = null
+        var attaches = 0
+        var requestId: String? = null
+        var requestHost: String? = null
+        var requestOutcome = "none"
+        val recreateNonces = mutableSetOf<String>()
+    }
+    private companion object {
+        const val acceptanceEngineKey = "haoxiguan.isolated.acceptance.owner.v1"
+        var acceptanceEngineState: AcceptanceEngineState? = null
+    }
+    private val acceptanceHostId = java.util.UUID.randomUUID().toString().replace("-", "")
+    private var acceptanceUiDisplayed = false
+    private var acceptanceHostChannel: MethodChannel? = null
+
+    @Suppress("DEPRECATION")
+    private fun acceptanceVersion(): String {
+        val info = packageManager.getPackageInfo(packageName, 0)
+        return (if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()).toString()
+    }
+
+    private fun acceptanceIdentity(): Map<String, Any> {
+        val state = checkNotNull(acceptanceEngineState)
+        return mapOf("package" to packageName, "build" to acceptanceVersion(),
+            "pid" to android.os.Process.myPid(), "engineId" to state.id,
+            "hostId" to acceptanceHostId, "attachCount" to state.attaches,
+            "requestId" to (state.requestId ?: ""), "requestHostId" to (state.requestHost ?: ""),
+            "requestOutcome" to state.requestOutcome,
+            "attached" to (state.host == acceptanceHostId), "uiDisplayed" to acceptanceUiDisplayed,
+            "executingDart" to state.engine.dartExecutor.isExecutingDart)
+    }
+
+    private fun acceptanceEngineEvent(event: String) {
+        android.util.Log.i("HaoxiguanAcceptanceEngine", org.json.JSONObject(mapOf(
+            "event" to event, "pid" to android.os.Process.myPid(), "hostId" to acceptanceHostId,
+            "engineId" to acceptanceEngineState?.id, "changingConfigurations" to isChangingConfigurations,
+            "finishing" to isFinishing, "uiDisplayed" to acceptanceUiDisplayed,
+            "requestId" to acceptanceEngineState?.requestId,
+            "requestHostId" to acceptanceEngineState?.requestHost,
+            "requestOutcome" to acceptanceEngineState?.requestOutcome)).toString())
+    }
+
+    override fun provideFlutterEngine(context: android.content.Context): FlutterEngine {
+        check(packageName == "com.haoxiguan.haoxiguan.acceptance")
+        check(android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
+        val cache = io.flutter.embedding.engine.FlutterEngineCache.getInstance()
+        val existing = acceptanceEngineState
+        if (existing != null) {
+            check(cache.get(acceptanceEngineKey) === existing.engine)
+            acceptanceEngineEvent("engineProvidedAgain")
+            return existing.engine
+        }
+        check(cache.get(acceptanceEngineKey) == null)
+        // Let the pinned delegate execute Dart in onStart, after ActivityAware
+        // plugin attachment and configureFlutterEngine. Never pre-run main.
+        val engine = FlutterEngine(context.applicationContext)
+        acceptanceEngineState = AcceptanceEngineState(engine)
+        cache.put(acceptanceEngineKey, engine)
+        acceptanceEngineEvent("engineCreated")
+        return engine
+    }
+
+    override fun shouldDestroyEngineWithHost(): Boolean = false
+    override fun shouldRestoreAndSaveState(): Boolean = false
+
+    private fun acceptanceEngineAttach(engine: FlutterEngine) {
+        val state = checkNotNull(acceptanceEngineState)
+        check(state.engine === engine)
+        state.host = acceptanceHostId
+        state.attaches += 1
+        acceptanceEngineEvent("hostConfigured")
+        acceptanceHostChannel = MethodChannel(engine.dartExecutor.binaryMessenger,
+            "com.haoxiguan.haoxiguan/acceptance_engine").also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "identity" -> result.success(acceptanceIdentity())
+                        "recreate" -> {
+                            val nonce = call.argument<String>("nonce")
+                            val entry = call.argument<String>("entryId")
+                            val run = call.argument<String>("runId")
+                            val request = call.argument<String>("requestId")
+                            val launch = org.json.JSONObject(File(filesDir, "acceptance-launch.json").readText())
+                            val report = org.json.JSONObject(File(filesDir, "acceptance-report.json").readText())
+                            check(nonce != null && nonce.matches(Regex("[0-9a-f]{32}")))
+                            check(entry != null && entry.matches(Regex("[0-9a-f]{32}")))
+                            check(request != null && request.matches(Regex("[0-9a-f]{32}")))
+                            check(run != null && run.matches(Regex("[0-9]+")))
+                            check(launch.getString("package") == packageName && launch.getString("nonce") == nonce)
+                            check(launch.getString("build") == acceptanceVersion())
+                            check(report.getString("package") == packageName && report.getString("build") == acceptanceVersion())
+                            check(report.getString("launchNonce") == nonce && report.getString("runId") == run)
+                            check(report.getString("entryId") == entry && report.getInt("ownerPid") == android.os.Process.myPid())
+                            check(report.getString("status") == "running" && state.host == acceptanceHostId)
+                            check(state.recreateNonces.add(nonce))
+                            state.requestId = request
+                            state.requestHost = acceptanceHostId
+                            state.requestOutcome = "queued"
+                            // Reply before posting the one deterministic lifecycle change.
+                            result.success(mapOf("queued" to true, "requestId" to request))
+                            acceptanceEngineEvent("recreateRequested")
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                if (!isFinishing && state.host == acceptanceHostId) {
+                                    state.requestOutcome = "executed"
+                                    acceptanceEngineEvent("recreateExecuted")
+                                    recreate()
+                                } else {
+                                    state.requestOutcome = "abandoned"
+                                    acceptanceEngineEvent("recreateAbandoned")
+                                }
+                            }
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (error: Exception) {
+                    result.error("acceptance_engine_identity", error.javaClass.simpleName, null)
+                }
+            }
+        }
+    }
+
+    override fun cleanUpFlutterEngine(engine: FlutterEngine) {
+        acceptanceEngineEvent("hostCleanup")
+        // An old host must never clear a new host's binding to this engine.
+        if (acceptanceEngineState?.host == acceptanceHostId) {
+            acceptanceEngineState?.host = null
+            acceptanceHostChannel?.setMethodCallHandler(null)
+        }
+        super.cleanUpFlutterEngine(engine)
+    }
+
+    override fun onFlutterUiDisplayed() {
+        super.onFlutterUiDisplayed()
+        acceptanceUiDisplayed = true
+        acceptanceEngineEvent("uiDisplayed")
+    }
+
+    override fun onDestroy() {
+        acceptanceEngineEvent("hostDestroy")
+        // Cached Dart must receive an explicit error if an Activity-local SAF
+        // result cannot survive recreation. No pending Future may be discarded.
+        if (pending != null) finish { it.error("acceptance_host_destroyed", "SAF host was destroyed", null) }
+        super.onDestroy()
+    }

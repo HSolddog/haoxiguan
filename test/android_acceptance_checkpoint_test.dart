@@ -39,6 +39,7 @@ Map<String, Object?> _result(
     'stage': stage,
     'notificationCheckpointVersion': 1,
     for (final flag in [
+      'nativeEngineRecreation',
       'safExportReadback',
       'safOpenDecrypt',
       'safSizeLimit',

@@ -58,7 +58,8 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
   }
 
   Future<void> _request() async {
-    if (_busy) return;
+    if (!mounted || _busy) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     setState(() => _busy = true);
     try {
       await widget.controller.requestReminderPermission();
@@ -72,7 +73,8 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
   }
 
   Future<void> _openSettings() async {
-    if (_busy) return;
+    if (!mounted || _busy) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     setState(() {
       _busy = true;
       _returningFromSettings = true;
@@ -92,8 +94,10 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
     });
   }
 
-  Future<void> _rebuild() async {
-    if (_busy) return;
+  Future<void> _rebuild({bool userInitiated = false}) async {
+    if (!mounted || _busy) return;
+    // Returning from system settings can rebuild while this route is covered.
+    if (userInitiated && ModalRoute.of(context)?.isCurrent != true) return;
     setState(() => _busy = true);
     try {
       await _check();
@@ -163,7 +167,7 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(48, 48),
                 ),
-                onPressed: _busy ? null : _rebuild,
+                onPressed: _busy ? null : () => _rebuild(userInitiated: true),
                 child: Text(_busy ? '正在检查…' : '检查并重建提醒'),
               ),
             ],

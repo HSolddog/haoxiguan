@@ -11,9 +11,15 @@ import 'backup_restore_dialog.dart';
 import 'unsaved_changes_guard.dart';
 
 class WebDavScreen extends StatefulWidget {
-  const WebDavScreen({super.key, required this.controller, this.settingsStore});
+  const WebDavScreen({
+    super.key,
+    required this.controller,
+    this.settingsStore,
+    this.clientFactory,
+  });
   final HabitController controller;
   final BackupSettingsStore? settingsStore;
+  final WebDavClient Function(BackupSettings)? clientFactory;
   @override
   State<WebDavScreen> createState() => _WebDavScreenState();
 }
@@ -21,6 +27,9 @@ class WebDavScreen extends StatefulWidget {
 class _WebDavScreenState extends State<WebDavScreen> {
   late final BackupSettingsStore _store =
       widget.settingsStore ?? BackupSettingsStore(DeviceSecretStore());
+  WebDavClient _client(BackupSettings settings) =>
+      widget.clientFactory?.call(settings) ??
+      WebDavClient(settings.endpoint, settings.username, settings.appPassword);
   final _endpoint = TextEditingController(),
       _user = TextEditingController(),
       _appPassword = TextEditingController(),
@@ -124,8 +133,9 @@ class _WebDavScreenState extends State<WebDavScreen> {
       automatic: _automatic,
       wifiOnly: _wifi,
     );
-    final client = WebDavClient(s.endpoint, s.username, s.appPassword);
+    final client = _client(s);
     try {
+      await client.verifyAccess(s.vault, s.device);
       // Complete one real encrypted upload and restore before enabling automation.
       final item = await client.upload(
         raw,
@@ -156,7 +166,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
 
   Future<void> _list() async {
     final s = _settings!;
-    final client = WebDavClient(s.endpoint, s.username, s.appPassword);
+    final client = _client(s);
     try {
       final items = <RemoteBackup>[];
       for (final vault in await client.children('haoxiguan/')) {
@@ -177,7 +187,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
 
   Future<void> _restore(RemoteBackup item) async {
     final s = _settings!;
-    final client = WebDavClient(s.endpoint, s.username, s.appPassword);
+    final client = _client(s);
     try {
       // Use the currently entered backup password so old-password snapshots remain recoverable.
       final raw = await client.restore(item, _backupPassword.text);

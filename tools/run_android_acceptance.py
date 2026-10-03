@@ -278,6 +278,34 @@ def tap_node(node):
     shell('input', 'tap', str((left + right)//2), str((top + bottom)//2))
 
 
+def settings_channel_title(root, expected_title):
+    # Android 16 exposes this screen title through the collapsing toolbar's
+    # accessibility description. Do not accept matching text from another row.
+    titles = [node for node in root.iter('node')
+              if node.get('package') == 'com.android.settings' and
+              node.get('resource-id') == 'com.android.settings:id/collapsing_toolbar']
+    if len(titles) != 1:
+        return False
+    values = (titles[0].get('text', ''), titles[0].get('content-desc', ''))
+    if any(values):
+        return expected_title in values and all(value in ('', expected_title) for value in values)
+    # AOSP Settings' action_bar Toolbar creates its title as a direct TextView
+    # child. Keep this fallback inside the unique, otherwise empty title bar.
+    toolbars = [node for node in titles[0]
+                if node.tag == 'node' and node.get('resource-id') == 'com.android.settings:id/action_bar']
+    if len(toolbars) != 1:
+        return False
+    toolbar = toolbars[0]
+    if toolbar.get('package') != 'com.android.settings' or toolbar.get('class') not in (
+            'android.widget.Toolbar', 'android.view.ViewGroup'):
+        return False
+    children = [node for node in toolbar if node.tag == 'node' and
+                node.get('class') == 'android.widget.TextView' and node.get('text', '')]
+    return (len(children) == 1 and children[0].get('package') == 'com.android.settings' and
+            children[0].get('text') == expected_title and
+            children[0].get('content-desc', '') in ('', expected_title))
+
+
 def settings_switch(root, label):
     parents = {child: parent for parent in root.iter() for child in parent}
     labels = [node for node in root.iter('node')
@@ -365,8 +393,10 @@ def drive_native_ui(value):
              'Show notifications' if channel else f'All {app_label} notifications')
     if device_api < 26 or channel:
         expected_title = '习惯提醒' if channel else app_label
-        if not any(node.get('package') == 'com.android.settings' and
-                   node.get('text') == expected_title for node in nodes):
+        title_matches = (settings_channel_title(root, expected_title) if channel else
+                         any(node.get('package') == 'com.android.settings' and
+                             node.get('text') == expected_title for node in nodes))
+        if not title_matches:
             return True
     switch = settings_switch(root, label)
     if switch is None:
@@ -389,6 +419,67 @@ def drive_native_ui(value):
         event('notification-ui-tap', runId=run_id, stage=stage, desiredChecked=desired)
         tap_node(switch)
     return True
+
+
+def assert_engine_recreation(value):
+    assert value.get('nativeEngineRecreation') is True, 'native engine recreation was not proved'
+    assert type(value.get('ownerPid')) is int and value['ownerPid'] > 0, 'invalid current owner PID'
+    assert isinstance(value.get('entryId'), str) and re.fullmatch('[0-9a-f]{32}', value['entryId']), 'invalid current owner entry'
+    proof = value.get('nativeEngineRecreationEvidence')
+    assert isinstance(proof, dict) and proof.get('firstRunningReportUnchanged') is True, 'missing native engine proof'
+    assert (proof.get('runId'), proof.get('nonce')) == (value.get('runId'), value.get('launchNonce')), 'engine proof has another logical authorization'
+    assert isinstance(proof.get('requestId'), str) and re.fullmatch('[0-9a-f]{32}', proof['requestId']), 'invalid recreate request'
+    assert isinstance(proof.get('entryId'), str) and re.fullmatch('[0-9a-f]{32}', proof['entryId']), 'invalid original owner entry'
+    before, after = proof.get('before'), proof.get('after')
+    assert isinstance(before, dict) and isinstance(after, dict), 'missing actual native host identities'
+    for host in (before, after):
+        assert (host.get('package'), host.get('build')) == (package, value.get('build')), 'foreign native host'
+        assert type(host.get('pid')) is int and host['pid'] > 0, 'invalid host PID'
+        assert type(host.get('attachCount')) is int and host['attachCount'] > 0, 'invalid attach count'
+        assert all(host.get(key) is True for key in ('attached', 'uiDisplayed', 'executingDart')), 'owner is not visibly attached'
+        assert all(isinstance(host.get(key), str) and re.fullmatch('[0-9a-f]{32}', host[key]) for key in ('engineId', 'hostId')), 'invalid host/engine identity'
+    assert (before['pid'], before['engineId']) == (after['pid'], after['engineId']), 'recreation changed process or engine'
+    assert before['hostId'] != after['hostId'] and after['attachCount'] > before['attachCount'], 'Activity was not really recreated'
+    assert (after.get('requestOutcome'), after.get('requestId'), after.get('requestHostId')) == ('executed', proof['requestId'], before['hostId']), 'new host has no exact executed recreation request'
+    current = before['pid']
+    resumes = value.get('notificationProcessResumes', [])
+    assert isinstance(resumes, list), 'invalid continuation observations'
+    for observation in resumes:
+        assert isinstance(observation, dict) and observation.get('runId') == value.get('runId'), 'another logical continuation'
+        assert type(observation.get('previousPid')) is int and observation['previousPid'] == current and type(observation.get('pid')) is int and observation['pid'] > 0 and observation['pid'] != current, 'broken continuation PID chain'
+        assert observation.get('databaseDifferencePaths') == [] and observation.get('completeModelUnchanged') is True, 'continuation changed original business data'
+        current = observation['pid']
+    assert current == value.get('ownerPid'), 'report owner has no verified original engine or continuation'
+    if not resumes:
+        assert value.get('entryId') == proof['entryId'], 'recreation changed the original Dart owner'
+
+
+def check_entry_ownership_failure(build, phase, nonce):
+    runtime = args.output/'runtime-live.log'
+    if not runtime.exists():
+        return
+    marker = 'ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE '
+    for line in runtime.read_text(encoding='utf-8', errors='strict').splitlines():
+        if marker not in line:
+            continue
+        try:
+            observation = json.loads(line.split(marker, 1)[1])
+        except (ValueError, TypeError) as error:
+            raise RuntimeError('malformed native entry ownership diagnostic') from error
+        if not isinstance(observation, dict):
+            raise RuntimeError('malformed native entry ownership diagnostic')
+        if observation.get('nonce') != nonce:
+            continue
+        valid = (observation.get('package'), observation.get('build'), observation.get('phase')) == (package, str(build), phase)
+        valid = valid and type(observation.get('pid')) is int and observation['pid'] > 0
+        valid = valid and isinstance(observation.get('entryId'), str) and re.fullmatch('[0-9a-f]{32}', observation['entryId'])
+        valid = valid and observation.get('reportWritten') is False and observation.get('businessOpened') is False
+        valid = valid and observation.get('reason') == 'retained owner did not respond to the bounded challenge'
+        (args.output/f'entry-ownership-failure-{nonce}.txt').write_text(line+'\n', encoding='utf-8')
+        if not valid:
+            raise RuntimeError('native entry ownership diagnostic has a wrong identity')
+        event('entry-ownership-failure', observation=observation)
+        raise RuntimeError('native acceptance entry owner did not respond; no business replay is permitted')
 
 
 def assert_native_flags(value):
@@ -608,6 +699,10 @@ def valid_passed_predecessor(saved, build, previous):
             type(saved.get('habits')) is not int or saved['habits'] != 3 or
             saved.get('backupConfigured') is not False or saved.get('syncConfigured') is not False):
         return False
+    try:
+        assert_engine_recreation(saved)
+    except (AssertionError, KeyError, TypeError, ValueError):
+        return False
     if build == 10001:
         return saved['build'] == '10001' and saved.get('phase') == 'create' and saved.get('previousRunId') is None
     if saved.get('phase') != 'reopen' or not isinstance(saved.get('previousRunId'), str) or not re.fullmatch(r'[0-9]+', saved['previousRunId']):
@@ -677,6 +772,7 @@ def start_and_wait(build, phase, previous=None):
     archived = set()
     while time.monotonic() < deadline:
         require_emulator(f'{build}/{phase} report')
+        check_entry_ownership_failure(build, phase, nonce)
         report = command(adb, 'exec-out', 'run-as', package, 'cat',
                          'files/acceptance-report.json', check=False, timeout=15)
         try:
@@ -714,6 +810,7 @@ def start_and_wait(build, phase, previous=None):
                 if value.get('status') == 'failed':
                     raise RuntimeError(json.dumps(value, ensure_ascii=False))
                 if value.get('status') == 'passed':
+                    assert_engine_recreation(value)
                     assert value['phase'] == phase, value
                     assert value['schema'] == (2 if build == 10001 else 3), value
                     if build == 10002:
@@ -755,7 +852,7 @@ def collect_diagnostics(emulator, log, runtime_process=None, runtime_log=None):
     diagnostic('runtime', lambda: (args.output/'runtime.log').write_bytes(command(
         adb, 'logcat', '-d', '-s', 'flutter', 'AndroidRuntime', 'ActivityManager',
         'ActivityTaskManager', 'FlutterActivity', 'FlutterActivityAndFragmentDelegate',
-        'FlutterEngine', 'FlutterJNI', 'libc', 'DEBUG', 'lowmemorykiller',
+        'FlutterEngine', 'FlutterJNI', 'HaoxiguanAcceptanceEngine', 'libc', 'DEBUG', 'lowmemorykiller',
         'WM-WorkerWrapper', 'WM-SystemJobService', timeout=10).stdout))
     diagnostic('last-screen', lambda: (args.output/'last-screen.png').write_bytes(
         command(adb, 'exec-out', 'screencap', '-p', timeout=10).stdout))
@@ -828,6 +925,7 @@ def main(argv=None):
         runtime_log = (args.output/'runtime-live.log').open('wb')
         runtime_process = subprocess.Popen(
             adb_values('logcat', '-v', 'threadtime', 'flutter:V', 'AndroidRuntime:V',
+             'HaoxiguanAcceptanceEngine:V',
              'ActivityManager:I', 'ActivityTaskManager:V', 'FlutterActivity:V',
              'FlutterActivityAndFragmentDelegate:V', 'FlutterEngine:V', 'FlutterJNI:V',
              'libc:W', 'DEBUG:I', 'lowmemorykiller:I',

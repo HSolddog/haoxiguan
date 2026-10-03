@@ -52,7 +52,9 @@ class _NoteEditorState extends State<_NoteEditor> {
   }
 
   Future<void> _save() async {
-    if (_saving) return;
+    if (!mounted || _saving) return;
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
     final current = widget.controller.habitById(widget.habit.id);
     if (current == null) {
       setState(() => _error = '这个习惯已不存在，备注尚未保存。当前输入仍保留，可复制后关闭。');
@@ -69,9 +71,9 @@ class _NoteEditorState extends State<_NoteEditor> {
         _text.text,
       );
       if (!mounted) return;
-      if (saved) {
+      if (saved && route?.isCurrent == true) {
         Navigator.pop(context);
-      } else {
+      } else if (!saved) {
         setState(() => _error = '备注尚未保存，输入已保留。请检查存储后重试。');
       }
     } on Object {

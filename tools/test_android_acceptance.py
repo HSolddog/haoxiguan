@@ -27,11 +27,22 @@ def probe_result(saved=None, code=0, stderr=b''):
                   (b'' if saved is None else json.dumps(saved).encode()), code=code, stderr=stderr)
 
 
+def engine_proof(value):
+    host = {'package': driver.package, 'build': value['build'], 'pid': value['ownerPid'],
+            'engineId': 'c'*32, 'hostId': 'd'*32, 'attachCount': 1,
+            'attached': True, 'uiDisplayed': True, 'executingDart': True}
+    return {'runId': value['runId'], 'nonce': value['launchNonce'], 'entryId': value['entryId'],
+            'requestId': 'f'*32, 'before': host, 'after': {**host, 'hostId': 'e'*32, 'attachCount': 2,
+                'requestId': 'f'*32, 'requestHostId': host['hostId'], 'requestOutcome': 'executed'},
+            'firstRunningReportUnchanged': True}
+
+
 def passed_predecessor(build='10001', phase='reopen', run_id='122'):
     value = {'package': driver.package, 'build': build, 'phase': phase, 'status': 'passed', 'runId': run_id,
              'schema': 2 if build == '10001' else 3, 'launchNonce': 'a' * 32,
              'ownerPid': 11, 'entryId': 'b' * 32, 'previousRunId': None if phase == 'create' else '121',
              'habits': 3, 'nativeCrypto': True, 'keystore': True, 'backupConfigured': False, 'syncConfigured': False}
+    value.update({'nativeEngineRecreation': True, 'nativeEngineRecreationEvidence': engine_proof(value)})
     if build == '10002':
         value.update({'notificationApiLevel': 24, 'nativeChannelDiagnosis': 'notApplicable', 'nativeChannelRecovery': 'notApplicable',
                       **{field: True for field in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
@@ -50,7 +61,10 @@ def process_list(*pids):
 def ui_xml(label, checked=None, owner='com.android.settings', title='好习惯隔离验收'):
     root = ET.Element('hierarchy')
     screen = ET.SubElement(root, 'node', {'package': owner})
-    ET.SubElement(screen, 'node', {'package': owner, 'text': title})
+    title_attributes = {'package': owner, 'text': title}
+    if title == '习惯提醒':
+        title_attributes['resource-id'] = 'com.android.settings:id/collapsing_toolbar'
+    ET.SubElement(screen, 'node', title_attributes)
     row = ET.SubElement(screen, 'node', {'package': owner, 'clickable': 'true'})
     ET.SubElement(row, 'node', {'package': owner, 'text': label, 'enabled': 'true',
                               'clickable': 'true', 'bounds': '[10,20][100,70]'})
@@ -462,6 +476,203 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
             self.assertEqual(json.loads(command.call_args.kwargs['input']),
                              {'runId': '1791030128478865', 'stage': stage, 'apiLevel': 36})
 
+    def test_captured_android16_channel_title_requires_readback_and_app_return_before_ack(self):
+        driver.args.api = driver.device_api = 36
+        source = (Path(__file__).parent/'fixtures/native-settings-api36-channel.xml').read_text(encoding='utf-8')
+        captured = ET.fromstring(source)
+        self.assertFalse(any(node.get('package') == 'com.android.settings' and
+                             node.get('text') == '习惯提醒' for node in captured.iter('node')))
+        self.assertTrue(driver.settings_channel_title(captured, '习惯提醒'))
+        captured_switches = [node for node in captured.iter('node')
+                             if node.get('resource-id') == 'android:id/switch_widget']
+        self.assertEqual(len(captured_switches), 1)
+        self.assertEqual(captured_switches[0].get('checked'), 'true')
+        self.assertEqual(captured_switches[0].get('enabled'), 'true')
+        app = ui_xml('native fixture', owner=driver.package)
+        for stage, before, desired in [('awaitingChannelDisable', 'true', 'false'),
+                                       ('awaitingChannelEnable', 'false', 'true')]:
+            tree = ET.fromstring(source)
+            switch = next(node for node in tree.iter('node')
+                          if node.get('resource-id') == 'android:id/switch_widget')
+            switch.set('checked', before)
+            current = [source if before == 'true' else ET.tostring(tree, encoding='unicode')]
+            report = {'runId': '1791061413488295', 'stage': stage}
+            with self.subTest(stage=stage), \
+                    patch.object(driver, 'shell', side_effect=lambda *v, **kw: current[0] if v[0] == 'cat' else '') as shell, \
+                    patch.object(driver, 'command', return_value=result()) as command:
+                driver.drive_native_ui(report)
+                driver.drive_native_ui(report)  # A stale checked state cannot replay the tap.
+                self.assertFalse(driver.ui_stages[(report['runId'], stage)].get('verified'))
+                command.assert_not_called()
+                switch.set('checked', desired)
+                current[0] = ET.tostring(tree, encoding='unicode')
+                driver.drive_native_ui(report)
+                command.assert_not_called()
+                driver.drive_native_ui(report)  # Only now return from Settings.
+                current[0] = ui_xml('native fixture', owner='com.other.app')
+                driver.drive_native_ui(report)
+                command.assert_not_called()
+                current[0] = app
+                driver.drive_native_ui(report)
+                driver.drive_native_ui(report)
+            self.assertEqual([c.args for c in shell.call_args_list if c.args[0] == 'input'],
+                             [('input', 'tap', '596', '735'), ('input', 'keyevent', '4')])
+            command.assert_called_once()
+            self.assertEqual(json.loads(command.call_args.kwargs['input']),
+                             {'runId': report['runId'], 'stage': stage, 'apiLevel': 36})
+            self.assertEqual(command.call_args.args[3], driver.package)
+
+    def test_channel_title_accepts_only_one_exact_settings_toolbar(self):
+        driver.args.api = driver.device_api = 36
+        source = (Path(__file__).parent/'fixtures/native-settings-api36-channel.xml').read_text(encoding='utf-8')
+        for title_values in [('习惯提醒', ''), ('', '习惯提醒'), ('习惯提醒', '习惯提醒')]:
+            tree = ET.fromstring(source)
+            title = next(node for node in tree.iter('node')
+                         if node.get('resource-id') == 'com.android.settings:id/collapsing_toolbar')
+            title.set('text', title_values[0])
+            title.set('content-desc', title_values[1])
+            with self.subTest(title_values=title_values):
+                self.assertTrue(driver.settings_channel_title(tree, '习惯提醒'))
+        for defect in ('wrong-package', 'wrong-container', 'wrong-title', 'conflicting-title',
+                       'arbitrary-description', 'duplicate-container', 'duplicate-other-title'):
+            tree = ET.fromstring(source)
+            title = next(node for node in tree.iter('node')
+                         if node.get('resource-id') == 'com.android.settings:id/collapsing_toolbar')
+            if defect == 'wrong-package':
+                title.set('package', 'com.other.app')
+            elif defect == 'wrong-container':
+                title.set('resource-id', 'com.android.settings:id/preference')
+            elif defect == 'wrong-title':
+                title.set('content-desc', 'Other channel')
+            elif defect == 'conflicting-title':
+                title.set('text', 'Other channel')
+            elif defect == 'arbitrary-description':
+                title.set('content-desc', 'Other channel')
+                ET.SubElement(tree, 'node', {'package': 'com.android.settings',
+                                           'content-desc': '习惯提醒', 'text': '习惯提醒'})
+            else:
+                duplicate = ET.SubElement(tree, 'node', dict(title.attrib))
+                if defect == 'duplicate-other-title':
+                    duplicate.set('content-desc', 'Other channel')
+            xml = ET.tostring(tree, encoding='unicode')
+            with self.subTest(defect=defect), \
+                    patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell, \
+                    patch.object(driver, 'command') as command:
+                self.assertFalse(driver.settings_channel_title(tree, '习惯提醒'))
+                driver.drive_native_ui({'runId': '123', 'stage': 'awaitingChannelDisable'})
+            self.assertFalse(any(c.args[0] == 'input' for c in shell.call_args_list))
+            command.assert_not_called()
+        self.assertFalse((driver.args.output/'driver-events.jsonl').exists())
+
+    def test_channel_title_fallback_reads_only_the_unique_toolbar_direct_text_title(self):
+        # Synthetic legacy representation derived from pinned AOSP layout/code;
+        # the original API35 channel title hierarchy was not captured.
+        driver.args.api = driver.device_api = 35
+        source = (Path(__file__).parent/'fixtures/native-settings-api36-channel.xml').read_text(encoding='utf-8')
+
+        def fallback_tree():
+            tree = ET.fromstring(source)
+            title_bar = next(node for node in tree.iter('node')
+                             if node.get('resource-id') == 'com.android.settings:id/collapsing_toolbar')
+            title_bar.set('text', '')
+            title_bar.set('content-desc', '')
+            toolbar = next(node for node in title_bar
+                           if node.get('resource-id') == 'com.android.settings:id/action_bar')
+            title = ET.SubElement(toolbar, 'node', {'package': 'com.android.settings',
+                                                  'class': 'android.widget.TextView',
+                                                  'text': '习惯提醒', 'content-desc': ''})
+            return tree, title_bar, toolbar, title
+
+        for toolbar_class in ('android.view.ViewGroup', 'android.widget.Toolbar'):
+            tree, title_bar, toolbar, title = fallback_tree()
+            toolbar.set('class', toolbar_class)
+            xml = ET.tostring(tree, encoding='unicode')
+            report = {'runId': '123', 'stage': 'awaitingChannelDisable'}
+            driver.ui_stages.clear()
+            with self.subTest(toolbar_class=toolbar_class), \
+                    patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell, \
+                    patch.object(driver, 'command') as command:
+                self.assertTrue(driver.settings_channel_title(tree, '习惯提醒'))
+                driver.drive_native_ui(report)
+                driver.drive_native_ui(report)
+            self.assertEqual([c.args for c in shell.call_args_list if c.args[0] == 'input'],
+                             [('input', 'tap', '596', '735')])
+            self.assertFalse(driver.ui_stages[('123', report['stage'])].get('verified'))
+            command.assert_not_called()
+        for defect in ('wrong-toolbar-id', 'wrong-toolbar-package', 'wrong-toolbar-class',
+                       'nested-toolbar', 'duplicate-toolbar', 'wrong-title-package',
+                       'wrong-title-class', 'wrong-title-text', 'description-only',
+                       'nested-title', 'outside-title', 'duplicate-title',
+                       'conflicting-title-description', 'nonempty-wrong-container-title',
+                       'duplicate-container'):
+            tree, title_bar, toolbar, title = fallback_tree()
+            if defect == 'wrong-toolbar-id':
+                toolbar.set('resource-id', 'com.android.settings:id/other_toolbar')
+            elif defect == 'wrong-toolbar-package':
+                toolbar.set('package', 'com.other.app')
+            elif defect == 'wrong-toolbar-class':
+                toolbar.set('class', 'android.widget.LinearLayout')
+            elif defect == 'nested-toolbar':
+                title_bar.remove(toolbar)
+                ET.SubElement(title_bar, 'node', {'package': 'com.android.settings'}).append(toolbar)
+            elif defect == 'duplicate-toolbar':
+                ET.SubElement(title_bar, 'node', dict(toolbar.attrib))
+            elif defect == 'wrong-title-package':
+                title.set('package', 'com.other.app')
+            elif defect == 'wrong-title-class':
+                title.set('class', 'android.widget.Button')
+            elif defect == 'wrong-title-text':
+                title.set('text', 'Other channel')
+            elif defect == 'description-only':
+                title.set('text', '')
+                title.set('content-desc', '习惯提醒')
+            elif defect in ('nested-title', 'outside-title'):
+                toolbar.remove(title)
+                parent = toolbar if defect == 'nested-title' else tree
+                ET.SubElement(parent, 'node', {'package': 'com.android.settings'}).append(title)
+            elif defect == 'duplicate-title':
+                ET.SubElement(toolbar, 'node', dict(title.attrib))
+            elif defect == 'conflicting-title-description':
+                title.set('content-desc', 'Other channel')
+            elif defect == 'nonempty-wrong-container-title':
+                title_bar.set('text', 'Other channel')
+            else:
+                ET.SubElement(tree, 'node', dict(title_bar.attrib))
+            xml = ET.tostring(tree, encoding='unicode')
+            driver.ui_stages.clear()
+            with self.subTest(defect=defect), \
+                    patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell, \
+                    patch.object(driver, 'command') as command:
+                self.assertFalse(driver.settings_channel_title(tree, '习惯提醒'))
+                driver.drive_native_ui({'runId': '123', 'stage': 'awaitingChannelDisable'})
+            self.assertFalse(any(c.args[0] == 'input' for c in shell.call_args_list))
+            command.assert_not_called()
+
+    def test_captured_channel_still_rejects_ambiguous_disabled_or_unknown_switches(self):
+        driver.args.api = driver.device_api = 36
+        source = (Path(__file__).parent/'fixtures/native-settings-api36-channel.xml').read_text(encoding='utf-8')
+        for defect in ('duplicate', 'disabled', 'missing-checked', 'unknown-checked'):
+            tree = ET.fromstring(source)
+            switch = next(node for node in tree.iter('node')
+                          if node.get('resource-id') == 'android:id/switch_widget')
+            if defect == 'duplicate':
+                parents = {child: parent for parent in tree.iter() for child in parent}
+                ET.SubElement(parents[switch], 'node', dict(switch.attrib))
+            elif defect == 'disabled':
+                switch.set('enabled', 'false')
+            elif defect == 'missing-checked':
+                switch.attrib.pop('checked')
+            else:
+                switch.set('checked', 'unknown')
+            xml = ET.tostring(tree, encoding='unicode')
+            with self.subTest(defect=defect), \
+                    patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell, \
+                    patch.object(driver, 'command') as command, self.assertRaises(ValueError):
+                driver.drive_native_ui({'runId': '123', 'stage': 'awaitingChannelDisable'})
+            self.assertFalse(any(c.args[0] == 'input' for c in shell.call_args_list))
+            command.assert_not_called()
+        self.assertFalse((driver.args.output/'driver-events.jsonl').exists())
+
     def test_label_without_own_switch_cannot_borrow_another_rows_switch(self):
         root = ET.fromstring(ui_xml('Block all', 'false'))
         row = root.find('./node/node[@clickable="true"]')
@@ -532,9 +743,8 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         fields = ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
                   'nativeReminderScheduling', 'workManagerRenewal', 'periodicTasksRegistered')
         for missing in fields:
-            report = {'build': '10002', 'runId': '123', 'status': 'passed', 'phase': 'reopen', 'schema': 3,
-                      'launchNonce': 'a' * 32, 'previousRunId': 'old',
-                      **{field: field != missing for field in fields}}
+            report = passed_predecessor('10002', run_id='123')
+            report.update({'previousRunId': 'old', missing: False})
             with self.subTest(missing=missing), patch.object(driver, 'shell'), patch.object(driver, 'command', return_value=result(json.dumps(report).encode())):
                 with self.assertRaises(AssertionError):
                     driver.start_and_wait(10002, 'reopen', 'old')
@@ -565,13 +775,8 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         waiting = {'build': '10002', 'runId': '123', 'status': 'running', 'stage': 'awaitingNotificationDeny',
                    'launchNonce': 'a' * 32, 'phase': 'reopen', 'previousRunId': '122'}
         resumed = {**waiting, 'notificationProcessResumes': [{'pid': 2}]}
-        completed = {'build': '10002', 'runId': '123', 'status': 'passed', 'phase': 'reopen', 'schema': 3,
-                     'launchNonce': 'a' * 32, 'previousRunId': '122',
-                     'notificationApiLevel': 24, 'nativeChannelDiagnosis': 'notApplicable', 'nativeChannelRecovery': 'notApplicable',
-                     **{field: True for field in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
-                        'nativeReminderScheduling', 'workManagerRenewal', 'periodicTasksRegistered',
-                        'nativeDeniedHabitSaved', 'nativeAppPermissionDiagnosis', 'nativeAppPermissionRecovery',
-                        'nativeRestorePreviewCancel', 'nativeRestoreProtection', 'nativeRestoreConfirm', 'nativeRestoreReopen')}}
+        completed = passed_predecessor('10002', run_id='123')
+        completed['previousRunId'] = '122'
         with patch.object(driver, 'shell'), \
                 patch.object(driver, 'command', side_effect=[result(json.dumps(v).encode()) for v in [waiting, resumed, completed]]), \
                 patch.object(driver, 'archive_settings_checkpoint') as archive, \
@@ -773,6 +978,77 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
             with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
             path.unlink(); files.rmdir(); files.symlink_to(root/'missing-directory')
             with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
+
+    def test_engine_recreation_requires_exact_executed_native_request(self):
+        saved = passed_predecessor()
+        driver.assert_engine_recreation(saved)
+        corruptions = [('nativeEngineRecreation', False), ('firstRunningReportUnchanged', False),
+                       ('requestOutcome', 'abandoned'), ('requestOutcome', 'queued'),
+                       ('requestId', '0'*32), ('requestHostId', '0'*32), ('engineId', '0'*32),
+                       ('hostId', 'd'*32), ('attachCount', 1), ('pid', 12), ('uiDisplayed', False),
+                       ('attached', False), ('executingDart', False), ('package', 'other'), ('build', '10002')]
+        for field, value in corruptions:
+            candidate = json.loads(json.dumps(saved))
+            proof = candidate['nativeEngineRecreationEvidence']
+            if field == 'nativeEngineRecreation': candidate[field] = value
+            elif field == 'firstRunningReportUnchanged': proof[field] = value
+            else: proof['after'][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(AssertionError):
+                driver.assert_engine_recreation(candidate)
+
+    def test_schema2_predecessor_cannot_skip_the_same_engine_gate(self):
+        candidate = passed_predecessor(phase='create')
+        self.assertTrue(driver.valid_passed_predecessor(candidate, 10001, '122'))
+        for field in ('nativeEngineRecreation', 'nativeEngineRecreationEvidence'):
+            damaged = {name:value for name,value in candidate.items() if name != field}
+            self.assertFalse(driver.valid_passed_predecessor(damaged, 10001, '122'))
+
+    def test_engine_origin_can_continue_only_along_verified_same_run_sql_pid_chain(self):
+        saved = passed_predecessor('10002')
+        saved.update({'ownerPid': 13, 'entryId': '0'*32, 'notificationProcessResumes': [
+            {'runId':'122', 'previousPid':11, 'pid':12, 'databaseDifferencePaths':[], 'completeModelUnchanged':True},
+            {'runId':'122', 'previousPid':12, 'pid':13, 'databaseDifferencePaths':[], 'completeModelUnchanged':True}]})
+        driver.assert_engine_recreation(saved)
+        for field,value in [('runId','other'),('previousPid',11),('pid',True),('pid',12),
+                            ('databaseDifferencePaths',['tables.habits']),('completeModelUnchanged',False)]:
+            candidate = json.loads(json.dumps(saved))
+            candidate['notificationProcessResumes'][1][field] = value
+            with self.subTest(field=field), self.assertRaises(AssertionError):
+                driver.assert_engine_recreation(candidate)
+
+    def test_unresponsive_entry_is_immediate_failure_before_any_report_or_ui_mutation(self):
+        observation = {'package':driver.package,'build':'10001','phase':'create','nonce':'a'*32,
+                       'pid':11,'entryId':'b'*32,'reportWritten':False,'businessOpened':False,
+                       'reason':'retained owner did not respond to the bounded challenge'}
+        raw = '10-03 21:03:27 flutter: ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE ' + json.dumps(observation) + '\n'
+        (driver.args.output/'runtime-live.log').write_text(raw, encoding='utf-8')
+        with patch.object(driver, 'require_emulator'), patch.object(driver, 'shell') as shell, \
+                patch.object(driver, 'command') as command, patch.object(driver, 'drive_native_ui') as ui:
+            with self.assertRaisesRegex(RuntimeError, 'entry owner did not respond'):
+                driver.start_and_wait(10001, 'create')
+        shell.assert_called_once_with('am', 'start', '-n', driver.activity)
+        command.assert_not_called()
+        ui.assert_not_called()
+        self.assertEqual((driver.args.output/('entry-ownership-failure-'+'a'*32+'.txt')).read_text(), raw)
+        self.assertEqual(self.events()[-1]['event'], 'entry-ownership-failure')
+
+    def test_entry_failure_scope_is_closed_and_other_nonce_is_ignored(self):
+        observation = {'package':driver.package,'build':'10001','phase':'create','nonce':'a'*32,
+                       'pid':11,'entryId':'b'*32,'reportWritten':False,'businessOpened':False,
+                       'reason':'retained owner did not respond to the bounded challenge'}
+        runtime = driver.args.output/'runtime-live.log'
+        runtime.write_text('ACCEPTANCE_SPECTATOR {"ownerReply":true}\n', encoding='utf-8')
+        driver.check_entry_ownership_failure(10001, 'create', 'a'*32)
+        runtime.write_text('ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE '+json.dumps({**observation,'nonce':'c'*32}), encoding='utf-8')
+        driver.check_entry_ownership_failure(10001, 'create', 'a'*32)
+        for field,value in [('package','other'),('build','10002'),('phase','reopen'),('pid',True),
+                            ('entryId','bad'),('reportWritten',True),('businessOpened',True),('reason','unknown')]:
+            runtime.write_text('ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE '+json.dumps({**observation,field:value}), encoding='utf-8')
+            with self.subTest(field=field), self.assertRaisesRegex(RuntimeError,'wrong identity'):
+                driver.check_entry_ownership_failure(10001, 'create', 'a'*32)
+        runtime.write_text('ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE broken', encoding='utf-8')
+        with self.assertRaisesRegex(RuntimeError, 'malformed'):
+            driver.check_entry_ownership_failure(10001, 'create', 'a'*32)
 
     def test_probe_timeout_preserves_partial_output_without_publishing_or_retrying(self):
         self.launch_patch.stop()

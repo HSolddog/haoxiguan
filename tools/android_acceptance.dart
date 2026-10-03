@@ -6,6 +6,7 @@ import 'dart:math';
 import 'dart:ui' show IsolateNameServer;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:workmanager/workmanager.dart';
@@ -23,6 +24,138 @@ import 'package:haoxiguan/ui/backup_restore_dialog.dart';
 final acceptanceNavigator = GlobalKey<NavigatorState>();
 
 const acceptancePackage = 'com.haoxiguan.haoxiguan.acceptance';
+const acceptanceEngineChannel = MethodChannel(
+  'com.haoxiguan.haoxiguan/acceptance_engine',
+);
+
+Map<String, Object?> engineHostIdentity(
+  Object? raw, {
+  required String build,
+  required int expectedPid,
+}) {
+  if (raw is! Map) {
+    throw const FormatException('engine identity must be an object');
+  }
+  final value = raw.cast<String, Object?>();
+  if (value['package'] != acceptancePackage ||
+      value['build'] != build ||
+      value['pid'] is! int ||
+      value['pid'] != expectedPid ||
+      value['attachCount'] is! int ||
+      (value['attachCount']! as int) < 1 ||
+      value['attached'] is! bool ||
+      value['uiDisplayed'] is! bool ||
+      value['executingDart'] != true ||
+      [
+        value['engineId'],
+        value['hostId'],
+      ].any((id) => id is! String || !RegExp(r'^[0-9a-f]{32}$').hasMatch(id))) {
+    throw const FormatException('foreign or malformed native engine identity');
+  }
+  return value;
+}
+
+Future<Map<String, Object?>> verifyNativeEngineRecreation(
+  File report,
+  Map<String, Object?> result,
+  AcceptanceLaunch launch, {
+  Duration timeout = const Duration(seconds: 20),
+}) async {
+  final originalReport = await report.readAsString();
+  final originalEntry = result['entryId'];
+  final originalRun = result['runId'];
+  final expectedPid = result['ownerPid']! as int;
+  Future<Map<String, Object?>> identity() async => engineHostIdentity(
+    await acceptanceEngineChannel
+        .invokeMapMethod<String, Object?>('identity')
+        .timeout(const Duration(seconds: 2)),
+    build: launch.build,
+    expectedPid: expectedPid,
+  );
+  Future<Map<String, Object?>> visibleHost({
+    Map<String, Object?>? before,
+    String? request,
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      Map<String, Object?> value;
+      try {
+        value = await identity();
+      } on MissingPluginException {
+        if (before == null) rethrow;
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        continue;
+      }
+      if (before != null) {
+        check(
+          value['requestOutcome'] != 'abandoned',
+          'deterministic recreation request was abandoned',
+        );
+        check(
+          value['engineId'] == before['engineId'],
+          'recreation retains one native engine',
+        );
+      }
+      if (value['attached'] == true &&
+          value['uiDisplayed'] == true &&
+          (before == null || value['hostId'] != before['hostId'])) {
+        if (before != null) {
+          check(
+            value['requestOutcome'] == 'executed' &&
+                value['requestId'] == request &&
+                value['requestHostId'] == before['hostId'],
+            'new host belongs to the exact executed recreation request',
+          );
+          check(
+            (value['attachCount']! as int) > (before['attachCount']! as int),
+            'recreated host really reattached the original engine',
+          );
+        }
+        return value;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    throw TimeoutException(
+      'original owner has no visible reattached native host',
+      timeout,
+    );
+  }
+
+  final before = await visibleHost();
+  final request = acceptanceEntryId();
+  final reply = await acceptanceEngineChannel
+      .invokeMapMethod<String, Object?>('recreate', {
+        'nonce': launch.nonce,
+        'entryId': originalEntry,
+        'runId': originalRun,
+        'requestId': request,
+      })
+      .timeout(const Duration(seconds: 2));
+  check(
+    reply?['queued'] == true && reply?['requestId'] == request,
+    'one exact native recreation request was accepted',
+  );
+  final after = await visibleHost(before: before, request: request);
+  check(
+    result['entryId'] == originalEntry &&
+        result['runId'] == originalRun &&
+        result['launchNonce'] == launch.nonce,
+    'recreation retains logical owner identity',
+  );
+  check(
+    await report.readAsString() == originalReport,
+    'recreation does not overwrite the first running report',
+  );
+  return {
+    'requestId': request,
+    'runId': originalRun,
+    'entryId': originalEntry,
+    'nonce': launch.nonce,
+    'before': before,
+    'after': after,
+    'firstRunningReportUnchanged': true,
+  };
+}
 
 class AcceptanceLaunch {
   AcceptanceLaunch._(this.data);
@@ -289,6 +422,7 @@ class SettingsCheckpoint {
       'original baseline',
     );
     for (final flag in [
+      'nativeEngineRecreation',
       'safExportReadback',
       'safOpenDecrypt',
       'safSizeLimit',
@@ -585,6 +719,13 @@ Future<void> main() async {
     debugPrint(
       'ACCEPTANCE_SPECTATOR ${jsonEncode({'pid': pid, 'entryId': entryId, 'nonce': launch.nonce, 'isolate': Isolate.current.debugName, 'ownerReply': observation, 'uiAttachmentProven': false})}',
     );
+    if (observation == null) {
+      // Preserve the first report and owner mapping. A missing owner response
+      // is an explicit failure observation, never permission to replay work.
+      debugPrint(
+        'ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE ${jsonEncode({'package': acceptancePackage, 'build': build, 'phase': launch.phase, 'nonce': launch.nonce, 'pid': pid, 'entryId': entryId, 'reason': 'retained owner did not respond to the bounded challenge', 'reportWritten': false, 'businessOpened': false})}',
+      );
+    }
     return;
   }
   WidgetsBinding.instance.addObserver(owner);
@@ -633,6 +774,17 @@ Future<void> main() async {
       result.addAll({'ownerPid': pid, 'entryId': entryId});
     }
     await writeAtomic(report, jsonEncode(result));
+    if (continuation == null) {
+      result['nativeEngineRecreationEvidence'] =
+          await verifyNativeEngineRecreation(report, result, launch);
+      result['nativeEngineRecreation'] = true;
+      await writeAtomic(report, jsonEncode(result));
+    } else {
+      check(
+        result['nativeEngineRecreation'] == true,
+        'checkpoint retains the completed native engine recreation proof',
+      );
+    }
     repository = await SqliteHabitRepository.open();
     final date = DateTime(2026, 7, 13, 10, 30);
     controller = HabitController(

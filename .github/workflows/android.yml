@@ -63,6 +63,8 @@ jobs:
         run: flutter test --coverage
       - name: Test native sync runner isolation and protocol
         run: python3 -m unittest discover -s tools -p test_android_sync_acceptance.py -v
+      - name: Test native acceptance driver and fixture restoration
+        run: python3 -m unittest discover -s tools -p 'test_android_acceptance*.py' -v
       - name: Validate published JSON schemas
         run: |
           python3 -m venv "$RUNNER_TEMP/haoxiguan-schema-venv"
@@ -148,7 +150,7 @@ jobs:
           sudo setfacl -m u:"$USER":rw /dev/kvm
       - name: Native storage, crypto and upgrade
         run: |
-          python3 -m unittest discover -s tools -p test_android_acceptance.py -v
+          python3 -m unittest discover -s tools -p 'test_android_acceptance*.py' -v
           python3 tools/run_android_acceptance.py --api ${{ matrix.api }} --apks acceptance-apks --output acceptance-results
       - name: Preserve native acceptance evidence
         if: always()

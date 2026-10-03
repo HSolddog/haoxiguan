@@ -118,6 +118,20 @@ class _RecoveryScreen extends StatelessWidget {
               if (controller.canRecoverBackup)
                 TextButton(
                   onPressed: () async {
+                    if (!context.mounted) return;
+                    final ownerRoute = ModalRoute.of(context);
+                    if (ownerRoute?.isCurrent != true) return;
+                    var answered = false;
+                    void answer(BuildContext dialogContext, bool value) {
+                      if (answered ||
+                          !dialogContext.mounted ||
+                          ModalRoute.of(dialogContext)?.isCurrent != true) {
+                        return;
+                      }
+                      answered = true;
+                      Navigator.pop(dialogContext, value);
+                    }
+
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -127,17 +141,21 @@ class _RecoveryScreen extends StatelessWidget {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context, false),
+                            onPressed: () => answer(context, false),
                             child: const Text('取消'),
                           ),
                           FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
+                            onPressed: () => answer(context, true),
                             child: const Text('确认恢复'),
                           ),
                         ],
                       ),
                     );
-                    if (confirmed == true) await controller.recoverBackup();
+                    if (confirmed == true &&
+                        context.mounted &&
+                        ownerRoute?.isCurrent == true) {
+                      await controller.recoverBackup();
+                    }
                   },
                   child: const Text('从保护副本恢复'),
                 ),
@@ -2060,11 +2078,16 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                           onPressed: _saving
                               ? null
                               : () async {
+                                  if (!mounted || _saving) return;
+                                  final route = ModalRoute.of(context);
+                                  if (route?.isCurrent != true) return;
                                   final navigator = Navigator.of(context);
                                   if (await _guard.currentState
                                               ?.requestLeave() !=
                                           true ||
-                                      !mounted) {
+                                      !mounted ||
+                                      _saving ||
+                                      route?.isCurrent != true) {
                                     return;
                                   }
                                   navigator.pop();
@@ -2364,7 +2387,9 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
   }
 
   Future<void> _save() async {
-    if (_saving) return;
+    if (!mounted || _saving) return;
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
     final title = _titleController.text.trim();
     if (title.isEmpty || title.length > 80) {
       ScaffoldMessenger.of(
@@ -2438,7 +2463,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
       );
     }
     if (!mounted) return;
-    if (!saved) {
+    if (!saved || route?.isCurrent != true) {
       setState(() => _saving = false);
       return;
     }
@@ -3150,6 +3175,20 @@ Future<void> _showReviewPeriodDialog(
   BuildContext context,
   HabitController controller,
 ) async {
+  if (!context.mounted) return;
+  final ownerRoute = ModalRoute.of(context);
+  if (ownerRoute?.isCurrent != true) return;
+  var answered = false;
+  void answer(BuildContext dialogContext, int days) {
+    if (answered ||
+        !dialogContext.mounted ||
+        ModalRoute.of(dialogContext)?.isCurrent != true) {
+      return;
+    }
+    answered = true;
+    Navigator.pop(dialogContext, days);
+  }
+
   final value = await showDialog<int>(
     context: context,
     builder: (context) => SimpleDialog(
@@ -3163,12 +3202,14 @@ Future<void> _showReviewPeriodDialog(
                   : Icons.radio_button_unchecked_rounded,
             ),
             title: Text(_reviewPeriodLabel(days)),
-            onTap: () => Navigator.pop(context, days),
+            onTap: () => answer(context, days),
           ),
       ],
     ),
   );
-  if (value != null) await controller.setReviewDays(value);
+  if (value != null && context.mounted && ownerRoute?.isCurrent == true) {
+    await controller.setReviewDays(value);
+  }
 }
 
 String _reviewPeriodLabel(int days) => switch (days) {
