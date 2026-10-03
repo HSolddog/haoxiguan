@@ -92,6 +92,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _run(Future<String?> Function() action) async {
+    if (_busy) return;
     setState(() {
       _busy = true;
       _result = null;
@@ -521,6 +522,7 @@ class _PasswordDialogState extends State<_PasswordDialog> {
     dirty: _password.text.isNotEmpty || _confirm.text.isNotEmpty,
     isDirty: () => _password.text.isNotEmpty || _confirm.text.isNotEmpty,
     saving: _busy,
+    isSaving: () => _busy,
     child: AlertDialog(
       title: Text(widget.creating ? '设置备份密码' : '输入备份密码'),
       content: SingleChildScrollView(
@@ -564,6 +566,7 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           onPressed: _busy
               ? null
               : () async {
+                  if (_busy) return;
                   if (widget.creating &&
                       (_password.text.runes.length < 12 ||
                           _password.text != _confirm.text)) {

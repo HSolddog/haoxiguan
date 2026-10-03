@@ -29,6 +29,17 @@ class UnsavedChangesGuardState extends State<UnsavedChangesGuard> {
     if ((widget.isSaving?.call() ?? widget.saving) || _asking) return false;
     if (!(widget.isDirty?.call() ?? widget.dirty)) return true;
     _asking = true;
+    var answered = false;
+    void answer(BuildContext dialogContext, bool discard) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, discard);
+    }
+
     try {
       return await showDialog<bool>(
             context: context,
@@ -38,12 +49,12 @@ class UnsavedChangesGuardState extends State<UnsavedChangesGuard> {
               actions: [
                 TextButton(
                   key: const Key('keep-editing-button'),
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: () => answer(context, false),
                   child: const Text('继续编辑'),
                 ),
                 TextButton(
                   key: const Key('discard-changes-button'),
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () => answer(context, true),
                   child: const Text('放弃修改'),
                 ),
               ],
@@ -56,8 +67,14 @@ class UnsavedChangesGuardState extends State<UnsavedChangesGuard> {
   }
 
   Future<void> leave() async {
+    final route = ModalRoute.of(context);
     final discard = await requestLeave();
-    if (mounted && discard) Navigator.of(context).pop();
+    if (mounted &&
+        discard &&
+        route?.isCurrent == true &&
+        !(widget.isSaving?.call() ?? widget.saving)) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override

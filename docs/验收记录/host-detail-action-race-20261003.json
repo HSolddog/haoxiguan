@@ -1,0 +1,401 @@
+{
+  "observedAtUtc": "2026-10-03T20:33:08.8602183Z",
+  "baseCommit": "6cbd63a170bec4af25d5c8eaad9697198da396c3",
+  "worktreeContainsUncommittedSourceUnderTest": true,
+  "codeSha256": "68fdc1dd6ac09a8d6a031b6104f00ab3b0c5dec9aa12316138c4750bad53b112",
+  "codeSha256Definition": "SHA256 of the UTF-8 sourceFiles ordered path + TAB + per-file SHA256 + LF manifest.",
+  "sourceFiles": [
+    {
+      "repositoryRelativePath": "lib/ui/habit_app.dart",
+      "bytes": 120753,
+      "sha256": "2adc32e865749347f40a907706a758d845b3589f4eac7eaa475c053b989f98c7"
+    },
+    {
+      "repositoryRelativePath": "test/detail_action_race_test.dart",
+      "bytes": 15426,
+      "sha256": "45f47061f6d5087d8cbcb3d345ee092f037215b00678f0eeee52680b8080860e"
+    }
+  ],
+  "designBasis": [
+    {
+      "repositoryRelativePath": "docs/本地数据完整性.md",
+      "lines": [
+        29,
+        33,
+        46,
+        90
+      ],
+      "requirements": [
+        "L01: UI confirmation follows the business transaction commit.",
+        "L05: failure is visible and retry remains possible.",
+        "Fast repeated taps and L-T04: the same action must not duplicate."
+      ]
+    },
+    {
+      "repositoryRelativePath": "docs/交互设计.md",
+      "lines": [
+        91,
+        92,
+        93
+      ],
+      "requirements": [
+        "Keep edits on failure for retry.",
+        "Confirm records only after successful persistence.",
+        "Calendar backfill and existing factual dates remain supported."
+      ]
+    }
+  ],
+  "defectsConfirmedBySource": [
+    {
+      "originalPathAndLine": "lib/ui/habit_app.dart:2927",
+      "defect": "Detail archive discarded the boolean commit result and closed the sheet even on false."
+    },
+    {
+      "originalPathAndLine": "lib/ui/habit_app.dart:2915",
+      "defect": "Pause directly called a non-idempotent toggle with no immediate entry lock."
+    },
+    {
+      "originalPathAndLine": "lib/ui/habit_app.dart:2710",
+      "defect": "Calendar completion directly called a non-idempotent toggle with no immediate entry lock."
+    },
+    {
+      "originalPathAndLine": "lib/ui/habit_app.dart:2700",
+      "defect": "Rest confirmation could be opened again while a prior transaction still showed the old rest state."
+    },
+    {
+      "originalPathAndLine": "lib/ui/habit_app.dart:907",
+      "defect": "Archived-list restore directly toggled archive state; repeated pending callbacks could rearchive it."
+    },
+    {
+      "intermediatePathAndLine": "lib/ui/habit_app.dart:2531",
+      "defect": "The first implementation blocked pending writes but could start an idle write from a cached callback after the detail sheet had been dismissed and a replacement route pushed before the next frame.",
+      "finalEntryGuardPathAndLine": "lib/ui/habit_app.dart:2533"
+    }
+  ],
+  "resultingBehavior": [
+    "Detail writes first require their original modal route to remain current and acquire a live synchronous entry lock before any await. Calendar completion, pause, archive, rest confirmation and delete confirmation share it.",
+    "Archive/delete close the original detail route only after a true result and only if that captured route remains current and the state is mounted.",
+    "False keeps the detail and original facts with a visible, accessible error near the triggering action; unknown exceptions ask the user to inspect current state without asserting a rollback.",
+    "One inline live-region error is made visible after layout with ensureVisible; no obscured home-Scaffold Snackbar duplicates the message.",
+    "Cancelled confirmations return null without a save-error message. Rest/delete buttons are single use and verify their own dialog route is still current before popping.",
+    "Archived-list rows have state keyed by habit ID; restore/delete confirmation cannot share repeated pending callbacks.",
+    "Existing +1/+5 quick increments, quick-record undo, domain algorithms, ordinary detail navigation and normal detail dismissal retain their behavior."
+  ],
+  "verification": {
+    "target": {
+      "command": "flutter test --no-pub test/detail_action_race_test.dart --reporter expanded",
+      "exitCode": 0,
+      "passed": 14,
+      "log": "detail-action-race-route-targeted.log",
+      "sourceFilesMatchFinalBytes": true,
+      "cases": [
+        "Archive, pause and calendar completion each receive two cached callbacks before the next frame: one repository write, no uncommitted state, expected persisted fact on controller reopen.",
+        "Archive returns false: original snapshot remains, detail stays, error is hit-testable and inside the real modal sheet; retry closes only after commit. Every field of the old-date entry's toJson and its note are preserved after failure and successful archive retry, including separate actual-controller reloads.",
+        "Late archive completes during sheet dismissal/new-route navigation: the replacement route stays open.",
+        "Calendar completion returns false: original facts remain and the error is hit-testable inside the visible sheet.",
+        "Archived-list restore fails, remains archived, exposes error and then retries with one write per attempt.",
+        "Rest entry and confirmation each receive two stale callbacks: one dialog, one committed exemption.",
+        "Rest/delete cancellation causes no writes or save errors.",
+        "After rest/delete dialog dismissal, its same-frame stale confirm callback neither writes nor closes the detail.",
+        "Archive, pause and completion cached callbacks invoked after idle sheet dismissal/replacement navigation before the next frame perform no repository write and leave the replacement route open."
+      ]
+    },
+    "related": {
+      "command": "flutter test --no-pub test/habit_design_flow_test.dart test/quick_record_test.dart test/quick_record_accessibility_test.dart test/trash_export_flow_test.dart test/creation_guidance_flow_test.dart test/history_review_ui_test.dart test/plan_change_preview_test.dart --reporter expanded",
+      "exitCode": 0,
+      "passed": 22,
+      "log": "detail-action-race-route-related.log",
+      "sourceFilesAtRun": [
+        {
+          "path": "lib/ui/habit_app.dart",
+          "sha256": "2adc32e865749347f40a907706a758d845b3589f4eac7eaa475c053b989f98c7"
+        },
+        {
+          "path": "test/detail_action_race_test.dart",
+          "sha256": "45f47061f6d5087d8cbcb3d345ee092f037215b00678f0eeee52680b8080860e"
+        }
+      ],
+      "sourceFilesMatchFinalBytes": true
+    },
+    "analyze": {
+      "command": "flutter analyze --no-pub lib/ui/habit_app.dart test/detail_action_race_test.dart",
+      "exitCode": 0,
+      "result": "No issues found",
+      "durationSeconds": 2,
+      "log": "detail-action-race-route-analyze.log"
+    },
+    "format": {
+      "command": "dart format --output=none --set-exit-if-changed lib/ui/habit_app.dart test/detail_action_race_test.dart",
+      "exitCode": 0,
+      "files": 2,
+      "changed": 0,
+      "log": "detail-action-race-route-format-final.log"
+    },
+    "visibleErrors": {
+      "coordinateSpace": "Flutter logical pixels, real showModalBottomSheet, default 800 x 600 test surface",
+      "sheet": [
+        80,
+        114.2,
+        720,
+        600
+      ],
+      "archive": [
+        160,
+        462.2,
+        672,
+        482.2
+      ],
+      "calendar": [
+        236.1,
+        114.2,
+        563.9,
+        134.2
+      ],
+      "hitTestable": true,
+      "eachErrorFullyInsideSheet": true
+    },
+    "counterfactual": {
+      "command": "flutter test --no-pub test/detail_action_race_test.dart --plain-name 'dismissed detail ignores' --reporter expanded",
+      "exitCode": 1,
+      "passed": 0,
+      "failed": 3,
+      "log": "detail-action-race-route-counterfactual.log",
+      "sourceFilesAtRun": [
+        {
+          "path": "lib/ui/habit_app.dart",
+          "sha256": "2cbfbcaf3a156d0c02233e3d021fc37311c6fc7e4e7b19a467d3d236ed33a143"
+        },
+        {
+          "path": "test/detail_action_race_test.dart",
+          "sha256": "45f47061f6d5087d8cbcb3d345ee092f037215b00678f0eeee52680b8080860e"
+        }
+      ],
+      "observedFailure": "Each of archive, pause and completion expected zero writes after same-frame idle detail dismissal but observed one actual repository save. The tests ran before adding the single route.isCurrent entry guard.",
+      "soleProductChangeAfterFailure": "lib/ui/habit_app.dart:2533 checks the captured original route is current before starting a write.",
+      "finalConfirmation": "The same three cases pass in the final 14-case target run."
+    }
+  },
+  "scanCoverage": {
+    "filesReviewedIndependently": [
+      {
+        "path": "lib/ui/habit_app.dart",
+        "result": "The listed factual-write defects are now covered by this patch/tests. Existing editor and quick-record entry guards were verified."
+      },
+      {
+        "path": "lib/ui/legacy_restore_dialog.dart",
+        "result": "Preview entry guard and live isSaving closure present."
+      },
+      {
+        "path": "lib/ui/note_editor.dart",
+        "result": "Save entry guard and live isSaving closure present; no missing-guard claim."
+      },
+      {
+        "path": "lib/ui/theme_color_dialog.dart",
+        "result": "Save/preset entry guard and live isSaving closure present; no missing-guard claim."
+      },
+      {
+        "path": "lib/ui/accessible_controls.dart",
+        "result": "Callbacks configure draft UI; no independent asynchronous persistence entry."
+      },
+      {
+        "path": "lib/ui/trash_screen.dart",
+        "result": "Restore repeats are idempotent; permanent deletion only removes an existing trashed habit. No new same-toggle loss path identified within this review."
+      },
+      {
+        "path": "lib/ui/unsaved_changes_guard.dart",
+        "result": "Live isSaving/isDirty closures verified. Parent separately owns confirmation-reply race investigation; no fix claim here."
+      }
+    ],
+    "separatelyOwnedPendingIntegration": [
+      "lib/ui/record_editor.dart",
+      "lib/ui/habit_history.dart",
+      "lib/ui/reminder_settings_card.dart",
+      "lib/ui/backup_restore_dialog.dart",
+      "lib/ui/data_screen.dart",
+      "lib/ui/webdav_screen.dart",
+      "lib/ui/sync_screen.dart"
+    ],
+    "frameworkCheck": "Pinned Flutter SnackBarAction checks _haveTriggeredAction synchronously before invoking quick undo; no duplicate-undo defect reported.",
+    "statusAtAudit": "The seven separately owned files were pending integration at the time of this independent scan; their fixes and shared-guard work are not claimed by this agent."
+  },
+  "logs": [
+    {
+      "taskRootRelativePath": "detail-action-race-format.log",
+      "bytes": 126,
+      "sha256": "87e04e33b164d23b3a2eed2f7f315add8add29c95b824c09d0c356a7958b02cc"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-format-retry.log",
+      "bytes": 93,
+      "sha256": "749bd89f944ea317d49b8b3d484982a99608255da47015223d1d5fe2c90960ef"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-format-final.log",
+      "bytes": 48,
+      "sha256": "e3f8955fd76f403b48a15e251451dc3ea8616bdd890d0a17706abaf8ec09198a"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-targeted-initial.log",
+      "bytes": 12572,
+      "sha256": "913d8200410d4afd197e076f22989f20b03c3fc8d447b2eb444c6f0fe6c99d03"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-targeted-prelint.log",
+      "bytes": 1167,
+      "sha256": "e1c55f71146e9a223ecb8340f59269408b78f7964743618c6861c635c8288a6f"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-targeted.log",
+      "bytes": 1167,
+      "sha256": "e1c55f71146e9a223ecb8340f59269408b78f7964743618c6861c635c8288a6f"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-related.log",
+      "bytes": 4232,
+      "sha256": "23ade4455a9707bfec41d1f63ec077dd35ee08bcfeb78ece6f30f30c234d6171"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-analyze-initial.log",
+      "bytes": 251,
+      "sha256": "8e1bee952ec1c9cc83262b1df2c7dbcce8a025023904534ad8a45eab2f3c46bd"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-analyze.log",
+      "bytes": 98,
+      "sha256": "7bf36ac2c1cfa5e65fcbfc06603cd8f147ca880bf0d5f2dc2186c218d9353f58"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-route-format.log",
+      "bytes": 92,
+      "sha256": "458a542690ddc9873bd025e8031927581a4e1064ffaf0d5da2be8d27e1169d33"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-route-counterfactual.log",
+      "bytes": 5631,
+      "sha256": "700eb03316aee7f55378bba88ad7d4bc47fcea26ff89dbb5e1f048f5972e53d5"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-route-targeted.log",
+      "bytes": 1358,
+      "sha256": "bf9590d2d46e4af94c6e4821994fd0ebe157a63d68e0ef9cd6508556f4c7819f"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-route-related.log",
+      "bytes": 4206,
+      "sha256": "7175819b6e00b56ce8a35416c495c21bf5fb4077efebe3d4734fe64e154233c1"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-route-analyze.log",
+      "bytes": 98,
+      "sha256": "6109587380330b41457a411f13590dac682fe4b8fcd6705a6dedfce63890d6a5"
+    },
+    {
+      "taskRootRelativePath": "detail-action-race-route-format-final.log",
+      "bytes": 48,
+      "sha256": "3d33c65e9c18941fffacbbcf742dfdd29b863505ce11677be44ef5804afa9b77"
+    }
+  ],
+  "limitations": [
+    "Widget tests execute the actual HabitController with a gated MemoryHabitRepository; disk-full errors are synthetic. This task does not claim a device or disk SQLite result.",
+    "Full regression, shared-guard counterfactual/fix and debug/native validation remain coordinated by the parent.",
+    "No Go, AVD, Docker, real servers, secret access, installation, publication, commit or push was performed by this agent."
+  ],
+  "history": [
+    {
+      "stage": "First implementation before the additional dismissed-detail entry guard and history sentinel",
+      "observedAtUtc": "2026-10-03T20:24:18.6045237Z",
+      "codeSha256": "3fbc98935f7074fcc972ad63b213c2d0038a80dac7b6e6dc00ebdb66d139ac1b",
+      "sourceFiles": [
+        {
+          "repositoryRelativePath": "lib/ui/habit_app.dart",
+          "bytes": 120711,
+          "sha256": "2cbfbcaf3a156d0c02233e3d021fc37311c6fc7e4e7b19a467d3d236ed33a143"
+        },
+        {
+          "repositoryRelativePath": "test/detail_action_race_test.dart",
+          "bytes": 13179,
+          "sha256": "06a794d9a784850b10510e50e762037a5fd5b71bdc64d65aa7ab712eaec36221"
+        }
+      ],
+      "verification": {
+        "target": {
+          "command": "flutter test --no-pub test/detail_action_race_test.dart --reporter expanded",
+          "exitCode": 0,
+          "passed": 11,
+          "log": "detail-action-race-targeted.log",
+          "cases": [
+            "Archive, pause and calendar completion each receive two cached callbacks before the next frame: one repository write, no uncommitted state, expected persisted fact on controller reopen.",
+            "Archive returns false: original snapshot remains, detail stays, error is hit-testable and inside the real modal sheet; retry closes only after commit.",
+            "Late archive completes during sheet dismissal/new-route navigation: the replacement route stays open.",
+            "Calendar completion returns false: original facts remain and the error is hit-testable inside the visible sheet.",
+            "Archived-list restore fails, remains archived, exposes error and then retries with one write per attempt.",
+            "Rest entry and confirmation each receive two stale callbacks: one dialog, one committed exemption.",
+            "Rest/delete cancellation causes no writes or save errors.",
+            "After rest/delete dialog dismissal, its same-frame stale confirm callback neither writes nor closes the detail."
+          ],
+          "sourceFilesMatchHistoricalBytes": true
+        },
+        "related": {
+          "command": "flutter test --no-pub test/habit_design_flow_test.dart test/quick_record_test.dart test/quick_record_accessibility_test.dart test/trash_export_flow_test.dart test/creation_guidance_flow_test.dart test/history_review_ui_test.dart test/plan_change_preview_test.dart --reporter expanded",
+          "exitCode": 0,
+          "passed": 22,
+          "log": "detail-action-race-related.log",
+          "sourceFilesAtRun": [
+            {
+              "path": "lib/ui/habit_app.dart",
+              "sha256": "b352385b4434cea085dd394dc402c0ba0827375fc8f03d0aaf2b5604ba7645a2"
+            },
+            {
+              "path": "test/detail_action_race_test.dart",
+              "sha256": "06a794d9a784850b10510e50e762037a5fd5b71bdc64d65aa7ab712eaec36221"
+            }
+          ],
+          "laterSourceChange": "Only the analyzer-requested equivalent collection syntax changed: if-null element became ?_errorFor('calendar'). Final 11 tests reran after that change."
+        },
+        "analyze": {
+          "command": "flutter analyze --no-pub lib/ui/habit_app.dart test/detail_action_race_test.dart",
+          "exitCode": 0,
+          "result": "No issues found",
+          "durationSeconds": 2.1
+        },
+        "format": {
+          "command": "dart format --output=none --set-exit-if-changed lib/ui/habit_app.dart test/detail_action_race_test.dart",
+          "exitCode": 0,
+          "files": 2,
+          "changed": 0
+        },
+        "visibleErrors": {
+          "coordinateSpace": "Flutter logical pixels, real showModalBottomSheet, default 800 x 600 test surface",
+          "sheet": [
+            80,
+            114.2,
+            720,
+            600
+          ],
+          "archive": [
+            160,
+            462.2,
+            672,
+            482.2
+          ],
+          "calendar": [
+            236.1,
+            114.2,
+            563.9,
+            134.2
+          ],
+          "hitTestable": true,
+          "eachErrorFullyInsideSheet": true
+        },
+        "initialDiagnostics": {
+          "targetLog": "detail-action-race-targeted-initial.log",
+          "passed": 5,
+          "failed": 6,
+          "result": "Initial target: five lazy-action finders needed scrolling and one calendar error was outside the viewport; subsequent locators and ensureVisible fixed these. Initial analyzer: one use_null_aware_elements info, subsequently corrected. These are diagnosis logs, not pre-fix product counterfactuals.",
+          "analyzeLog": "detail-action-race-analyze-initial.log"
+        }
+      },
+      "evidenceScope": "The first 11/22 results remain bound to their historical source hashes and logs. They are not relabelled as final 14-case results."
+    }
+  ]
+}

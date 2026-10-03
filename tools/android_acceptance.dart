@@ -63,6 +63,36 @@ String acceptanceEntryId() => List.generate(
   (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
 ).join();
 
+/// A cold process may see a completed authorization again. Reading a terminal
+/// report never grants permission to rewrite it or open a business repository.
+Future<Map<String, Object?>?> terminalLaunchReport(
+  File report,
+  AcceptanceLaunch launch,
+) async {
+  if (!await report.exists()) return null;
+  final decoded = jsonDecode(await report.readAsString());
+  if (decoded is! Map) {
+    throw const FormatException('invalid retained report');
+  }
+  final value = decoded.cast<String, Object?>();
+  if (value['status'] == 'failed') return value;
+  if (value['status'] != 'passed') return null;
+  if (value['package'] != acceptancePackage ||
+      value['build'] != launch.build ||
+      value['phase'] != launch.phase ||
+      value['launchNonce'] != launch.nonce ||
+      value['previousRunId'] != launch.previous ||
+      value['runId'] is! String ||
+      !RegExp(r'^\d+$').hasMatch(value['runId']! as String) ||
+      value['ownerPid'] is! int ||
+      (value['ownerPid']! as int) <= 0 ||
+      value['entryId'] is! String ||
+      !RegExp(r'^[a-f0-9]{32}$').hasMatch(value['entryId']! as String)) {
+    return null;
+  }
+  return value;
+}
+
 /// One atomic process-local owner, retained even after the terminal report.
 /// A duplicate is only a spectator; a positive ping does not prove UI attachment.
 class AcceptanceOwner with WidgetsBindingObserver {
@@ -210,6 +240,7 @@ class SettingsCheckpoint {
     );
     require(
       result['runId'] == value['runId'] &&
+          result['package'] == acceptancePackage &&
           result['build'] == build &&
           result['phase'] == 'reopen' &&
           result['status'] == 'running' &&
@@ -531,6 +562,7 @@ Future<void> main() async {
     return;
   }
   final result = <String, Object?>{
+    'package': acceptancePackage,
     'build': build,
     'phase': launch.phase,
     'status': 'running',
@@ -559,6 +591,22 @@ Future<void> main() async {
   debugPrint(
     'ACCEPTANCE_OWNER ${jsonEncode({'pid': pid, 'entryId': entryId, 'nonce': launch.nonce, 'build': build, 'phase': launch.phase, 'isolate': Isolate.current.debugName})}',
   );
+  final report = File('${directory.path}/acceptance-report.json');
+  try {
+    final terminal = await terminalLaunchReport(report, launch);
+    if (terminal != null) {
+      result
+        ..clear()
+        ..addAll(terminal);
+      debugPrint(
+        'ACCEPTANCE_TERMINAL_SPECTATOR ${jsonEncode({'pid': pid, 'entryId': entryId, 'nonce': launch.nonce, 'retainedStatus': terminal['status'], 'retainedRunId': terminal['runId'], 'businessOpened': false, 'reportWritten': false})}',
+      );
+      return;
+    }
+  } catch (error) {
+    debugPrint('ACCEPTANCE_RETAINED_REPORT_REJECTED $error');
+    return;
+  }
   // This isolated fixture is driven through Android's accessibility hierarchy.
   // Keep Flutter semantics active even without a physical accessibility service.
   final acceptanceSemantics = WidgetsBinding.instance.ensureSemantics();
@@ -568,7 +616,6 @@ Future<void> main() async {
       home: const Scaffold(body: Center(child: Text('好习惯隔离验收正在运行'))),
     ),
   );
-  final report = File('${directory.path}/acceptance-report.json');
   final baseline = File('${directory.path}/acceptance-baseline.json');
   SqliteHabitRepository? repository;
   HabitController? controller;

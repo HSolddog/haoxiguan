@@ -64,6 +64,7 @@ class _SyncScreenState extends State<SyncScreen> {
   }
 
   Future<void> _run(Future<void> Function() action) async {
+    if (_busy) return;
     setState(() {
       _busy = true;
       _message = null;
@@ -753,6 +754,7 @@ class _SyncConflictDialogState extends State<SyncConflictDialog> {
   }
 
   Future<void> _apply() async {
+    if (_saving) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -907,6 +909,7 @@ class _SyncRecoveryPasswordDialogState
   }
 
   Future<void> _save() async {
+    if (saving) return;
     if (first.text.runes.length < 12 || first.text != second.text) {
       setState(() => error = '密码至少 12 个字符，两次输入需一致');
       return;

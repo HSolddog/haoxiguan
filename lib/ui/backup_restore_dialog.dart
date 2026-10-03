@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/backup_preview.dart';
 import '../state/habit_controller.dart';
+import 'unsaved_changes_guard.dart';
 
 class BackupRestoreDialog extends StatefulWidget {
   const BackupRestoreDialog({
@@ -22,8 +23,10 @@ class BackupRestoreDialogState extends State<BackupRestoreDialog> {
   bool _preserveLegacyText = false;
   String? _error;
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !_saving,
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+    dirty: false,
+    saving: _saving,
+    isSaving: () => _saving,
     child: AlertDialog(
       title: const Text('恢复预览'),
       content: SingleChildScrollView(
@@ -55,7 +58,10 @@ class BackupRestoreDialogState extends State<BackupRestoreDialog> {
                 subtitle: const Text('保留全部原文。今后编辑时，标题需为 1–80 个字符，备注最多 2000 字。'),
                 onChanged: _saving
                     ? null
-                    : (value) => setState(() => _preserveLegacyText = value!),
+                    : (value) {
+                        if (_saving) return;
+                        setState(() => _preserveLegacyText = value!);
+                      },
               ),
             ],
             if (_saving) const LinearProgressIndicator(),
@@ -65,7 +71,16 @@ class BackupRestoreDialogState extends State<BackupRestoreDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _saving ? null : () => Navigator.pop(context, false),
+          onPressed: _saving
+              ? null
+              : () {
+                  if (!context.mounted ||
+                      _saving ||
+                      ModalRoute.of(context)?.isCurrent != true) {
+                    return;
+                  }
+                  Navigator.pop(context, false);
+                },
           child: const Text('取消'),
         ),
         FilledButton(
@@ -76,6 +91,13 @@ class BackupRestoreDialogState extends State<BackupRestoreDialog> {
                       !_preserveLegacyText)
               ? null
               : () async {
+                  if (!context.mounted ||
+                      ModalRoute.of(context)?.isCurrent != true ||
+                      _saving ||
+                      (widget.preview.requiresCompatibilityConfirmation &&
+                          !_preserveLegacyText)) {
+                    return;
+                  }
                   setState(() {
                     _saving = true;
                     _error = null;

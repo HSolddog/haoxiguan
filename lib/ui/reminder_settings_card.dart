@@ -58,6 +58,7 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
   }
 
   Future<void> _request() async {
+    if (_busy) return;
     setState(() => _busy = true);
     try {
       await widget.controller.requestReminderPermission();
@@ -71,6 +72,7 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
   }
 
   Future<void> _openSettings() async {
+    if (_busy) return;
     setState(() {
       _busy = true;
       _returningFromSettings = true;

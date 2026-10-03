@@ -1,6 +1,7 @@
 """Run native no-cloud persistence and same-certificate upgrade on a disposable AVD."""
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -538,29 +539,122 @@ def archive_settings_checkpoint(value):
     event('checkpoint-archived', runId=value['runId'], stage=value['stage'], pid=checkpoint['pid'])
 
 
+report_path = 'files/acceptance-report.json'
+report_probe_prefix = f'HAOXIGUAN_REPORT_PROBE_V1|{package}|{report_path}|'
+
+
+def report_probe_script():
+    """Read only the exact isolated private path; bad types never mean absent."""
+    absent = f'printf "%s\\n" "{report_probe_prefix}ABSENT"'
+    invalid = f'printf "%s\\n" "{report_probe_prefix}INVALID"; exit 2'
+    exists = f'printf "%s\\n" "{report_probe_prefix}EXISTS"'
+    return (
+        f'if [ ! -d . ] || [ ! -r . ] || [ ! -x . ]; then {invalid}; '
+        f'elif [ -L files ] || {{ [ -e files ] && [ ! -d files ]; }}; then {invalid}; '
+        f'elif [ ! -d files ]; then {absent}; '
+        f'elif [ ! -r files ] || [ ! -x files ]; then {invalid}; '
+        f'elif [ -L {report_path} ]; then {invalid}; '
+        f'elif [ -e {report_path} ]; then '
+        f'if [ ! -f {report_path} ] || [ ! -r {report_path} ]; then {invalid}; fi; '
+        f'{exists}; cat {report_path} || exit 2; '
+        f'else {absent}; fi'
+    )
+
+
+def decode_report_probe(result):
+    # exec-out does not propagate the remote exit status. Even shell -T is
+    # accepted only with an exact package/path marker and empty stderr.
+    if result.returncode != 0 or result.stderr:
+        raise RuntimeError('isolated report probe has an ADB or remote read error')
+    absent = (report_probe_prefix + 'ABSENT\n').encode()
+    exists = (report_probe_prefix + 'EXISTS\n').encode()
+    if result.stdout == absent:
+        return None
+    if not result.stdout.startswith(exists):
+        raise RuntimeError('isolated report probe has an unknown status or identity')
+    def unique_object(pairs):
+        value = {}
+        for name, item in pairs:
+            if name in value:
+                raise ValueError('duplicate report JSON key')
+            value[name] = item
+        return value
+    def invalid_constant(value):
+        raise ValueError('non-finite report JSON number')
+    def finite_number(value):
+        number = float(value)
+        if not math.isfinite(number):
+            raise ValueError('non-finite report JSON number')
+        return number
+    try:
+        value = json.loads(result.stdout[len(exists):].decode('utf-8'),
+                           object_pairs_hook=unique_object, parse_constant=invalid_constant, parse_float=finite_number)
+    except (ValueError, UnicodeDecodeError) as error:
+        raise RuntimeError('isolated existing report is not strict JSON') from error
+    if not isinstance(value, dict):
+        raise RuntimeError('isolated existing report is not an object')
+    return value
+
+
+def valid_passed_predecessor(saved, build, previous):
+    if (saved.get('package') != package or saved.get('status') != 'passed' or
+            saved.get('runId') != previous or saved.get('build') not in ('10001', '10002') or
+            type(saved.get('schema')) is not int or saved['schema'] != (2 if saved['build'] == '10001' else 3) or
+            any(field in saved for field in ('error', 'stack', 'continuationRejected')) or
+            not isinstance(saved.get('launchNonce'), str) or not re.fullmatch(r'[a-f0-9]{32}', saved['launchNonce']) or
+            type(saved.get('ownerPid')) is not int or saved['ownerPid'] <= 0 or
+            not isinstance(saved.get('entryId'), str) or not re.fullmatch(r'[a-f0-9]{32}', saved['entryId']) or
+            saved.get('nativeCrypto') is not True or saved.get('keystore') is not True or
+            type(saved.get('habits')) is not int or saved['habits'] != 3 or
+            saved.get('backupConfigured') is not False or saved.get('syncConfigured') is not False):
+        return False
+    if build == 10001:
+        return saved['build'] == '10001' and saved.get('phase') == 'create' and saved.get('previousRunId') is None
+    if saved.get('phase') != 'reopen' or not isinstance(saved.get('previousRunId'), str) or not re.fullmatch(r'[0-9]+', saved['previousRunId']):
+        return False
+    if saved['build'] == '10002':
+        try:
+            assert_native_flags(saved)
+        except (AssertionError, KeyError, TypeError):
+            return False
+    return True
+
+
 def prepare_launch(build, phase, previous):
     """Authorize one of the existing four launches; never called for OS Back."""
     if build not in (10001, 10002) or phase not in ('create', 'reopen') or (
             (phase == 'create' and (build != 10001 or previous is not None)) or
             (phase == 'reopen' and (not isinstance(previous, str) or not re.fullmatch(r'[0-9]+', previous)))):
         raise ValueError('invalid host phase predecessor')
-    prior = command(adb, 'exec-out', 'run-as', package, 'cat',
-                    'files/acceptance-report.json', check=False, timeout=15)
+    nonce = uuid.uuid4().hex
+    evidence = args.output/f'preflight-report-{build}-{phase}-{nonce}'
+    try:
+        prior = command(adb, 'shell', '-T', 'run-as', package, 'sh', '-c',
+                        "'" + report_probe_script() + "'", check=False, timeout=15)
+    except subprocess.TimeoutExpired as error:
+        def raw(value): return value.encode('utf-8') if isinstance(value, str) else value or b''
+        evidence.with_suffix('.stdout.bin').write_bytes(raw(error.stdout))
+        evidence.with_suffix('.stderr.bin').write_bytes(raw(error.stderr))
+        evidence.with_suffix('.metadata.json').write_text(json.dumps({
+            'package':package, 'path':report_path, 'build':build, 'phase':phase,
+            'previousRunId':previous, 'probeId':nonce, 'readCompleted':False,
+            'type':'TimeoutExpired', 'timeout':error.timeout}, indent=2), encoding='utf-8')
+        raise
+    evidence.with_suffix('.stdout.bin').write_bytes(prior.stdout)
+    evidence.with_suffix('.stderr.bin').write_bytes(prior.stderr)
+    evidence.with_suffix('.metadata.json').write_text(json.dumps({
+        'package': package, 'path': report_path, 'build': build, 'phase': phase,
+        'previousRunId': previous, 'probeId': nonce, 'returncode': prior.returncode,
+        'stdoutBytes': len(prior.stdout), 'stderrBytes': len(prior.stderr)}, indent=2), encoding='utf-8')
+    saved = decode_report_probe(prior)
     if previous is None:
-        if prior.returncode == 0:
+        if saved is not None:
             raise RuntimeError('initial launch refuses an existing acceptance report')
     else:
-        try:
-            saved = json.loads(prior.stdout)
-        except (json.JSONDecodeError, UnicodeDecodeError) as error:
-            raise RuntimeError('reopen requires its retained passed predecessor') from error
-        if (prior.returncode != 0 or not isinstance(saved, dict) or saved.get('status') != 'passed' or
-                saved.get('runId') != previous or
-                (build == 10001 and (saved.get('build'), saved.get('phase')) != ('10001', 'create')) or
-                (build == 10002 and (saved.get('build') not in ('10001', '10002') or saved.get('phase') != 'reopen'))):
+        if saved is None or not valid_passed_predecessor(saved, build, previous) or saved['launchNonce'] == nonce:
             raise RuntimeError('host launch refuses a failed, unfinished or unrelated predecessor')
     launch = {'version': 1, 'package': package, 'build': str(build), 'phase': phase,
-              'previousRunId': previous, 'nonce': uuid.uuid4().hex}
+              'previousRunId': previous, 'nonce': nonce}
     raw = json.dumps(launch).encode()
     # One mutation, no retries. Rename publishes the complete authorization.
     command(adb, 'shell', 'run-as', package, 'sh', '-c',

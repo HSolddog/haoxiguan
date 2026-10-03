@@ -1,0 +1,148 @@
+{
+  "kind": "host-entry-save-race",
+  "taskDate": "2026-10-03",
+  "baseCommit": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "designClauses": [
+    "G01b: explicit history correction and cancellation unchanged",
+    "G03/G04: durable record value, one action per entry and saving exit protection",
+    "G05: one permission or Settings operation, failure retry"
+  ],
+  "scope": [
+    "lib/ui/record_editor.dart",
+    "lib/ui/habit_history.dart",
+    "lib/ui/reminder_settings_card.dart",
+    "test/entry_save_race_test.dart"
+  ],
+  "testedFileSha256": {
+    "lib/ui/record_editor.dart": "56c24dc10a8b9c2e718c2b550a02fa595a83c13e7e5f5bbda1031e6b38cbede2",
+    "lib/ui/habit_history.dart": "39d2d9f1d95f5256fe30dcca52e3b460360736b3a16af0295d9c1b74ab19d113",
+    "lib/ui/reminder_settings_card.dart": "fc5ea096b266353f2f2947f27ebd4a630a5c2cb3d7ef1a9bf0f0ff19f11bd5d1",
+    "test/entry_save_race_test.dart": "6ffafbda0ecb6c0352ce74a779df14e6343750204910b03a9bb4548eb20998a4"
+  },
+  "testedSharedGuardSha256": "69c7f5ecffa83ed5cc7980f6a4c1d4fb43b940919dc3ded32791ad552e3d8f5c",
+  "validation": {
+    "newWidgetCases": {
+      "passed": 6,
+      "exitCode": 0,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-final-new-targeted.log",
+        "sha256": "b097186d0994a70e4684aee92e79f376f618616b193f94816f7a9abc92252624"
+      }
+    },
+    "relatedExistingCases": {
+      "passed": 14,
+      "exitCode": 0,
+      "files": [
+        "test/record_draft_test.dart",
+        "test/history_review_ui_test.dart",
+        "test/reminder_recovery_test.dart",
+        "test/reminder_status_test.dart"
+      ],
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-related-targeted.log",
+        "sha256": "fb6ae7bad8df5afa686160105035d2b1f0d4b9143cbb79ff229de1fa4fdb972f"
+      },
+      "binding": "The three product file bytes are identical before and after the test-only print to debugPrint correction."
+    },
+    "uniqueTargetCasesPassed": 20,
+    "analysis": {
+      "exitCode": 0,
+      "result": "No issues found",
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-final-analyze.log",
+        "sha256": "8935f8a45c986ad5faa263e6731736ad0ecdca42cd1d4a32180d8e34648309b0"
+      }
+    },
+    "format": {
+      "exitCode": 0,
+      "files": 4,
+      "changed": 0,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-final-format.log",
+        "sha256": "6da92ee864e20de127c25594d2397578ee2a0781e0265f3c8a6349839e336bee"
+      }
+    }
+  },
+  "newScenarios": [
+    {
+      "scenario": "record-count",
+      "saveCalls": 1,
+      "liveEntries": 2,
+      "value": 3000,
+      "reopenedMatches": true
+    },
+    {
+      "scenario": "record-duration",
+      "saveCalls": 1,
+      "liveEntries": 2,
+      "value": 420,
+      "reopenedMatches": true
+    },
+    {
+      "scenario": "record-failure-retry",
+      "attempts": 2,
+      "liveEntries": 1,
+      "value": 2000
+    },
+    {
+      "scenario": "history-failure-retry",
+      "attempts": 2,
+      "start": "2026-10-02",
+      "factsPreserved": true,
+      "reopenedMatches": true
+    },
+    {
+      "scenario": "permission-failure-retry",
+      "permissionCalls": 2,
+      "settingsCalls": 0,
+      "factsUnchanged": true
+    },
+    {
+      "scenario": "settings-failure-retry",
+      "settingsCalls": 2,
+      "channelArguments": true,
+      "factsUnchanged": true
+    }
+  ],
+  "counterfactual": {
+    "exitCode": 1,
+    "expectedFailures": 2,
+    "method": "Baseline product source copies outside the repository with imports adjusted only; same new regression assertions; production files never reverted.",
+    "confirmedDefects": [
+      "Repeated count save produced three live entries including the original, instead of two.",
+      "The history preview closed while the repository save was still pending."
+    ],
+    "log": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-counterfactual.log",
+      "sha256": "5414235cdfe50be18d85e7f7bb3dfabc9a96411aa42f282e7e52fc31cb601ba4"
+    },
+    "source": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-counterfactual-source.json",
+      "sha256": "68f38c3abc304000859a1ecdb450b32020936a15ebe27fbb5c49e01be5143b06"
+    }
+  },
+  "history": {
+    "firstAnalysis": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-analyze.log",
+      "sha256": "9dea931f6d50615ab12a180fc9050ce100fe2ec29f09a5587876ba9acb94d853"
+    },
+    "firstSource": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-first-tested-source.json",
+      "sha256": "87ea910f97f081ddcb84bbcccc6546aa694195893bced93ff8b22f8cad000ce5"
+    },
+    "correction": "A single avoid_print info was corrected by changing the test evidence helper to debugPrint. All six new tests reran against final bytes. The earlier counterfactual source and logs retain their original bytes."
+  },
+  "evidenceLimits": [
+    "Synthetic MemoryHabitRepository gates and actual HabitController/UI callbacks; reopened controller model equality is not SQLite or Android proof.",
+    "Permission and Settings calls use synthetic scheduler/diagnostics, never a real phone or system Settings.",
+    "No Flutter/Go/AVD/network validation beyond the recorded serial host targets."
+  ],
+  "remainingVerification": [
+    "Root integrated regression/build against all groups; new Android notifications and dual-device sync evidence remain separate.",
+    "Root owns the later shared guard/history/restore idle route dismissal guards. These logs are an earlier increment and must not be rebound to those final bytes."
+  ],
+  "frozenSource": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\entry-save-race-frozen-source.json",
+    "sha256": "6f0003859c256e0ca1e17acf9a8197d8d8a1599f4c9590397ff36ab5abbe3fd0"
+  }
+}

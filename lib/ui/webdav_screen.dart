@@ -208,6 +208,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
     dirty: _dirty,
     isDirty: () => _dirty,
     saving: _busy,
+    isSaving: () => _busy,
     child: Scaffold(
       appBar: AppBar(title: const Text('自己的 WebDAV 备份')),
       body: ListView(

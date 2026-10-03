@@ -1,0 +1,353 @@
+{
+  "kind": "actual_android_native_sync_acceptance",
+  "designRequirements": [
+    "G07",
+    "G09"
+  ],
+  "nativePassed": true,
+  "sourceSha": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+  "sourceTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "localEquivalentSha": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "mergeSha": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+  "mergeParents": [
+    "8e390aa8bc1bf438e6f6a6c7cdf7ee10d773776a",
+    "8d28b98f36b2a2362647d85976340b6b30d0f892"
+  ],
+  "mergeTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "runId": 37148462733,
+  "runUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733",
+  "jobId": 111279242288,
+  "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733/job/111279242288",
+  "jobConclusion": "success",
+  "nativeStepStartedAt": "2026-10-03T19:48:04Z",
+  "nativeStepCompletedAt": "2026-10-03T19:51:19Z",
+  "schemaVersion": 3,
+  "sdkInt": 35,
+  "fixtureRunId": "0e3c9ee3914848f29e254116eeaf3583",
+  "source": {
+    "repository": "SqliteHabitRepository",
+    "secretStore": "DeviceSecretStore",
+    "screen": "SyncScreen",
+    "conflictDialog": "SyncConflictDialog",
+    "transport": "HttpSyncTransport",
+    "platform": "android"
+  },
+  "sourceFileSha256": "8608f7608b1ab16ae3e9a81156f1b6cbf55a12434e2f015724fdd95bea5c60c4",
+  "fixtureArtifacts": [
+    {
+      "id": 11282438811,
+      "name": "android-sync-acceptance-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "digest": "sha256:2cf5e93d17e08623b237923d9c5bed15c8b60603129819066e4ec10345d5e27d",
+      "sizeInBytes": 108771934,
+      "sourceSha": "8d28b98f36b2a2362647d85976340b6b30d0f892"
+    }
+  ],
+  "evidenceArtifacts": [
+    {
+      "id": 11283770279,
+      "name": "android-native-sync-api-35-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "digest": "sha256:367ebbf0bffad55c1392157d541fd5503005ad7760e331130917500c14f96dbd",
+      "sizeInBytes": 5279,
+      "localArchive": "artifact.zip",
+      "localDigestVerified": true
+    }
+  ],
+  "strictProtocolValidation": "passed",
+  "factsExpectedActualAndBothClientsEqual": true,
+  "sharedInitialFactsSha256": "0f572e7553bfacbf6b6a446c047c5dd29918ffdf1012cfbf9a5a2b0f9f641985",
+  "sharedConvergedFactsSha256": "afd19821a98579ffd4190d6d97383585d7f33748ba2ea09905731ebf7629218b",
+  "reports": {
+    "A": {
+      "status": "passed",
+      "stage": "complete",
+      "packageName": "com.haoxiguan.haoxiguan.syncacceptance.a",
+      "build": "11001",
+      "reportSequence": 55,
+      "flags": {
+        "realSyncScreen": true,
+        "realTlsTransport": true,
+        "productionStorage": true,
+        "recoverySafVerified": true,
+        "initialPreviewCancelled": true,
+        "initialPreviewConfirmed": true,
+        "fullFactsTransferred": true,
+        "independentSameDayEntries": true,
+        "manualConflictMerged": true,
+        "protectionIntegrity": true,
+        "sqliteReopened": true,
+        "keystoreProcessReopened": true,
+        "disconnectedOfflineBackup": true
+      },
+      "counts": {
+        "habits": 3,
+        "plans": 6,
+        "entries": 10,
+        "notes": 4
+      },
+      "facts": {
+        "initialExpectedFactsSha256": "0f572e7553bfacbf6b6a446c047c5dd29918ffdf1012cfbf9a5a2b0f9f641985",
+        "initialActualFactsSha256": "0f572e7553bfacbf6b6a446c047c5dd29918ffdf1012cfbf9a5a2b0f9f641985",
+        "convergedExpectedFactsSha256": "afd19821a98579ffd4190d6d97383585d7f33748ba2ea09905731ebf7629218b",
+        "convergedActualFactsSha256": "afd19821a98579ffd4190d6d97383585d7f33748ba2ea09905731ebf7629218b",
+        "offlineExpectedFactsSha256": "fc6973b0c62f400afb6fdd75157c89a4314a185df5e3d224db8ea9e0cbe3a07a",
+        "offlineActualFactsSha256": "fc6973b0c62f400afb6fdd75157c89a4314a185df5e3d224db8ea9e0cbe3a07a"
+      },
+      "cancel": {
+        "beforeSnapshotSha256": "82bc20a5a56c2a98b24fd563b891f9168be328b14b6da4ada2d8f6343cea5943",
+        "afterSnapshotSha256": "82bc20a5a56c2a98b24fd563b891f9168be328b14b6da4ada2d8f6343cea5943",
+        "beforeBusinessRevision": 3,
+        "afterBusinessRevision": 3,
+        "beforeProtectionCount": 0,
+        "afterProtectionCount": 0,
+        "beforeSyncProtectionCount": 0,
+        "afterSyncProtectionCount": 0,
+        "beforeRemoteObjects": 0,
+        "afterRemoteObjects": 0,
+        "beforeRemoteHighWater": 0,
+        "afterRemoteHighWater": 0
+      },
+      "restart": {
+        "beforeSnapshotSha256": "79746725dec7708c3b7f77611b2bd524e2a72c71e01bbad7c941966316db5b2d",
+        "afterSnapshotSha256": "79746725dec7708c3b7f77611b2bd524e2a72c71e01bbad7c941966316db5b2d",
+        "beforeBusinessRevision": 11,
+        "afterBusinessRevision": 11,
+        "beforeStateRevision": 22,
+        "afterStateRevision": 22,
+        "beforeProtectionCount": 1,
+        "afterProtectionCount": 1,
+        "beforeSyncProtectionCount": 1,
+        "afterSyncProtectionCount": 1
+      },
+      "lifecycle": {
+        "oldLaunchId": "dd5b3fc7cb5b444da3c0f9ce58f4d2de",
+        "newLaunchId": "bb201f5993b24ccc9519709af18efa65",
+        "forceStopCount": 1,
+        "oldPids": [
+          2409
+        ],
+        "healthyIdentityDisappearReads": 2,
+        "reportSequenceStrictPerLaunch": true,
+        "onlyTwoObservedLaunches": true
+      },
+      "stageOrder": [
+        "awaitingRecoverySave",
+        "awaitingRecoveryReadback",
+        "awaitingReplicaImport",
+        "awaitingConflictResolution",
+        "awaitingReopen",
+        "awaitingBackupSave",
+        "awaitingBackupReadback",
+        "complete"
+      ],
+      "diagnostic": {
+        "failureCode": "none",
+        "lastStage": "complete",
+        "lastAction": "complete",
+        "frameworkFailure": "none"
+      }
+    },
+    "B": {
+      "status": "passed",
+      "stage": "complete",
+      "packageName": "com.haoxiguan.haoxiguan.syncacceptance.b",
+      "build": "11002",
+      "reportSequence": 100,
+      "flags": {
+        "realSyncScreen": true,
+        "realTlsTransport": true,
+        "productionStorage": true,
+        "recoverySafVerified": true,
+        "initialPreviewCancelled": true,
+        "initialPreviewConfirmed": true,
+        "fullFactsTransferred": true,
+        "independentSameDayEntries": true,
+        "manualConflictMerged": true,
+        "protectionIntegrity": true,
+        "sqliteReopened": true,
+        "keystoreProcessReopened": true,
+        "disconnectedOfflineBackup": true
+      },
+      "counts": {
+        "habits": 3,
+        "plans": 6,
+        "entries": 10,
+        "notes": 4
+      },
+      "facts": {
+        "initialExpectedFactsSha256": "0f572e7553bfacbf6b6a446c047c5dd29918ffdf1012cfbf9a5a2b0f9f641985",
+        "initialActualFactsSha256": "0f572e7553bfacbf6b6a446c047c5dd29918ffdf1012cfbf9a5a2b0f9f641985",
+        "convergedExpectedFactsSha256": "afd19821a98579ffd4190d6d97383585d7f33748ba2ea09905731ebf7629218b",
+        "convergedActualFactsSha256": "afd19821a98579ffd4190d6d97383585d7f33748ba2ea09905731ebf7629218b",
+        "offlineExpectedFactsSha256": "b916b3ff43be7614fb0d53c088a8b54ca39eeee2deaff281724b0d23bd2f0373",
+        "offlineActualFactsSha256": "b916b3ff43be7614fb0d53c088a8b54ca39eeee2deaff281724b0d23bd2f0373"
+      },
+      "cancel": {
+        "beforeSnapshotSha256": "064735617b616d4fa1b9b2b000db045849a4f55d239d51fcd8e0987a73d4380a",
+        "afterSnapshotSha256": "064735617b616d4fa1b9b2b000db045849a4f55d239d51fcd8e0987a73d4380a",
+        "beforeBusinessRevision": 2,
+        "afterBusinessRevision": 2,
+        "beforeProtectionCount": 0,
+        "afterProtectionCount": 0,
+        "beforeSyncProtectionCount": 0,
+        "afterSyncProtectionCount": 0,
+        "beforeRemoteObjects": 20,
+        "afterRemoteObjects": 20,
+        "beforeRemoteHighWater": 20,
+        "afterRemoteHighWater": 20
+      },
+      "restart": {
+        "beforeSnapshotSha256": "782780a1fa2e10c62f2f5ddeb5b6f5d72576a5a2e6db906c20ee0d94f14c0a6b",
+        "afterSnapshotSha256": "782780a1fa2e10c62f2f5ddeb5b6f5d72576a5a2e6db906c20ee0d94f14c0a6b",
+        "beforeBusinessRevision": 10,
+        "afterBusinessRevision": 10,
+        "beforeStateRevision": 21,
+        "afterStateRevision": 21,
+        "beforeProtectionCount": 3,
+        "afterProtectionCount": 3,
+        "beforeSyncProtectionCount": 3,
+        "afterSyncProtectionCount": 3
+      },
+      "lifecycle": {
+        "oldLaunchId": "2413d96f7b2748c390707f740abc6a68",
+        "newLaunchId": "541a0116264147f4ad5e00cb1e2de5a1",
+        "forceStopCount": 1,
+        "oldPids": [
+          2310
+        ],
+        "healthyIdentityDisappearReads": 2,
+        "reportSequenceStrictPerLaunch": true,
+        "onlyTwoObservedLaunches": true
+      },
+      "stageOrder": [
+        "awaitingSourceUpload",
+        "awaitingRecoveryJoin",
+        "awaitingAChangesUploaded",
+        "awaitingConvergence",
+        "awaitingReopen",
+        "awaitingBackupSave",
+        "awaitingBackupReadback",
+        "complete"
+      ],
+      "diagnostic": {
+        "failureCode": "none",
+        "lastStage": "complete",
+        "lastAction": "complete",
+        "frameworkFailure": "none"
+      }
+    }
+  },
+  "safActions": [
+    {
+      "role": "A",
+      "stage": "awaitingRecoverySave",
+      "action": "save",
+      "time": 142.992807338
+    },
+    {
+      "role": "A",
+      "stage": "awaitingRecoveryReadback",
+      "action": "select",
+      "time": 151.082345277
+    },
+    {
+      "role": "B",
+      "stage": "awaitingRecoveryJoin",
+      "action": "select",
+      "time": 164.694301109
+    },
+    {
+      "role": "A",
+      "stage": "awaitingBackupSave",
+      "action": "save",
+      "time": 221.429461937
+    },
+    {
+      "role": "A",
+      "stage": "awaitingBackupReadback",
+      "action": "select",
+      "time": 224.600756073
+    },
+    {
+      "role": "B",
+      "stage": "awaitingBackupSave",
+      "action": "save",
+      "time": 235.816513891
+    },
+    {
+      "role": "B",
+      "stage": "awaitingBackupReadback",
+      "action": "select",
+      "time": 238.986398317
+    }
+  ],
+  "safActionCount": 7,
+  "actualSnapshotRetry": {
+    "actuallyReached": true,
+    "reason": "ui_snapshot_idle",
+    "attempts": [
+      1,
+      2
+    ],
+    "eventTimes": [
+      176.909355328,
+      188.653331183
+    ],
+    "laterBRecoveryStageCompleted": true,
+    "recoverySelectionCount": 1,
+    "previousRunSpecificStderrRemainsUnknown": true,
+    "recoverySelectionReplayed": false,
+    "selectionReplayEvidence": "one B awaitingRecoveryJoin saf-action; source once guard unchanged"
+  },
+  "productionInitialReviewMenuActuallyCompleted": {
+    "actuallyReached": true,
+    "BInitialFactsEqualA": true,
+    "BAwaitAChangesUploadedObserved": true
+  },
+  "rawDirectory": "ci-followup-8d28b98\\native-sync",
+  "rawIndex": {
+    "path": "ci-followup-8d28b98\\native-sync\\index.json",
+    "sha256": "62e319e54f1fc1ad08492d8f182a925c491d3751a44df3a0d8bc987a453e1305"
+  },
+  "rawAudit": {
+    "path": "ci-followup-8d28b98\\native-sync\\report-audit.json",
+    "sha256": "273d83fc4b7c185d4959c3d80c956e42d6634fcb1929f7b8fed0ff26c2af7baf"
+  },
+  "evidenceFiles": [
+    {
+      "path": "artifact.zip",
+      "sha256": "367ebbf0bffad55c1392157d541fd5503005ad7760e331130917500c14f96dbd",
+      "bytes": 5279
+    },
+    {
+      "path": "driver-events.jsonl",
+      "sha256": "6d2a271e5b54a8734f7e53c3c59622a46389183711153e54b9bccecc8053af73",
+      "bytes": 9343
+    },
+    {
+      "path": "job.log",
+      "sha256": "807cc0be12632af51e658c603927924c2c6b7d6fc67da65027c27d82a2d00971",
+      "bytes": 6485
+    },
+    {
+      "path": "report-a.json",
+      "sha256": "cad7dad352db6eecb96a94807bceb9ca0a7276d2e3a8c169ab0f24d2d9444db4",
+      "bytes": 2877
+    },
+    {
+      "path": "report-audit.json",
+      "sha256": "273d83fc4b7c185d4959c3d80c956e42d6634fcb1929f7b8fed0ff26c2af7baf",
+      "bytes": 10893
+    },
+    {
+      "path": "report-b.json",
+      "sha256": "c053af686708ef69289652422d5d1e9c84a6652413db83d55105105b093d71f2",
+      "bytes": 2882
+    },
+    {
+      "path": "results.json",
+      "sha256": "78caf8a67d97e72c42deef5fb5b5f2de725c7312ffd717bc8e4c442a5f5fdea9",
+      "bytes": 6080
+    }
+  ],
+  "remainingBlockers": []
+}

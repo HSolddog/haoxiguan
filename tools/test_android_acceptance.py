@@ -2,7 +2,9 @@
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 from types import SimpleNamespace
@@ -18,6 +20,25 @@ spec.loader.exec_module(driver)
 
 def result(stdout=b'', code=0, stderr=b''):
     return subprocess.CompletedProcess(['adb'], code, stdout, stderr)
+
+
+def probe_result(saved=None, code=0, stderr=b''):
+    return result((driver.report_probe_prefix + ('ABSENT\n' if saved is None else 'EXISTS\n')).encode() +
+                  (b'' if saved is None else json.dumps(saved).encode()), code=code, stderr=stderr)
+
+
+def passed_predecessor(build='10001', phase='reopen', run_id='122'):
+    value = {'package': driver.package, 'build': build, 'phase': phase, 'status': 'passed', 'runId': run_id,
+             'schema': 2 if build == '10001' else 3, 'launchNonce': 'a' * 32,
+             'ownerPid': 11, 'entryId': 'b' * 32, 'previousRunId': None if phase == 'create' else '121',
+             'habits': 3, 'nativeCrypto': True, 'keystore': True, 'backupConfigured': False, 'syncConfigured': False}
+    if build == '10002':
+        value.update({'notificationApiLevel': 24, 'nativeChannelDiagnosis': 'notApplicable', 'nativeChannelRecovery': 'notApplicable',
+                      **{field: True for field in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
+                         'nativeReminderScheduling', 'workManagerRenewal', 'periodicTasksRegistered',
+                         'nativeDeniedHabitSaved', 'nativeAppPermissionDiagnosis', 'nativeAppPermissionRecovery',
+                         'nativeRestorePreviewCancel', 'nativeRestoreProtection', 'nativeRestoreConfirm', 'nativeRestoreReopen')}})
+    return value
 
 
 def process_list(*pids):
@@ -579,8 +600,8 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
 
     def test_host_nonce_is_written_once_before_launch_and_bound_to_passed_predecessor(self):
         self.launch_patch.stop()
-        saved = {'build': '10001', 'phase': 'reopen', 'status': 'passed', 'runId': '122'}
-        with patch.object(driver, 'command', side_effect=[result(json.dumps(saved).encode()), result()]) as command:
+        saved = passed_predecessor()
+        with patch.object(driver, 'command', side_effect=[probe_result(saved), result()]) as command:
             nonce = driver.prepare_launch(10002, 'reopen', '122')
         self.assertRegex(nonce, r'^[a-f0-9]{32}$')
         self.assertEqual(command.call_count, 2)
@@ -597,14 +618,14 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
             {'build': '10001', 'phase': 'reopen', 'status': status, 'runId': '122'}
             for status in ('failed', 'running')
         ] + [{'build': '10001', 'phase': 'create', 'status': 'passed', 'runId': '122'}]:
-            with self.subTest(saved=saved), patch.object(driver, 'command', return_value=result(json.dumps(saved).encode())) as command:
+            with self.subTest(saved=saved), patch.object(driver, 'command', return_value=probe_result(saved)) as command:
                 with self.assertRaisesRegex(RuntimeError, 'refuses'):
                     driver.prepare_launch(10002, 'reopen', '122')
                 command.assert_called_once()
 
     def test_fresh_install_has_no_report_and_creates_files_in_its_single_publish(self):
         self.launch_patch.stop()
-        with patch.object(driver, 'command', side_effect=[result(code=1, stderr=b'No such file'), result()]) as command:
+        with patch.object(driver, 'command', side_effect=[probe_result(), result()]) as command:
             nonce = driver.prepare_launch(10001, 'create', None)
         self.assertRegex(nonce, r'^[a-f0-9]{32}$')
         self.assertEqual(command.call_count, 2)
@@ -651,6 +672,119 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         self.assertEqual((driver.args.output/'report-123-awaitingNotificationDeny-failed.json').read_bytes(), failed_raw)
         archive.assert_called_once_with(waiting)
         ui.assert_called_once_with(waiting)
+
+    def test_exec_out_zero_with_missing_file_error_is_unknown_not_absent(self):
+        self.launch_patch.stop()
+        raw = b'cat: files/acceptance-report.json: No such file or directory\n'
+        with patch.object(driver, 'command', return_value=result(raw)) as command:
+            with self.assertRaisesRegex(RuntimeError, 'unknown status'):
+                driver.prepare_launch(10001, 'create', None)
+        command.assert_called_once()
+        self.assertEqual(command.call_args.args[:6], ('adb', 'shell', '-T', 'run-as', driver.package, 'sh'))
+        self.assertEqual(next(driver.args.output.glob('preflight-*.stdout.bin')).read_bytes(), raw)
+        self.assertFalse(list(driver.args.output.glob('launch-*.json')))
+
+    def test_probe_absent_requires_exact_identity_empty_stderr_and_success(self):
+        absent = probe_result().stdout
+        self.assertIsNone(driver.decode_report_probe(result(absent)))
+        for bad in [result(absent, code=1), result(absent, stderr=b'unknown warning'), result(b''),
+                    result(absent + b'unknown\n'), result(b'unknown\n' + absent),
+                    result(absent.replace(driver.package.encode(), b'com.other.app')),
+                    result(absent.replace(b'files/acceptance-report.json', b'other.json')),
+                    result(absent.replace(b'ABSENT', b'INVALID'))]:
+            with self.subTest(raw=bad.stdout, code=bad.returncode, stderr=bad.stderr):
+                with self.assertRaises(RuntimeError): driver.decode_report_probe(bad)
+
+    def test_probe_existing_requires_one_strict_object_without_duplicate_keys_or_nonfinite_values(self):
+        marker = (driver.report_probe_prefix + 'EXISTS\n').encode()
+        self.assertEqual(driver.decode_report_probe(result(marker + b'{"status":"failed","error":"first"}')),
+                         {'status': 'failed', 'error': 'first'})
+        for body in [b'', b'null', b'[]', b'{"runId":"1","runId":"2"}', b'{"x":NaN}', b'{"x":Infinity}',
+                     b'{"x":1e999}', b'{"x":-1e999}',
+                     b'{"x":{"status":"passed","status":"failed"}}', b'{}\nunknown', b'\xff', marker+b'{}']:
+            with self.subTest(body=body), self.assertRaises(RuntimeError):
+                driver.decode_report_probe(result(marker + body))
+
+    def test_all_existing_four_phase_predecessors_remain_valid(self):
+        self.launch_patch.stop()
+        for build, saved in [(10001, passed_predecessor(phase='create')),
+                             (10002, passed_predecessor()), (10002, passed_predecessor(build='10002'))]:
+            with self.subTest(build=build, savedBuild=saved['build']), patch.object(driver, 'command', side_effect=[probe_result(saved), result()]) as command:
+                nonce = driver.prepare_launch(build, 'reopen', '122')
+                self.assertRegex(nonce, r'^[a-f0-9]{32}$')
+                self.assertEqual(command.call_count, 2)
+
+    def test_passed_predecessor_rejects_wrong_identity_schema_types_or_terminal_error(self):
+        self.launch_patch.stop()
+        saved = passed_predecessor()
+        for field, value in [('package', 'com.other.app'), ('schema', True), ('schema', 3), ('runId', '123'),
+                             ('status', 'running'), ('phase', 'create'), ('error', None), ('stack', ''),
+                             ('ownerPid', True), ('entryId', 'unknown'), ('launchNonce', 'unknown'),
+                             ('previousRunId', None), ('nativeCrypto', 1), ('habits', True)]:
+            with self.subTest(field=field), patch.object(driver, 'command', return_value=probe_result({**saved, field:value})) as command:
+                with self.assertRaisesRegex(RuntimeError, 'refuses'):
+                    driver.prepare_launch(10002, 'reopen', '122')
+                command.assert_called_once()
+        with patch.object(driver, 'command', return_value=probe_result()) as command:
+            with self.assertRaisesRegex(RuntimeError, 'refuses'):
+                driver.prepare_launch(10002, 'reopen', '122')
+            command.assert_called_once()
+
+    def test_existing_failed_first_report_is_preserved_and_no_nonce_is_published(self):
+        self.launch_patch.stop()
+        failed = {'status':'failed','error':'first SQL failure','stack':'first stack'}
+        raw = probe_result(failed).stdout
+        with patch.object(driver, 'command', return_value=result(raw)) as command:
+            with self.assertRaisesRegex(RuntimeError, 'refuses'):
+                driver.prepare_launch(10001, 'create', None)
+        command.assert_called_once()
+        self.assertEqual(next(driver.args.output.glob('preflight-*.stdout.bin')).read_bytes(), raw)
+        self.assertFalse(list(driver.args.output.glob('launch-*.json')))
+
+    def test_readonly_probe_shell_handles_real_missing_directory_and_bad_file_types(self):
+        shell = shutil.which('sh')
+        if shell is None:
+            git = shutil.which('git')
+            candidates = [] if git is None else [Path(git).parent.parent/'usr'/'bin'/'sh.exe', Path(git).parent.parent/'bin'/'bash.exe']
+            shell = next((str(p) for p in candidates if p.is_file()), None)
+        if shell is None:
+            self.skipTest('POSIX shell unavailable; Linux native CI runs real filesystem probe checks')
+        root = driver.args.output/'shell-probe'
+        root.mkdir()
+        probe_environment = dict(os.environ)
+        probe_environment['PATH'] = str(Path(shell).parent) + os.pathsep + probe_environment.get('PATH', '')
+        def run(): return subprocess.run([shell, '-c', driver.report_probe_script()], cwd=root,
+                                         env=probe_environment, capture_output=True, timeout=5)
+        self.assertIsNone(driver.decode_report_probe(run()))
+        files = root/'files'
+        files.write_text('bad directory type')
+        with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
+        files.unlink(); files.mkdir()
+        self.assertIsNone(driver.decode_report_probe(run()))
+        path = files/'acceptance-report.json'
+        path.mkdir()
+        with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
+        path.rmdir()
+        saved = passed_predecessor()
+        path.write_text(json.dumps(saved))
+        self.assertEqual(driver.decode_report_probe(run()), saved)
+        if os.name != 'nt':
+            path.unlink(); path.symlink_to(files/'missing-target')
+            with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
+            path.unlink(); files.rmdir(); files.symlink_to(root/'missing-directory')
+            with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
+
+    def test_probe_timeout_preserves_partial_output_without_publishing_or_retrying(self):
+        self.launch_patch.stop()
+        error = subprocess.TimeoutExpired(['adb'], 15, output=b'partial probe', stderr=b'partial stderr')
+        with patch.object(driver, 'command', side_effect=error) as command:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                driver.prepare_launch(10001, 'create', None)
+        command.assert_called_once()
+        self.assertEqual(next(driver.args.output.glob('preflight-*.stdout.bin')).read_bytes(), b'partial probe')
+        self.assertEqual(next(driver.args.output.glob('preflight-*.stderr.bin')).read_bytes(), b'partial stderr')
+        self.assertFalse(json.loads(next(driver.args.output.glob('preflight-*.metadata.json')).read_text())['readCompleted'])
+        self.assertFalse(list(driver.args.output.glob('launch-*.json')))
 
 
 if __name__ == '__main__':

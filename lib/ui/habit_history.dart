@@ -4,6 +4,7 @@ import '../models/habit.dart';
 import '../models/history_review.dart';
 import '../models/plan.dart';
 import '../state/habit_controller.dart';
+import 'unsaved_changes_guard.dart';
 
 class HabitHistorySummary extends StatelessWidget {
   const HabitHistorySummary({
@@ -104,14 +105,18 @@ Future<bool> showStartDateCorrection(
   );
   if (date == null || !context.mounted) return false;
   final preview = controller.previewStartDateCorrection(habit.id, date);
+  final guard = GlobalKey<UnsavedChangesGuardState>();
   var saving = false;
   String? error;
   return await showDialog<bool>(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setState) => PopScope(
-            canPop: !saving,
+          builder: (context, setState) => UnsavedChangesGuard(
+            key: guard,
+            dirty: false,
+            saving: saving,
+            isSaving: () => saving,
             child: AlertDialog(
               title: const Text('历史校正影响预览'),
               content: SingleChildScrollView(
@@ -157,7 +162,13 @@ Future<bool> showStartDateCorrection(
                 TextButton(
                   onPressed: saving
                       ? null
-                      : () => Navigator.pop(context, false),
+                      : () {
+                          if (context.mounted &&
+                              !saving &&
+                              ModalRoute.of(context)?.isCurrent == true) {
+                            Navigator.pop(context, false);
+                          }
+                        },
                   child: const Text('取消'),
                 ),
                 FilledButton(
@@ -165,6 +176,11 @@ Future<bool> showStartDateCorrection(
                   onPressed: saving
                       ? null
                       : () async {
+                          if (!context.mounted ||
+                              saving ||
+                              ModalRoute.of(context)?.isCurrent != true) {
+                            return;
+                          }
                           setState(() => saving = true);
                           final saved = await controller
                               .confirmStartDateCorrection(preview);

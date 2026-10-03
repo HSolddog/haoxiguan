@@ -27,6 +27,7 @@ Map<String, Object?> _result(
 ) {
   final step = notificationStages.indexOf(stage);
   return {
+    'package': 'com.haoxiguan.haoxiguan.acceptance',
     'build': '10002',
     'phase': 'reopen',
     'status': 'running',
@@ -162,6 +163,10 @@ void main() {
     rejected(
       notificationStages.first,
       (v) => v['result']['notificationCheckpointVersion'] = 1.0,
+    );
+    rejected(
+      notificationStages.first,
+      (v) => v['result']['package'] = 'com.other.app',
     );
     rejected(
       notificationStages.first,

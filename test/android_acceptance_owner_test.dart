@@ -11,6 +11,7 @@ import '../tools/android_acceptance.dart'
         AcceptanceOwner,
         CheckpointConflict,
         FailedCheckpointConflict,
+        terminalLaunchReport,
         readSettingsCheckpoint,
         writeAtomic;
 
@@ -52,6 +53,101 @@ void duplicateIsolate(List<Object?> values) async {
 }
 
 void main() {
+  test(
+    'fresh registry observes an exact terminal authorization without rewriting its bytes',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'acceptance-cold-terminal-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final report = File('${directory.path}/acceptance-report.json');
+      final request = launch(
+        build: '10002',
+        phase: 'reopen',
+        previous: '123455',
+      );
+      final terminal = <String, Object?>{
+        'package': 'com.haoxiguan.haoxiguan.acceptance',
+        'build': '10002',
+        'phase': 'reopen',
+        'previousRunId': '123455',
+        'launchNonce': request.nonce,
+        'runId': '123456',
+        'ownerPid': 100,
+        'entryId': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        'status': 'passed',
+      };
+      final raw = '${const JsonEncoder.withIndent('    ').convert(terminal)}\n';
+      await report.writeAsString(raw, flush: true);
+      final name =
+          'acceptance-cold-terminal-${DateTime.now().microsecondsSinceEpoch}';
+      expect(IsolateNameServer.lookupPortByName(name), isNull);
+      final current = <String, Object?>{'runId': '999', 'status': 'running'};
+      final owner = AcceptanceOwner.claim(
+        request,
+        current,
+        'cccccccccccccccccccccccccccccccc',
+        name: name,
+      )!;
+      addTearDown(() {
+        IsolateNameServer.removePortNameMapping(name);
+        owner.port.close();
+        AcceptanceOwner.retained.remove(owner);
+      });
+      final retained = await terminalLaunchReport(report, request);
+      expect(retained, terminal);
+      current
+        ..clear()
+        ..addAll(retained!);
+      expect(
+        (await AcceptanceOwner.observe(request, name: name))!['status'],
+        'passed',
+      );
+      expect(await report.readAsString(), raw);
+      for (final wrong in [
+        {...terminal, 'package': 'com.other.app'},
+        {...terminal, 'build': '10001'},
+        {...terminal, 'phase': 'create'},
+        {...terminal, 'launchNonce': 'dddddddddddddddddddddddddddddddd'},
+        {...terminal, 'previousRunId': '123456'},
+        {...terminal, 'ownerPid': 0},
+        {...terminal, 'runId': 'unknown'},
+        {...terminal, 'entryId': 'unknown'},
+      ]) {
+        final wrongRaw = jsonEncode(wrong);
+        await report.writeAsString(wrongRaw, flush: true);
+        expect(await terminalLaunchReport(report, request), isNull);
+        await expectLater(
+          readSettingsCheckpoint(directory, '10002', report, launch: request),
+          throwsFormatException,
+        );
+        expect(await report.readAsString(), wrongRaw);
+      }
+      final failed = {
+        ...terminal,
+        'package': 'com.other.app',
+        'build': '10001',
+        'launchNonce': 'dddddddddddddddddddddddddddddddd',
+        'status': 'failed',
+        'error': 'original first failure',
+        'stack': 'original stack',
+      };
+      final failedRaw = jsonEncode(failed);
+      await report.writeAsString(failedRaw, flush: true);
+      expect(await terminalLaunchReport(report, request), failed);
+      expect(await report.readAsString(), failedRaw);
+      await report.writeAsString(
+        jsonEncode({...terminal, 'status': 'running'}),
+        flush: true,
+      );
+      expect(await terminalLaunchReport(report, request), isNull);
+      await expectLater(
+        readSettingsCheckpoint(directory, '10002', report, launch: request),
+        throwsFormatException,
+      );
+    },
+  );
+
   test(
     'host launch requires isolated identity and each real phase predecessor',
     () {

@@ -54,6 +54,7 @@ class _RecordEditorState extends State<_RecordEditor> {
   }
 
   Future<void> _delete(Habit habit, RecordEntry entry) async {
+    if (_saving) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -71,7 +72,7 @@ class _RecordEditorState extends State<_RecordEditor> {
         ],
       ),
     );
-    if (!mounted || confirmed != true) return;
+    if (!mounted || confirmed != true || _saving) return;
     setState(() => _saving = true);
     final saved = await widget.controller.deleteEntry(habit.id, entry.id);
     if (!mounted) return;
@@ -172,6 +173,7 @@ class _RecordEditorState extends State<_RecordEditor> {
             onPressed: _saving
                 ? null
                 : () async {
+                    if (_saving) return;
                     int value;
                     try {
                       if (duration) {

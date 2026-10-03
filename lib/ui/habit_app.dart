@@ -894,27 +894,10 @@ class HabitsScreen extends StatelessWidget {
               title: Text('已归档 · ${archived.length}'),
               children: archived
                   .map(
-                    (habit) => ListTile(
-                      leading: Text(
-                        habit.emoji,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                      title: Text(habit.title),
-                      trailing: Wrap(
-                        children: <Widget>[
-                          TextButton(
-                            onPressed: () =>
-                                controller.toggleArchived(habit.id),
-                            child: const Text('恢复'),
-                          ),
-                          IconButton(
-                            tooltip: '移入回收站',
-                            onPressed: () =>
-                                _confirmDeleteHabit(context, controller, habit),
-                            icon: const Icon(Icons.delete_outline_rounded),
-                          ),
-                        ],
-                      ),
+                    (habit) => _ArchivedHabitTile(
+                      key: ValueKey(habit.id),
+                      controller: controller,
+                      habit: habit,
                     ),
                   )
                   .toList(),
@@ -924,6 +907,76 @@ class HabitsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ArchivedHabitTile extends StatefulWidget {
+  const _ArchivedHabitTile({
+    super.key,
+    required this.controller,
+    required this.habit,
+  });
+
+  final HabitController controller;
+  final Habit habit;
+
+  @override
+  State<_ArchivedHabitTile> createState() => _ArchivedHabitTileState();
+}
+
+class _ArchivedHabitTileState extends State<_ArchivedHabitTile> {
+  bool _saving = false;
+  String? _error;
+
+  Future<void> _write(Future<bool?> Function() action) async {
+    if (_saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      if (await action() == false && mounted) {
+        setState(() => _error = '操作尚未保存，请检查存储后重试。');
+      }
+    } on Object {
+      if (mounted) setState(() => _error = '未能确认操作结果，请检查当前状态后重试。');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: Text(widget.habit.emoji, style: const TextStyle(fontSize: 24)),
+    title: Text(widget.habit.title),
+    subtitle: _error == null
+        ? (_saving ? const Text('正在保存') : null)
+        : Semantics(liveRegion: true, child: Text(_error!)),
+    trailing: Wrap(
+      children: <Widget>[
+        TextButton(
+          onPressed: _saving
+              ? null
+              : () => _write(
+                  () => widget.controller.toggleArchived(widget.habit.id),
+                ),
+          child: const Text('恢复'),
+        ),
+        IconButton(
+          tooltip: '移入回收站',
+          onPressed: _saving
+              ? null
+              : () => _write(
+                  () => _confirmDeleteHabit(
+                    context,
+                    widget.controller,
+                    widget.habit,
+                  ),
+                ),
+          icon: const Icon(Icons.delete_outline_rounded),
+        ),
+      ],
+    ),
+  );
 }
 
 class _HabitsCategorySection extends StatelessWidget {
@@ -2436,8 +2489,71 @@ class HabitDetailSheet extends StatefulWidget {
 
 class _HabitDetailSheetState extends State<HabitDetailSheet> {
   late DateTime _visibleMonth;
+  bool _writing = false;
+  String? _writeError;
+  String? _writeTarget;
+  final _writeErrorAnchor = GlobalKey();
 
   HabitController get controller => widget.controller;
+
+  Widget? _errorFor(String target) =>
+      _writeError != null && _writeTarget == target
+      ? Semantics(
+          key: _writeErrorAnchor,
+          liveRegion: true,
+          child: Text(
+            _writeError!,
+            key: const Key('detail-action-error'),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        )
+      : null;
+
+  void _showWriteError(String message) {
+    setState(() => _writeError = message);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      final errorContext = _writeErrorAnchor.currentContext;
+      if (errorContext != null) {
+        Scrollable.ensureVisible(
+          errorContext,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+        );
+      }
+    });
+  }
+
+  Future<void> _write(
+    Future<bool?> Function() action, {
+    required String target,
+    bool closeOnSuccess = false,
+  }) async {
+    if (_writing) return;
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
+    setState(() {
+      _writing = true;
+      _writeError = null;
+      _writeTarget = target;
+    });
+    var closing = false;
+    try {
+      final saved = await action();
+      if (!mounted) return;
+      if (saved == true && closeOnSuccess && route?.isCurrent == true) {
+        Navigator.pop(context);
+        closing = true;
+      } else if (saved == false) {
+        _showWriteError('操作尚未保存，原数据已保留。请检查存储后重试。');
+      }
+    } on Object {
+      if (mounted) {
+        _showWriteError('未能确认操作结果，请检查当前状态后重试。');
+      }
+    } finally {
+      if (mounted && !closing) setState(() => _writing = false);
+    }
+  }
 
   @override
   void initState() {
@@ -2478,6 +2594,7 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
           key: const Key('habit-detail-scroll'),
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
           children: <Widget>[
+            if (_writing) const LinearProgressIndicator(),
             Row(
               children: <Widget>[
                 Container(
@@ -2628,6 +2745,7 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                             .toList(),
                       ),
                       const SizedBox(height: 10),
+                      ?_errorFor('calendar'),
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -2667,12 +2785,27 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                                     ? '待完成'
                                     : '非计划日'}${backfilled ? '，补录' : ''}${available ? '' : '，不可记录'}',
                             child: InkWell(
+                              key: Key('detail-day-${dateKey(day)}'),
                               borderRadius: BorderRadius.circular(13),
-                              onLongPress: available
-                                  ? () async {
+                              onLongPress: available && !_writing
+                                  ? () => _write(() async {
                                       final rest = habit.exemptions.contains(
                                         dateKey(day),
                                       );
+                                      var answered = false;
+                                      void answer(
+                                        BuildContext context,
+                                        bool value,
+                                      ) {
+                                        if (answered ||
+                                            ModalRoute.of(context)?.isCurrent !=
+                                                true) {
+                                          return;
+                                        }
+                                        answered = true;
+                                        Navigator.pop(context, value);
+                                      }
+
                                       final confirmed = await showDialog<bool>(
                                         context: context,
                                         builder: (context) => AlertDialog(
@@ -2685,31 +2818,38 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                                           actions: [
                                             TextButton(
                                               onPressed: () =>
-                                                  Navigator.pop(context, false),
+                                                  answer(context, false),
                                               child: const Text('取消'),
                                             ),
                                             FilledButton(
                                               onPressed: () =>
-                                                  Navigator.pop(context, true),
+                                                  answer(context, true),
                                               child: const Text('确认'),
                                             ),
                                           ],
                                         ),
                                       );
                                       if (confirmed == true) {
-                                        await controller.toggleRest(
+                                        return controller.toggleRest(
                                           habit.id,
                                           day,
                                         );
                                       }
-                                    }
+                                      return null;
+                                    }, target: 'calendar')
                                   : null,
-                              onTap: available
+                              onTap:
+                                  available &&
+                                      (habit.recordType != 'boolean' ||
+                                          !_writing)
                                   ? () {
                                       if (habit.recordType == 'boolean') {
-                                        controller.toggleCompletion(
-                                          habit.id,
-                                          day,
+                                        _write(
+                                          () => controller.toggleCompletion(
+                                            habit.id,
+                                            day,
+                                          ),
+                                          target: 'calendar',
                                         );
                                       } else {
                                         showRecordEditor(
@@ -2909,10 +3049,15 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                           : Icons.pause_rounded,
                     ),
                     title: Text(habit.isPaused ? '恢复习惯' : '暂停习惯'),
-                    subtitle: Text(
-                      habit.isPaused ? '暂停期间不会被算作失败' : '旅行、生病或休息时可以暂停',
-                    ),
-                    onTap: () => controller.togglePaused(habit.id),
+                    subtitle:
+                        _errorFor('pause') ??
+                        Text(habit.isPaused ? '暂停期间不会被算作失败' : '旅行、生病或休息时可以暂停'),
+                    onTap: _writing
+                        ? null
+                        : () => _write(
+                            () => controller.togglePaused(habit.id),
+                            target: 'pause',
+                          ),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -2922,11 +3067,15 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                           : Icons.archive_outlined,
                     ),
                     title: Text(habit.archived ? '恢复到习惯列表' : '归档习惯'),
-                    subtitle: const Text('明天起停用，历史记录继续保留'),
-                    onTap: () async {
-                      await controller.toggleArchived(habit.id);
-                      if (context.mounted) Navigator.pop(context);
-                    },
+                    subtitle:
+                        _errorFor('archive') ?? const Text('明天起停用，历史记录继续保留'),
+                    onTap: _writing
+                        ? null
+                        : () => _write(
+                            () => controller.toggleArchived(habit.id),
+                            target: 'archive',
+                            closeOnSuccess: true,
+                          ),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -2940,14 +3089,17 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                         color: Theme.of(context).colorScheme.error,
                       ),
                     ),
-                    subtitle: const Text('移入回收站，至少保留 30 天，可随时恢复'),
-                    onTap: () async {
-                      await _confirmDeleteHabit(context, controller, habit);
-                      if (context.mounted &&
-                          (controller.habitById(habit.id)?.inTrash ?? true)) {
-                        Navigator.pop(context);
-                      }
-                    },
+                    subtitle:
+                        _errorFor('delete') ??
+                        const Text('移入回收站，至少保留 30 天，可随时恢复'),
+                    onTap: _writing
+                        ? null
+                        : () => _write(
+                            () =>
+                                _confirmDeleteHabit(context, controller, habit),
+                            target: 'delete',
+                            closeOnSuccess: true,
+                          ),
                   ),
                 ],
               ),
@@ -2959,11 +3111,18 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
   }
 }
 
-Future<void> _confirmDeleteHabit(
+Future<bool?> _confirmDeleteHabit(
   BuildContext context,
   HabitController controller,
   Habit habit,
 ) async {
+  var answered = false;
+  void answer(BuildContext context, bool value) {
+    if (answered || ModalRoute.of(context)?.isCurrent != true) return;
+    answered = true;
+    Navigator.pop(context, value);
+  }
+
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
@@ -2971,20 +3130,20 @@ Future<void> _confirmDeleteHabit(
       content: Text('“${habit.title}”及记录将移入回收站，至少保留 30 天。永久删除需要在回收站另行确认。'),
       actions: <Widget>[
         TextButton(
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => answer(context, false),
           child: const Text('取消'),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () => answer(context, true),
           child: const Text('移入回收站'),
         ),
       ],
     ),
   );
-  if (confirmed == true) await controller.deleteHabit(habit.id);
+  return confirmed == true ? controller.deleteHabit(habit.id) : null;
 }
 
 Future<void> _showReviewPeriodDialog(
