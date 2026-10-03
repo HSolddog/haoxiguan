@@ -47,10 +47,7 @@ class _SyncScreenState extends State<SyncScreen> {
   @override
   void initState() {
     super.initState();
-    _run(() async {
-      _settings = await _store.load();
-      await _readStatus();
-    });
+    _load();
   }
 
   @override
@@ -63,8 +60,20 @@ class _SyncScreenState extends State<SyncScreen> {
     super.dispose();
   }
 
-  Future<void> _run(Future<void> Function() action) async {
-    if (_busy) return;
+  Future<void> _load() => _perform(() async {
+    _settings = await _store.load();
+    await _readStatus();
+  });
+
+  Future<void> _run(Future<void> Function() action) {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) {
+      return Future<void>.value();
+    }
+    return _perform(action);
+  }
+
+  Future<void> _perform(Future<void> Function() action) async {
+    if (!mounted || _busy) return;
     setState(() {
       _busy = true;
       _message = null;
@@ -122,25 +131,39 @@ class _SyncScreenState extends State<SyncScreen> {
     }
   }
 
-  Future<bool> _confirm(String title, String message, String action) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(child: Text(message)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(action),
-            ),
-          ],
-        ),
-      ) ??
-      false;
+  Future<bool> _confirm(String title, String message, String action) async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return false;
+    final origin = ModalRoute.of(context);
+    var answered = false;
+    void answer(BuildContext dialogContext, bool confirmed) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, confirmed);
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(child: Text(message)),
+        actions: [
+          TextButton(
+            onPressed: () => answer(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => answer(context, true),
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true && mounted && origin?.isCurrent == true;
+  }
 
   Future<void> _connect() => _run(() async {
     final endpoint = HttpSyncTransport.validateEndpoint(
@@ -227,6 +250,7 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _sync() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!_settings!.recoveryExported) {
       throw const FormatException('请先保存加密恢复文件，避免换机后无法解密');
     }
@@ -239,13 +263,13 @@ class _SyncScreenState extends State<SyncScreen> {
         ),
       );
       if (result.preview != null) {
-        if (!mounted) return;
+        if (!mounted || origin?.isCurrent != true) return;
         final preview = result.preview!;
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (_) => InitialSyncPreviewDialog(preview: preview),
         );
-        if (confirmed != true) {
+        if (confirmed != true || !mounted || origin?.isCurrent != true) {
           _message = '已取消首次同步。本机与远端内容均未改变；下次同步将重新预览。';
           return;
         }
@@ -309,7 +333,9 @@ class _SyncScreenState extends State<SyncScreen> {
           '服务器基线已经改变。将保护本地数据，并重新下载核对；所有不同的习惯都需要你选择版本，不把旧服务器缺少的记录当作删除。',
           '保护并重新核对',
         );
-        if (!confirmed) {
+        if (!confirmed ||
+            !mounted ||
+            ModalRoute.of(context)?.isCurrent != true) {
           _message = '新授权已保存，尚未重新核对基线。可通过下方“重新核对基线”继续。';
           return;
         }
@@ -322,11 +348,14 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _resetBaseline() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!await _confirm(
-      '重新核对远端基线？',
-      '本地内容会先保留副本，重新下载后，每个不同的习惯都需要明确选择版本。请先获得当前服务器的有效授权。',
-      '保护并核对',
-    )) {
+          '重新核对远端基线？',
+          '本地内容会先保留副本，重新下载后，每个不同的习惯都需要明确选择版本。请先获得当前服务器的有效授权。',
+          '保护并核对',
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     await _withEngine((engine) => engine.resetBaselineForReview());
@@ -342,11 +371,23 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _devices() => _run(() async {
+    final origin = ModalRoute.of(context);
     final response = await _withEngine(
       (engine) => engine.session.request('GET', '/v1/devices'),
     );
-    if (!mounted) return;
+    if (!mounted || origin?.isCurrent != true) return;
     final devices = response['devices'] as List;
+    var answered = false;
+    void answer(BuildContext dialogContext, String? target) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, target);
+    }
+
     final target = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -374,7 +415,7 @@ class _SyncScreenState extends State<SyncScreen> {
                         ? null
                         : TextButton(
                             onPressed: () =>
-                                Navigator.pop(context, device['id'] as String),
+                                answer(context, device['id'] as String),
                             child: const Text('撤销'),
                           ),
                   ),
@@ -384,7 +425,7 @@ class _SyncScreenState extends State<SyncScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => answer(context, null),
             child: const Text('关闭'),
           ),
         ],
@@ -392,11 +433,14 @@ class _SyncScreenState extends State<SyncScreen> {
     );
     if (target == null ||
         !mounted ||
+        origin?.isCurrent != true ||
         !await _confirm(
           '撤销设备授权？',
           '该设备之后不能读写服务器；其本地习惯仍保留。重新连接需要新的邀请。',
           '撤销授权',
-        )) {
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     if (!RegExp(r'^[A-Za-z0-9_-]{32}$').hasMatch(target)) {
@@ -439,7 +483,12 @@ class _SyncScreenState extends State<SyncScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (context.mounted &&
+                  ModalRoute.of(context)?.isCurrent == true) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text('关闭'),
           ),
         ],
@@ -448,11 +497,14 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _deleteRemoteAccount() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!await _confirm(
-      '永久删除远端账户？',
-      '将删除该服务器上此账户的全部密文、同步历史和轮换归档，并撤销所有设备。不会删除本机习惯。管理员离线备份仍按其保存政策处理。此操作不能撤销。',
-      '永久删除远端账户',
-    )) {
+          '永久删除远端账户？',
+          '将删除该服务器上此账户的全部密文、同步历史和轮换归档，并撤销所有设备。不会删除本机习惯。管理员离线备份仍按其保存政策处理。此操作不能撤销。',
+          '永久删除远端账户',
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     await _withEngine(
@@ -470,11 +522,14 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _disconnect() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!await _confirm(
-      '断开本机同步？',
-      '保留本机所有习惯、远端数据和已保存的恢复材料。服务器上的设备授权可在“已授权设备”中另外撤销。',
-      '断开本机',
-    )) {
+          '断开本机同步？',
+          '保留本机所有习惯、远端数据和已保存的恢复材料。服务器上的设备授权可在“已授权设备”中另外撤销。',
+          '断开本机',
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     await _store.disconnect();
@@ -645,67 +700,79 @@ class InitialSyncPreviewDialog extends StatelessWidget {
   const InitialSyncPreviewDialog({super.key, required this.preview});
   final InitialSyncPreview preview;
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('首次同步预览'),
-    content: SizedBox(
-      width: 520,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('本机\n${_syncSummary(preview.local)}'),
-            const SizedBox(height: 16),
-            Text('远端\n${_syncSummary(preview.remote)}'),
-            const SizedBox(height: 16),
-            const Text(
-              '确认后才开始合并与上传。空的一端不会覆盖另一端；独立新增记录按原 ID 保留，冲突需要逐项选择。取消会保留两端现状。',
-            ),
-            if (preview.conflicts.isNotEmpty)
-              Text('${preview.conflicts.length} 个习惯需要进一步核对差异。'),
-            for (final id
-                in {...preview.local.keys, ...preview.remote.keys}
-                    .where((key) => key.startsWith('h/'))
-                    .map((key) => key.substring(2)))
-              ExpansionTile(
-                title: Text(_syncHabitTitle(id, preview.local, preview.remote)),
-                subtitle: Text(
-                  preview.local['h/$id'] == null
-                      ? '仅远端存在'
-                      : preview.remote['h/$id'] == null
-                      ? '仅本机存在'
-                      : '两端均有内容',
-                ),
-                children: [
-                  SelectableText(
-                    const JsonEncoder.withIndent('  ').convert({
-                      for (final side in {
-                        '本机': preview.local,
-                        '远端': preview.remote,
-                      }.entries)
-                        side.key: {
-                          for (final e in side.value.entries)
-                            if (SyncEntities.habitId(e.key, e.value) == id)
-                              e.key: e.value,
-                        },
-                    }),
-                  ),
-                ],
+  Widget build(BuildContext context) {
+    var answered = false;
+    void answer(bool confirmed) {
+      if (answered ||
+          !context.mounted ||
+          ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(context, confirmed);
+    }
+
+    return AlertDialog(
+      title: const Text('首次同步预览'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('本机\n${_syncSummary(preview.local)}'),
+              const SizedBox(height: 16),
+              Text('远端\n${_syncSummary(preview.remote)}'),
+              const SizedBox(height: 16),
+              const Text(
+                '确认后才开始合并与上传。空的一端不会覆盖另一端；独立新增记录按原 ID 保留，冲突需要逐项选择。取消会保留两端现状。',
               ),
-          ],
+              if (preview.conflicts.isNotEmpty)
+                Text('${preview.conflicts.length} 个习惯需要进一步核对差异。'),
+              for (final id
+                  in {...preview.local.keys, ...preview.remote.keys}
+                      .where((key) => key.startsWith('h/'))
+                      .map((key) => key.substring(2)))
+                ExpansionTile(
+                  title: Text(
+                    _syncHabitTitle(id, preview.local, preview.remote),
+                  ),
+                  subtitle: Text(
+                    preview.local['h/$id'] == null
+                        ? '仅远端存在'
+                        : preview.remote['h/$id'] == null
+                        ? '仅本机存在'
+                        : '两端均有内容',
+                  ),
+                  children: [
+                    SelectableText(
+                      const JsonEncoder.withIndent('  ').convert({
+                        for (final side in {
+                          '本机': preview.local,
+                          '远端': preview.remote,
+                        }.entries)
+                          side.key: {
+                            for (final e in side.value.entries)
+                              if (SyncEntities.habitId(e.key, e.value) == id)
+                                e.key: e.value,
+                          },
+                      }),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context, false),
-        child: const Text('取消'),
-      ),
-      FilledButton(
-        onPressed: () => Navigator.pop(context, true),
-        child: const Text('确认并继续同步'),
-      ),
-    ],
-  );
+      actions: [
+        TextButton(onPressed: () => answer(false), child: const Text('取消')),
+        FilledButton(
+          onPressed: () => answer(true),
+          child: const Text('确认并继续同步'),
+        ),
+      ],
+    );
+  }
 }
 
 class SyncConflictDialog extends StatefulWidget {
@@ -754,7 +821,10 @@ class _SyncConflictDialogState extends State<SyncConflictDialog> {
   }
 
   Future<void> _apply() async {
-    if (_saving) return;
+    if (!mounted || _saving || ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    final route = ModalRoute.of(context);
     setState(() {
       _saving = true;
       _error = null;
@@ -764,7 +834,7 @@ class _SyncConflictDialogState extends State<SyncConflictDialog> {
         for (final item in widget.decision.items)
           item.id: SyncSelection(_choices[item.id]!, text: _texts[item.id]),
       });
-      if (mounted) Navigator.pop(context, true);
+      if (mounted && route?.isCurrent == true) Navigator.pop(context, true);
     } on FormatException catch (e) {
       if (mounted) setState(() => _error = '${e.message}。选择与输入仍保留，请调整后重试。');
     } on Object {
@@ -909,7 +979,8 @@ class _SyncRecoveryPasswordDialogState
   }
 
   Future<void> _save() async {
-    if (saving) return;
+    if (!mounted || saving || ModalRoute.of(context)?.isCurrent != true) return;
+    final route = ModalRoute.of(context);
     if (first.text.runes.length < 12 || first.text != second.text) {
       setState(() => error = '密码至少 12 个字符，两次输入需一致');
       return;
@@ -922,7 +993,7 @@ class _SyncRecoveryPasswordDialogState
       final success = await widget.onContinue(first.text);
       if (!mounted) return;
       if (success) {
-        Navigator.pop(context, true);
+        if (route?.isCurrent == true) Navigator.pop(context, true);
       } else {
         setState(() => error = '恢复文件尚未保存。密码输入仍保留，可以重试或取消。');
       }

@@ -1,0 +1,57 @@
+{
+  "kind": "host dialog submission route lifetime regression",
+  "baseCommit": "5c7c425628fd16fa5838a0558ed885a1650de962",
+  "sourceSha256": {
+    "lib/ui/data_screen.dart": "3fa8fdabd0d41c1507e619743cc584cb09f7e862902e19bf78286a8659e66102",
+    "lib/ui/sync_screen.dart": "0fdd99068cf8f00c143086627b0af1028c46512d90e9e3a7f0b944ff23741590",
+    "test/dialog_submit_route_race_test.dart": "5435d00fb052849b0ccf49d5a9c2580b583504cda2e2b48d5bbd076436d93e71"
+  },
+  "results": {
+    "newCases": 24,
+    "relatedCases": 27,
+    "passed": 51,
+    "skipped": 0,
+    "failed": 0,
+    "testExitCode": 0,
+    "analyzeExitCode": 0,
+    "analysisIssues": 0,
+    "formatExitCode": 0,
+    "formatChanged": 0
+  },
+  "counterfactuals": {
+    "exactOriginalTwoSources": {
+      "assertionFailures": 18,
+      "passed": 0,
+      "exitCode": 1,
+      "expectedFailure": true,
+      "usesFinalTestBytes": true,
+      "sourceSha256": {
+        "lib/ui/data_screen.dart": "88fb8650e2cdcfa54502ee99d9cd444db5580e404b22e4911fe3167bd58583fe",
+        "lib/ui/sync_screen.dart": "3bf74349e60bcb8ecccee3e3e5cfebae960419de70bbe43accfabde0dac3644d"
+      }
+    },
+    "phase1SourcesBeforeOuterGuards": {
+      "assertionFailures": 5,
+      "passedControl": 1,
+      "exitCode": 1,
+      "expectedFailure": true
+    }
+  },
+  "coverage": [
+    "Mounted dialog already dismissed by explicit discard: old merge/recovery/backup submit delegates are blocked; primary facts, replacement/protection counts and file saves remain unchanged.",
+    "After an authorized delayed save, merge/recovery/backup completion checks the captured original route and leaves a later unrelated page open.",
+    "Readable JSON and CSV answers are single-use, reject old confirmation after cancellation, and check the original data page after the answer awaits; double confirmation saves only once.",
+    "Permanent remote account deletion uses the actual screen/controller, temporary SQLite, and controlled HttpClient: cancellation and leaving produce no DELETE and preserve active settings/facts; valid double-click intent sends exactly one DELETE.",
+    "First sync uses the actual SyncEngine and temporary SQLite with controlled opaque relay: cancellation/leaving produces zero uploaded operations and zero sync protections; valid double confirmation uploads once and creates exactly one protection while preserving business facts.",
+    "Idle data export and sync enrollment/reauthorization callbacks cannot begin dialogs or requests after their original page has left.",
+    "An already authorized file-open result returned after leaving cannot open the password or restore preview, replace facts, or create protection.",
+    "Device picker rejects a stale revoke answer after Close and keeps the parent open; archive/information Close callbacks check their own route.",
+    "Existing first-frame busy protection, failed draft/retry, strict import and explicit legacy-text-compatible restore remain covered by the related tests."
+  ],
+  "fullProofSha256": "76ab2f43b914154203e344a42ad822b175d51b3e2aa49d74ca53c21c7579f323",
+  "boundaries": [
+    "Synthetic host widget/real temporary SQLite/controlled HTTP evidence; no real server, device or APK claim.",
+    "Authorized in-flight commits keep their existing semantics; ordinary idle actions and continuation dialogs require their original route.",
+    "Complete proof and raw diagnostics remain private outside the repository; root full regression/build follows."
+  ]
+}

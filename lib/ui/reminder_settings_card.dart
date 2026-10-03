@@ -19,6 +19,7 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
   String? _result;
   bool _busy = false;
   bool _returningFromSettings = false;
+  bool _settingsResumePending = false;
 
   @override
   void initState() {
@@ -37,14 +38,26 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       if (_returningFromSettings) {
-        _returningFromSettings = false;
-        unawaited(_rebuild());
-      } else {
+        _settingsResumePending = true;
+        _rebuildAfterSettingsReturn();
+      } else if (!_busy) {
         // Settings may have been changed from the system app switcher. Main's
         // resume handler rebuilds reminders; refresh the visible diagnosis too.
         unawaited(_check(clearResult: true));
       }
     }
+  }
+
+  void _rebuildAfterSettingsReturn() {
+    if (!mounted ||
+        _busy ||
+        !_returningFromSettings ||
+        !_settingsResumePending) {
+      return;
+    }
+    _returningFromSettings = false;
+    _settingsResumePending = false;
+    unawaited(_rebuild());
   }
 
   Future<void> _check({bool clearResult = false}) async {
@@ -78,6 +91,7 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
     setState(() {
       _busy = true;
       _returningFromSettings = true;
+      _settingsResumePending = false;
     });
     final opened = await widget.controller.openReminderSettings(
       channel: _access == ReminderAccess.channelDisabled,
@@ -87,11 +101,13 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
       _busy = false;
       if (!opened) {
         _returningFromSettings = false;
+        _settingsResumePending = false;
         _result = '无法打开系统设置。请在系统“应用 → 好习惯 → 通知”中检查后，返回重建提醒。';
       } else {
         _result = '在系统设置中开启通知后返回，将重新检查并重建提醒。';
       }
     });
+    _rebuildAfterSettingsReturn();
   }
 
   Future<void> _rebuild({bool userInitiated = false}) async {

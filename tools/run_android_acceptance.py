@@ -441,6 +441,15 @@ def assert_engine_recreation(value):
     assert (before['pid'], before['engineId']) == (after['pid'], after['engineId']), 'recreation changed process or engine'
     assert before['hostId'] != after['hostId'] and after['attachCount'] > before['attachCount'], 'Activity was not really recreated'
     assert (after.get('requestOutcome'), after.get('requestId'), after.get('requestHostId')) == ('executed', proof['requestId'], before['hostId']), 'new host has no exact executed recreation request'
+    tree = proof.get('semanticsResend')
+    assert isinstance(tree, dict) and tree.get('method') == 'existingTreeDetachAttach', 'missing full semantics resend'
+    views = tree.get('views')
+    assert isinstance(views, list) and views, 'semantics resend has no views'
+    for view in views:
+        assert isinstance(view, dict) and type(view.get('rootId')) is int and view['rootId'] == 0 and view.get('nodeIdsPreserved') is True, 'semantics resend has no preserved root'
+        nodes = view.get('nodeIds')
+        assert isinstance(nodes, list) and nodes and all(type(node) is int and node >= 0 for node in nodes) and len(nodes) == len(set(nodes)) and nodes[0] == 0, 'semantics resend has malformed nodes'
+        assert type(view.get('completeNodeCount')) is int and view['completeNodeCount'] == len(nodes), 'semantics resend has an incomplete node count'
     current = before['pid']
     resumes = value.get('notificationProcessResumes', [])
     assert isinstance(resumes, list), 'invalid continuation observations'
@@ -458,9 +467,10 @@ def check_entry_ownership_failure(build, phase, nonce):
     runtime = args.output/'runtime-live.log'
     if not runtime.exists():
         return
-    marker = 'ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE '
     for line in runtime.read_text(encoding='utf-8', errors='strict').splitlines():
-        if marker not in line:
+        markers = ('ACCEPTANCE_ENTRY_OWNERSHIP_FAILURE ', 'ACCEPTANCE_SEMANTICS_FAILURE ')
+        marker = next((value for value in markers if value in line), None)
+        if marker is None:
             continue
         try:
             observation = json.loads(line.split(marker, 1)[1])
@@ -473,12 +483,19 @@ def check_entry_ownership_failure(build, phase, nonce):
         valid = (observation.get('package'), observation.get('build'), observation.get('phase')) == (package, str(build), phase)
         valid = valid and type(observation.get('pid')) is int and observation['pid'] > 0
         valid = valid and isinstance(observation.get('entryId'), str) and re.fullmatch('[0-9a-f]{32}', observation['entryId'])
-        valid = valid and observation.get('reportWritten') is False and observation.get('businessOpened') is False
-        valid = valid and observation.get('reason') == 'retained owner did not respond to the bounded challenge'
-        (args.output/f'entry-ownership-failure-{nonce}.txt').write_text(line+'\n', encoding='utf-8')
+        semantic = marker == 'ACCEPTANCE_SEMANTICS_FAILURE '
+        if semantic:
+            valid = valid and 'reportWritten' not in observation and 'businessOpened' not in observation
+        else:
+            valid = valid and observation.get('reportWritten') is False and observation.get('businessOpened') is False
+        valid = valid and (isinstance(observation.get('reason'), str) and bool(observation['reason']) if semantic else observation.get('reason') == 'retained owner did not respond to the bounded challenge')
+        prefix = 'semantics-binding' if semantic else 'entry-ownership'
+        (args.output/f'{prefix}-failure-{nonce}.txt').write_text(line+'\n', encoding='utf-8')
         if not valid:
             raise RuntimeError('native entry ownership diagnostic has a wrong identity')
-        event('entry-ownership-failure', observation=observation)
+        event(f'{prefix}-failure', observation=observation)
+        if semantic:
+            raise RuntimeError('native acceptance semantics could not bind to the visible host; no UI mutation is permitted')
         raise RuntimeError('native acceptance entry owner did not respond; no business replay is permitted')
 
 

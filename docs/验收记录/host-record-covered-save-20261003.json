@@ -1,0 +1,68 @@
+{
+  "scope": "Synthetic host widget regressions using real Navigator routes and HabitController with a gated MemoryHabitRepository; no production user/device data.",
+  "sourceFiles": [
+    {
+      "repositoryPath": "lib/ui/record_editor.dart",
+      "sha256": "bd9e0d90fb1b6484bb00e2ea43383e6c260c650cd0f4f3e42afa600d7f5767d7"
+    },
+    {
+      "repositoryPath": "test/record_editor_covered_save_test.dart",
+      "sha256": "c04330087e00176400bef9468797afdd1d85fc89e4bf6e28009768735aec7f1d"
+    }
+  ],
+  "oldSourceSha256": "bea77e09e6d487b405c89346c3f2f64e1eee630415cd80489003bc71b6070373",
+  "problem": "An active record editor covered by another route stayed busy after save completed because cleanup required the editor to be current.",
+  "change": "Always clear busy state while still mounted. A failed save retains both inputs and mode with the existing error. A successful current editor closes; a successful covered active editor clears committed value/seconds/replacement mode and announces that the record was saved.",
+  "oldSourceRegression": {
+    "testCount": 3,
+    "failed": 3,
+    "passed": 0,
+    "exitCode": 1,
+    "observed": "After save completed and the cover route was removed, the still-active editor field was disabled in all three cases."
+  },
+  "finalValidation": {
+    "passed": 22,
+    "exitCode": 0,
+    "newCoveredCases": 3,
+    "existingRecordCases": 19,
+    "analyzeSourceCount": 2,
+    "analyzeIssues": 0,
+    "analyzeExitCode": 0,
+    "analyzeSeconds": 8.0,
+    "formatFiles": 2,
+    "formatterChangedFiles": 1,
+    "formatExitCode": 0,
+    "relatedTests": [
+      {
+        "repositoryPath": "test/record_editor_route_race_test.dart",
+        "passed": 8
+      },
+      {
+        "repositoryPath": "test/record_draft_test.dart",
+        "passed": 5
+      },
+      {
+        "repositoryPath": "test/quick_record_test.dart",
+        "passed": 4
+      },
+      {
+        "repositoryPath": "test/quick_record_accessibility_test.dart",
+        "passed": 2
+      }
+    ],
+    "wording": "3 new covered-save cases plus 19 related cases; entry_save_race_test.dart was not part of this targeted command."
+  },
+  "newCases": [
+    "Count increment saved while covered: return to an enabled editor, cleared submitted draft, feedback and a distinct next increment.",
+    "Duration replacement saved while covered: return with amount/seconds/mode reset; a next record appends instead of repeating the replacement.",
+    "Duration save rejected while covered: original repository/controller remain intact, both inputs and replacement mode survive, one retry succeeds."
+  ],
+  "preservation": "The covering route is not popped by save completion. Historic entry fields and notes persist through successful saves and repository reload. Popped/disposed editor and duplicate callback regressions remain covered by the existing tests.",
+  "logDigests": {
+    "oldThreeNegativeSha256": "0bb5428ccbfc99e2da0a28789098e41a4fb9b2d60516d71eaad869d94e2fe774",
+    "final22TestsSha256": "12bcc67bbc2153bd5667d664271d5bd15b530f13747c2a9c12023dfb8aa75d0c",
+    "finalAnalyzeSha256": "c9202bf608d2c228ed229804de9114470945f9d8aaf868334be3360ea927f3f2",
+    "finalFormatSha256": "d91f84f30bf9697b4da0f6c7a77b4b4a4fd6e9390c4ba4332a7b2ea1c62cbe29"
+  },
+  "boundary": "This proves host route/persistence behavior. It is not a device or native CI verdict. Full before-source and logs remain in a private local archive."
+}

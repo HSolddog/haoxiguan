@@ -25,6 +25,7 @@ class _ReminderProbe implements ReminderScheduler, ReminderDiagnostics {
   ReminderAccess access = ReminderAccess.ready;
   Completer<bool>? permission;
   Completer<bool>? settings;
+  Completer<void>? pendingRebuild;
   int reads = 0;
   int permissions = 0;
   int opens = 0;
@@ -69,7 +70,10 @@ class _ReminderProbe implements ReminderScheduler, ReminderDiagnostics {
   }
 
   @override
-  Future<void> syncAll(Iterable<Habit> habits) async => rebuilds++;
+  Future<void> syncAll(Iterable<Habit> habits) async {
+    rebuilds++;
+    await pendingRebuild?.future;
+  }
 
   @override
   Future<void> syncHabit(Habit habit) async {}
@@ -316,4 +320,208 @@ void main() {
     await _expectFactsUnchanged(fixture);
     expect(tester.takeException(), isNull);
   });
+
+  for (final covered in [false, true]) {
+    testWidgets(
+      'pending OS settings return rebuilds when the card route is ${covered ? 'covered' : 'current'}',
+      (tester) async {
+        final fixture = await _seed(ReminderAccess.channelDisabled);
+        final opened = await _open(tester, fixture);
+        addTearDown(() {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        });
+        fixture.reminders.settings = Completer<bool>();
+        final settings = _action(tester, 'settings');
+        settings();
+        settings();
+        await tester.idle();
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        if (covered) {
+          opened.navigator.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  const Scaffold(body: Text('cover route sentinel')),
+            ),
+          );
+        }
+        fixture.reminders.access = ReminderAccess.ready;
+        // Return to the app while the platform result remains unresolved.
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.idle();
+        expect(fixture.reminders.calls, {
+          'reads': 0,
+          'permissions': 0,
+          'opens': 1,
+          'rebuilds': 0,
+        });
+        fixture.reminders.settings!.complete(true);
+        await tester.pumpAndSettle();
+        debugPrint(
+          'REMINDER_RESUME_ORDER=${jsonEncode({'covered': covered, ...fixture.reminders.calls})}',
+        );
+        expect(fixture.reminders.calls, {
+          'reads': 1,
+          'permissions': 0,
+          'opens': 1,
+          'rebuilds': 1,
+        });
+        expect(fixture.reminders.openedChannels, [true]);
+        if (covered) {
+          expect(find.text('cover route sentinel'), findsOneWidget);
+          opened.navigator.currentState!.pop();
+          await tester.pumpAndSettle();
+        }
+        expect(find.textContaining('通知权限可用'), findsOneWidget);
+        expect(find.text('已按当前习惯和记录重建提醒。'), findsOneWidget);
+        await _expectFactsUnchanged(fixture);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('pending OS settings return coalesces duplicate resumes', (
+    tester,
+  ) async {
+    final fixture = await _seed(ReminderAccess.channelDisabled);
+    await _open(tester, fixture);
+    addTearDown(() {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    });
+    final pendingRebuild = Completer<void>();
+    addTearDown(() {
+      if (!pendingRebuild.isCompleted) pendingRebuild.complete();
+    });
+    fixture.reminders
+      ..settings = Completer<bool>()
+      ..pendingRebuild = pendingRebuild;
+    addTearDown(() {
+      final settings = fixture.reminders.settings!;
+      if (!settings.isCompleted) settings.complete(false);
+    });
+    _action(tester, 'settings')();
+    await tester.idle();
+    fixture.reminders.access = ReminderAccess.ready;
+    for (var repeat = 0; repeat < 2; repeat++) {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.idle();
+    }
+    expect(fixture.reminders.reads, 0);
+    fixture.reminders.settings!.complete(true);
+    await tester.idle();
+    expect(fixture.reminders.reads, 1);
+    expect(fixture.reminders.rebuilds, 1);
+    for (var repeat = 0; repeat < 2; repeat++) {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.idle();
+    }
+    expect(fixture.reminders.reads, 1);
+    expect(fixture.reminders.rebuilds, 1);
+    pendingRebuild.complete();
+    await tester.pumpAndSettle();
+    expect(fixture.reminders.opens, 1);
+    expect(find.text('已按当前习惯和记录重建提醒。'), findsOneWidget);
+    await _expectFactsUnchanged(fixture);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final resumedFirst in [false, true]) {
+    testWidgets(
+      'failed settings open does not rebuild with ${resumedFirst ? 'resume first' : 'Future first'}',
+      (tester) async {
+        final fixture = await _seed(ReminderAccess.channelDisabled);
+        await _open(tester, fixture);
+        addTearDown(() {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        });
+        fixture.reminders.settings = Completer<bool>();
+        _action(tester, 'settings')();
+        await tester.idle();
+        fixture.reminders.access = ReminderAccess.ready;
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        if (resumedFirst) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.idle();
+        }
+        fixture.reminders.settings!.complete(false);
+        await tester.pumpAndSettle();
+        expect(find.textContaining('无法打开系统设置'), findsOneWidget);
+        if (!resumedFirst) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pumpAndSettle();
+        }
+        expect(fixture.reminders.opens, 1);
+        expect(fixture.reminders.rebuilds, 0);
+        expect(
+          tester
+              .widget<TextButton>(
+                find.byKey(const Key('reminder-system-settings')),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        await _expectFactsUnchanged(fixture);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'disposed pending settings open does not rebuild ${resumedFirst ? 'after' : 'before'} resume',
+      (tester) async {
+        final fixture = await _seed(ReminderAccess.channelDisabled);
+        final opened = await _open(tester, fixture);
+        addTearDown(() {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        });
+        fixture.reminders.settings = Completer<bool>();
+        _action(tester, 'settings')();
+        await tester.idle();
+        fixture.reminders.access = ReminderAccess.ready;
+        if (resumedFirst) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.idle();
+        }
+        opened.navigator.currentState!.pop();
+        await tester.pumpAndSettle();
+        expect(opened.context.mounted, isFalse);
+        if (!resumedFirst) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+        }
+        fixture.reminders.settings!.complete(true);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(fixture.reminders.calls, {
+          'reads': 0,
+          'permissions': 0,
+          'opens': 1,
+          'rebuilds': 0,
+        });
+        expect(find.text('home route sentinel'), findsOneWidget);
+        await _expectFactsUnchanged(fixture);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

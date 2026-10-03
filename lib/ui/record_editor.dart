@@ -35,6 +35,7 @@ class _RecordEditorState extends State<_RecordEditor> {
   final _seconds = TextEditingController(text: '0');
   bool _replace = false;
   bool _saving = false;
+  bool _saved = false;
   String? _error;
   bool get _dirty => _value.text.isNotEmpty || _seconds.text != '0' || _replace;
 
@@ -45,7 +46,7 @@ class _RecordEditorState extends State<_RecordEditor> {
     _seconds.addListener(_draftChanged);
   }
 
-  void _draftChanged() => setState(() {});
+  void _draftChanged() => setState(() => _saved = false);
   @override
   void dispose() {
     _value.dispose();
@@ -126,7 +127,10 @@ class _RecordEditorState extends State<_RecordEditor> {
               selected: {_replace},
               onSelectionChanged: _saving
                   ? null
-                  : (v) => setState(() => _replace = v.first),
+                  : (v) => setState(() {
+                      _replace = v.first;
+                      _saved = false;
+                    }),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -148,6 +152,14 @@ class _RecordEditorState extends State<_RecordEditor> {
                 enabled: !_saving,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: '秒（0–59）'),
+              ),
+            if (_saved)
+              Semantics(
+                liveRegion: true,
+                child: const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('记录已保存。', key: Key('record-save-success')),
+                ),
               ),
             if (_replace)
               const Padding(
@@ -217,13 +229,21 @@ class _RecordEditorState extends State<_RecordEditor> {
                       value,
                       replaceTotal: _replace,
                     );
-                    if (!context.mounted || route?.isCurrent != true) return;
-                    if (saved) {
+                    if (!mounted || !context.mounted) return;
+                    setState(() {
+                      _saving = false;
+                      _error = saved ? null : '保存未完成，请重试。';
+                    });
+                    if (saved && route?.isCurrent == true) {
                       Navigator.pop(context);
-                    } else {
+                    } else if (saved && route?.isActive == true) {
+                      // The submitted amount is committed even while another
+                      // route covers this editor. Retain it with a fresh draft.
+                      _value.clear();
+                      _seconds.text = '0';
                       setState(() {
-                        _saving = false;
-                        _error = '保存未完成，请重试。';
+                        _replace = false;
+                        _saved = true;
                       });
                     }
                   },

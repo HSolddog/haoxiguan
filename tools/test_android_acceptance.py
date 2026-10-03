@@ -34,7 +34,9 @@ def engine_proof(value):
     return {'runId': value['runId'], 'nonce': value['launchNonce'], 'entryId': value['entryId'],
             'requestId': 'f'*32, 'before': host, 'after': {**host, 'hostId': 'e'*32, 'attachCount': 2,
                 'requestId': 'f'*32, 'requestHostId': host['hostId'], 'requestOutcome': 'executed'},
-            'firstRunningReportUnchanged': True}
+            'firstRunningReportUnchanged': True,
+            'semanticsResend': {'method': 'existingTreeDetachAttach', 'views': [
+                {'rootId': 0, 'nodeIds': [0, 1], 'completeNodeCount': 2, 'nodeIdsPreserved': True}]}}
 
 
 def passed_predecessor(build='10001', phase='reopen', run_id='122'):
@@ -978,6 +980,46 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
             with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
             path.unlink(); files.rmdir(); files.symlink_to(root/'missing-directory')
             with self.assertRaises(RuntimeError): driver.decode_report_probe(run())
+
+    def test_engine_proof_requires_complete_preserved_semantics_root(self):
+        valid = passed_predecessor('10001', 'create')
+        driver.assert_engine_recreation(valid)
+        for tree in (None, {}, {'method': 'other', 'views': []},
+                     {'method': 'existingTreeDetachAttach', 'views': []},
+                     *({'method': 'existingTreeDetachAttach', 'views': [view]} for view in (
+                         {'rootId': True, 'nodeIds': [0], 'completeNodeCount': 1, 'nodeIdsPreserved': True},
+                         {'rootId': 0, 'nodeIds': [1], 'completeNodeCount': 1, 'nodeIdsPreserved': True},
+                         {'rootId': 0, 'nodeIds': [0, 0], 'completeNodeCount': 2, 'nodeIdsPreserved': True},
+                         {'rootId': 0, 'nodeIds': [0, True], 'completeNodeCount': 2, 'nodeIdsPreserved': True},
+                         {'rootId': 0, 'nodeIds': [0, -1], 'completeNodeCount': 2, 'nodeIdsPreserved': True},
+                         {'rootId': 0, 'nodeIds': [0], 'completeNodeCount': True, 'nodeIdsPreserved': True},
+                         {'rootId': 0, 'nodeIds': [0], 'completeNodeCount': 2, 'nodeIdsPreserved': True},
+                         {'rootId': 0, 'nodeIds': [0], 'completeNodeCount': 1, 'nodeIdsPreserved': False}))):
+            with self.subTest(tree=tree):
+                changed = json.loads(json.dumps(valid))
+                changed['nativeEngineRecreationEvidence']['semanticsResend'] = tree
+                with self.assertRaises(AssertionError):
+                    driver.assert_engine_recreation(changed)
+                self.assertFalse(driver.valid_passed_predecessor(changed, 10001, changed['runId']))
+
+    def test_semantics_failure_stops_ui_before_any_mutation_and_keeps_first_report(self):
+        observation = {'package': driver.package, 'build': '10002', 'phase': 'reopen',
+                       'nonce': 'a'*32, 'pid': 11, 'entryId': 'b'*32,
+                       'reason': 'semantics notification has no visible current host'}
+        line = 'ACCEPTANCE_SEMANTICS_FAILURE ' + json.dumps(observation)
+        (driver.args.output/'runtime-live.log').write_text(line+'\n', encoding='utf-8')
+        first = b'{"status":"running","runId":"123"}'
+        retained = driver.args.output/'first-report.json'
+        retained.write_bytes(first)
+        with patch.object(driver, 'command') as command, patch.object(driver, 'drive_native_ui') as ui:
+            with self.assertRaisesRegex(RuntimeError, 'semantics could not bind'):
+                driver.check_entry_ownership_failure(10002, 'reopen', 'a'*32)
+            command.assert_not_called()
+            ui.assert_not_called()
+        self.assertEqual(retained.read_bytes(), first)
+        self.assertEqual((driver.args.output/('semantics-binding-failure-'+'a'*32+'.txt')).read_text(encoding='utf-8'), line+'\n')
+        self.assertEqual(self.events()[-1]['event'], 'semantics-binding-failure')
+        driver.check_entry_ownership_failure(10002, 'reopen', 'c'*32)
 
     def test_engine_recreation_requires_exact_executed_native_request(self):
         saved = passed_predecessor()

@@ -76,6 +76,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _openService(Widget screen) async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
     await Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => screen));
@@ -92,7 +93,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _run(Future<String?> Function() action) async {
-    if (_busy) return;
+    if (!mounted || _busy || ModalRoute.of(context)?.isCurrent != true) return;
     setState(() {
       _busy = true;
       _result = null;
@@ -139,6 +140,19 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
   });
 
   Future<void> _exportPlain() => _run(() async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return null;
+    final origin = ModalRoute.of(context);
+    var answered = false;
+    void answer(BuildContext dialogContext, bool confirmed) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, confirmed);
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -148,17 +162,17 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => answer(context, false),
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => answer(context, true),
             child: const Text('导出明文'),
           ),
         ],
       ),
     );
-    if (confirm != true) return null;
+    if (confirm != true || !mounted || origin?.isCurrent != true) return null;
     final snapshot = widget.controller.exportJson();
     final createdAt = DateTime.now().toUtc();
     final bytes = utf8.encode(
@@ -176,6 +190,19 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
   });
 
   Future<void> _exportCsv() => _run(() async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return null;
+    final origin = ModalRoute.of(context);
+    var answered = false;
+    void answer(BuildContext dialogContext, bool confirmed) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, confirmed);
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -187,17 +214,17 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => answer(context, false),
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => answer(context, true),
             child: const Text('导出明文 CSV'),
           ),
         ],
       ),
     );
-    if (confirmed != true) return null;
+    if (confirmed != true || !mounted || origin?.isCurrent != true) return null;
     final saved = await _files.save(
       CsvExport.encodeArchive(widget.controller.exportJson()),
       'haoxiguan-csv-${DateTime.now().toUtc().millisecondsSinceEpoch}.zip',
@@ -206,8 +233,9 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
   });
 
   Future<void> _restore() => _run(() async {
+    final origin = ModalRoute.of(context);
     final bytes = await _files.open();
-    if (bytes == null) return null;
+    if (!mounted || origin?.isCurrent != true || bytes == null) return null;
     final envelope = jsonDecode(utf8.decode(bytes));
     String? raw;
     DateTime? createdAt;
@@ -216,7 +244,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
         throw const FormatException('不支持的备份版本');
       }
       if (envelope['encrypted'] == true) {
-        if (!mounted) return null;
+        if (!mounted || origin?.isCurrent != true) return null;
         await showDialog<String>(
           context: context,
           barrierDismissible: false,
@@ -233,7 +261,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
             },
           ),
         );
-        if (raw == null) return null;
+        if (!mounted || origin?.isCurrent != true || raw == null) return null;
       } else if (envelope['encrypted'] == false) {
         raw = jsonEncode(envelope['data']);
         if (envelope['createdAtUtc'] case final String value) {
@@ -248,7 +276,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
     }
     final restored = raw!;
     final preview = BackupPreview.forRestore(restored, createdAtUtc: createdAt);
-    if (!mounted) return null;
+    if (!mounted || origin?.isCurrent != true) return null;
     final completed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -437,7 +465,12 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            if (context.mounted &&
+                                ModalRoute.of(context)?.isCurrent == true) {
+                              Navigator.pop(context);
+                            }
+                          },
                           child: const Text('知道了'),
                         ),
                       ],
@@ -566,7 +599,12 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           onPressed: _busy
               ? null
               : () async {
-                  if (_busy) return;
+                  if (!context.mounted ||
+                      _busy ||
+                      ModalRoute.of(context)?.isCurrent != true) {
+                    return;
+                  }
+                  final route = ModalRoute.of(context);
                   if (widget.creating &&
                       (_password.text.runes.length < 12 ||
                           _password.text != _confirm.text)) {
@@ -579,7 +617,7 @@ class _PasswordDialogState extends State<_PasswordDialog> {
                   });
                   try {
                     if (await widget.onContinue?.call(_password.text) ?? true) {
-                      if (context.mounted) {
+                      if (context.mounted && route?.isCurrent == true) {
                         Navigator.pop(context, _password.text);
                       }
                     }

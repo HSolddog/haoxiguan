@@ -60,7 +60,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
     ]) {
       c.addListener(_draftChanged);
     }
-    _run(_load);
+    _run(_load, initialLoad: true);
   }
 
   void _draftChanged() {
@@ -81,9 +81,10 @@ class _WebDavScreenState extends State<WebDavScreen> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    _settings = await _store.load();
-    final s = _settings;
+  Future<void> _load(bool Function() active) async {
+    final s = await _store.load();
+    if (!active()) return;
+    _settings = s;
     if (s == null) return;
     _endpoint.text = s.endpoint;
     _user.text = s.username;
@@ -92,29 +93,37 @@ class _WebDavScreenState extends State<WebDavScreen> {
     _confirm.text = s.backupPassword;
     _automatic = s.automatic;
     _wifi = s.wifiOnly;
-    _status = await _store.status(s.id);
+    final status = await _store.status(s.id);
+    if (active()) _status = status;
   }
 
-  Future<void> _run(Future<void> Function() operation) async {
-    if (_busy) return;
+  Future<void> _run(
+    Future<void> Function(bool Function() active) operation, {
+    bool initialLoad = false,
+  }) async {
+    if (!mounted || _busy) return;
+    // initState loads local settings before the route dependency is available.
+    final route = initialLoad ? null : ModalRoute.of(context);
+    bool active() => mounted && (initialLoad || route?.isCurrent == true);
+    if (!active()) return;
     setState(() {
       _busy = true;
       _message = null;
     });
     try {
-      await operation();
+      await operation(active);
     } on DavFailure catch (e) {
-      _message = e.message;
+      if (active()) _message = e.message;
     } on FormatException catch (e) {
-      _message = e.message;
+      if (active()) _message = e.message;
     } on Object {
-      _message = '操作未完成，请检查连接、权限或系统安全存储。本机记录仍保留。';
+      if (active()) _message = '操作未完成，请检查连接、权限或系统安全存储。本机记录仍保留。';
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _save(bool Function() active) async {
     final endpoint = WebDavClient.validateEndpoint(_endpoint.text).toString();
     if (_backupPassword.text.runes.length < 12 ||
         _backupPassword.text != _confirm.text) {
@@ -133,9 +142,11 @@ class _WebDavScreenState extends State<WebDavScreen> {
       automatic: _automatic,
       wifiOnly: _wifi,
     );
+    if (!active()) return;
     final client = _client(s);
     try {
       await client.verifyAccess(s.vault, s.device);
+      if (!active()) return;
       // Complete one real encrypted upload and restore before enabling automation.
       final item = await client.upload(
         raw,
@@ -143,33 +154,42 @@ class _WebDavScreenState extends State<WebDavScreen> {
         s.vault,
         s.device,
       );
+      if (!active()) return;
       await client.restore(item, s.backupPassword);
+      if (!active()) return;
       await _store.save(s);
       await _store.writeStatus(s.id, {
         'lastSuccess': item.created.toIso8601String(),
         'sourceDigest': sha256.convert(utf8.encode(raw)).toString(),
         'owned': [item.toJson()],
       });
+      final status = await _store.status(s.id);
+      if (!active()) return;
       _settings = s;
-      _status = await _store.status(s.id);
+      _status = status;
       _message = '配置已保存，第一份加密备份已上传并验证可恢复。请另行妥善保管备份密码。';
     } finally {
       client.close();
     }
   }
 
-  Future<void> _backup() async {
+  Future<void> _backup(bool Function() active) async {
+    final id = _settings!.id;
     await BackupManager(_store).run(widget.controller.exportJson());
-    _status = await _store.status(_settings!.id);
+    if (!active()) return;
+    final status = await _store.status(id);
+    if (!active()) return;
+    _status = status;
     _message = '备份已上传并通过读回校验。';
   }
 
-  Future<void> _list() async {
+  Future<void> _list(bool Function() active) async {
     final s = _settings!;
     final client = _client(s);
     try {
       final items = <RemoteBackup>[];
       for (final vault in await client.children('haoxiguan/')) {
+        if (!active()) return;
         try {
           requireUuid(vault);
         } on FormatException {
@@ -177,6 +197,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
         }
         items.addAll(await client.list(vault));
       }
+      if (!active()) return;
       items.sort((a, b) => b.created.compareTo(a.created));
       _remote = items;
       _message = items.isEmpty ? '暂未找到具有完成标记的备份。' : '选择备份后会解密、预览，再确认恢复。';
@@ -185,7 +206,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
     }
   }
 
-  Future<void> _restore(RemoteBackup item) async {
+  Future<void> _restore(RemoteBackup item, bool Function() active) async {
     final s = _settings!;
     final client = _client(s);
     try {
@@ -195,7 +216,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
         raw,
         createdAtUtc: item.created.toUtc(),
       );
-      if (!mounted) return;
+      if (!mounted || !active()) return;
       final restored = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
@@ -205,7 +226,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
           preview: preview,
         ),
       );
-      if (restored == true) {
+      if (active() && restored == true) {
         _message = '恢复完成。原 WebDAV 配置不再自动备份这个新空间；远端副本保留。';
       }
     } finally {
@@ -257,8 +278,9 @@ class _WebDavScreenState extends State<WebDavScreen> {
                         TextButton(
                           onPressed: _busy
                               ? null
-                              : () => _run(() async {
+                              : () => _run((active) async {
                                   await _store.disconnect();
+                                  if (!active()) return;
                                   _settings = null;
                                   _remote = [];
                                   _status = {};
@@ -348,7 +370,9 @@ class _WebDavScreenState extends State<WebDavScreen> {
                 '${item.size} 字节 · 设备 ${item.device.substring(0, 8)} · 空间 ${item.vault.substring(0, 8)}',
               ),
               trailing: const Icon(Icons.restore),
-              onTap: _busy ? null : () => _run(() => _restore(item)),
+              onTap: _busy
+                  ? null
+                  : () => _run((active) => _restore(item, active)),
             ),
           const SizedBox(height: 32),
         ],

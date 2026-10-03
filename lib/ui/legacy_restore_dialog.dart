@@ -44,7 +44,9 @@ class _LegacyRestoreDialogState extends State<_LegacyRestoreDialog> {
   }
 
   Future<void> _preview() async {
-    if (_previewing) return;
+    if (!mounted || _previewing) return;
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
     setState(() {
       _previewing = true;
       _error = null;
@@ -61,13 +63,15 @@ class _LegacyRestoreDialogState extends State<_LegacyRestoreDialog> {
           preview: preview,
         ),
       );
-      if (mounted && restored == true) {
+      if (mounted && route?.isCurrent == true && restored == true) {
         Navigator.pop(context);
       }
     } on UnsupportedSnapshotVersion catch (error) {
-      if (mounted) setState(() => _error = '$error\n粘贴内容已保留，本机数据未改变。');
+      if (mounted && route?.isCurrent == true) {
+        setState(() => _error = '$error\n粘贴内容已保留，本机数据未改变。');
+      }
     } on Object {
-      if (mounted) {
+      if (mounted && route?.isCurrent == true) {
         setState(() => _error = '内容未通过校验。请粘贴完整、受支持的 JSON 后重试。当前输入已保留，本机数据未改变。');
       }
     } finally {

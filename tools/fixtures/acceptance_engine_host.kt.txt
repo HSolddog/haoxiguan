@@ -136,6 +136,9 @@
         super.onFlutterUiDisplayed()
         acceptanceUiDisplayed = true
         acceptanceEngineEvent("uiDisplayed")
+        // Notify the retained Dart owner after any host recreation. This only
+        // refreshes the existing semantics tree; it never starts main or work.
+        acceptanceHostChannel?.invokeMethod("hostUiDisplayed", acceptanceIdentity())
     }
 
     override fun onDestroy() {

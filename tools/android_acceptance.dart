@@ -21,6 +21,8 @@ import 'package:haoxiguan/services/reminder_service.dart';
 import 'package:haoxiguan/state/habit_controller.dart';
 import 'package:haoxiguan/ui/backup_restore_dialog.dart';
 
+import 'acceptance_semantics.dart';
+
 final acceptanceNavigator = GlobalKey<NavigatorState>();
 
 const acceptancePackage = 'com.haoxiguan.haoxiguan.acceptance';
@@ -751,6 +753,21 @@ Future<void> main() async {
   // This isolated fixture is driven through Android's accessibility hierarchy.
   // Keep Flutter semantics active even without a physical accessibility service.
   final acceptanceSemantics = WidgetsBinding.instance.ensureSemantics();
+  final semanticsRebinder = AcceptanceSemanticsRebinder(
+    channel: acceptanceEngineChannel,
+    decodeIdentity: (raw) => engineHostIdentity(
+      raw,
+      build: result['build']! as String,
+      expectedPid: pid,
+    ),
+    readIdentity: () => acceptanceEngineChannel
+        .invokeMapMethod<String, Object?>('identity')
+        .timeout(const Duration(seconds: 2)),
+    onFailure: (error) => debugPrint(
+      'ACCEPTANCE_SEMANTICS_FAILURE ${jsonEncode({'package': acceptancePackage, 'build': build, 'phase': launch.phase, 'nonce': launch.nonce, 'pid': pid, 'entryId': entryId, 'reason': error.toString()})}',
+    ),
+  )..start();
+  result['nativeSemanticsRebinds'] = semanticsRebinder.observations;
   runApp(
     MaterialApp(
       navigatorKey: acceptanceNavigator,
@@ -772,11 +789,24 @@ Future<void> main() async {
         ..clear()
         ..addAll(continuation.result);
       result.addAll({'ownerPid': pid, 'entryId': entryId});
+      final retainedRebinds = result['nativeSemanticsRebinds'];
+      if (retainedRebinds is List) {
+        semanticsRebinder.observations.insertAll(
+          0,
+          retainedRebinds.map(
+            (value) => (value as Map).cast<String, Object?>(),
+          ),
+        );
+      }
+      result['nativeSemanticsRebinds'] = semanticsRebinder.observations;
     }
     await writeAtomic(report, jsonEncode(result));
     if (continuation == null) {
       result['nativeEngineRecreationEvidence'] =
           await verifyNativeEngineRecreation(report, result, launch);
+      final semanticsHost = await semanticsRebinder.refresh();
+      (result['nativeEngineRecreationEvidence']! as Map)['semanticsResend'] =
+          semanticsHost['tree'];
       result['nativeEngineRecreation'] = true;
       await writeAtomic(report, jsonEncode(result));
     } else {
@@ -1094,6 +1124,10 @@ Future<void> main() async {
       });
     }
   } finally {
+    final semanticsFailure = await semanticsRebinder.close();
+    if (semanticsFailure != null && result['status'] != 'failed') {
+      result.addAll({'status': 'failed', 'error': semanticsFailure.toString()});
+    }
     controller?.dispose();
     await repository?.close();
     acceptanceSemantics.dispose();

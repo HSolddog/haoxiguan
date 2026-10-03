@@ -1815,6 +1815,8 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
   TimeOfDay? _reminder;
   late DateTime _startDate;
   bool _saving = false;
+  bool _saved = false;
+  bool get _canEdit => !_saving && !_saved;
   late String _initialDraft;
   final _ownGuard = GlobalKey<UnsavedChangesGuardState>();
   GlobalKey<UnsavedChangesGuardState> get _guard =>
@@ -1835,7 +1837,14 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
     _reminder,
     dateKey(_startDate),
   ].join('\u0000');
-  bool get _dirty => _draft != _initialDraft;
+  bool get _dirty => !_saved && _draft != _initialDraft;
+  void _changeDraft(VoidCallback change) {
+    if (!mounted || !_canEdit || ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    setState(change);
+  }
+
   void _inputChanged() {
     if (mounted) setState(() {});
   }
@@ -1958,6 +1967,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
               TextField(
                 key: const Key('habit-title-field'),
                 controller: _titleController,
+                enabled: _canEdit,
                 autofocus: true,
                 textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
@@ -1982,6 +1992,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                       TextField(
                         key: const Key('habit-category-field'),
                         controller: _categoryController,
+                        enabled: _canEdit,
                         textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           labelText: '分类',
@@ -1989,8 +2000,9 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                           prefixIcon: const Icon(Icons.folder_outlined),
                           suffixIcon: PopupMenuButton<HabitCategory>(
                             tooltip: '选择已有分类',
+                            enabled: _canEdit,
                             icon: const Icon(Icons.arrow_drop_down_rounded),
-                            onSelected: (value) => setState(() {
+                            onSelected: (value) => _changeDraft(() {
                               _categoryId = value.id;
                               _selectedCategoryName = value.name;
                               _categoryController.text = value.name;
@@ -2025,9 +2037,9 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                             child: Text('手动时长'),
                           ),
                         ],
-                        onChanged: _editing
+                        onChanged: _editing || !_canEdit
                             ? null
-                            : (value) => setState(() {
+                            : (value) => _changeDraft(() {
                                 _recordType = value!;
                                 _dailyTargetController.text =
                                     value == 'duration' ? '20' : '1';
@@ -2038,7 +2050,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                         if (_recordType == 'count')
                           TextField(
                             controller: _unitController,
-                            enabled: !_editing,
+                            enabled: !_editing && _canEdit,
                             maxLength: 20,
                             decoration: const InputDecoration(
                               labelText: '单位，例如 杯、页',
@@ -2047,6 +2059,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                         TextField(
                           key: const Key('daily-target-field'),
                           controller: _dailyTargetController,
+                          enabled: _canEdit,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
@@ -2059,6 +2072,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                         if (_recordType == 'duration')
                           TextField(
                             controller: _targetSecondsController,
+                            enabled: _canEdit,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               labelText: '目标秒数（0–59）',
@@ -2075,10 +2089,10 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                           key: const Key('create-related-habit'),
                           icon: const Icon(Icons.add_link),
                           label: const Text('需要更换类型或单位？新建关联习惯'),
-                          onPressed: _saving
+                          onPressed: !_canEdit
                               ? null
                               : () async {
-                                  if (!mounted || _saving) return;
+                                  if (!mounted || !_canEdit) return;
                                   final route = ModalRoute.of(context);
                                   if (route?.isCurrent != true) return;
                                   final navigator = Navigator.of(context);
@@ -2086,7 +2100,7 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                                               ?.requestLeave() !=
                                           true ||
                                       !mounted ||
-                                      _saving ||
+                                      !_canEdit ||
                                       route?.isCurrent != true) {
                                     return;
                                   }
@@ -2110,18 +2124,28 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                           title: const Text('开始日期（可选）'),
                           subtitle: Text(dateKey(_startDate)),
                           trailing: const Icon(Icons.edit_calendar_outlined),
-                          onTap: () async {
-                            final selected = await showDatePicker(
-                              context: context,
-                              initialDate: _startDate,
-                              firstDate: DateTime.utc(1900),
-                              lastDate: widget.controller.today,
-                              helpText: '选择今天或过去的开始日期',
-                            );
-                            if (selected != null && mounted) {
-                              setState(() => _startDate = dateOnly(selected));
-                            }
-                          },
+                          onTap: !_canEdit
+                              ? null
+                              : () async {
+                                  if (!mounted ||
+                                      !_canEdit ||
+                                      ModalRoute.of(context)?.isCurrent !=
+                                          true) {
+                                    return;
+                                  }
+                                  final selected = await showDatePicker(
+                                    context: context,
+                                    initialDate: _startDate,
+                                    firstDate: DateTime.utc(1900),
+                                    lastDate: widget.controller.today,
+                                    helpText: '选择今天或过去的开始日期',
+                                  );
+                                  if (selected != null && mounted) {
+                                    _changeDraft(
+                                      () => _startDate = dateOnly(selected),
+                                    );
+                                  }
+                                },
                         ),
                       const SizedBox(height: 22),
                       const Text(
@@ -2136,7 +2160,9 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                           final selected = emoji == _emoji;
                           return InkWell(
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () => setState(() => _emoji = emoji),
+                            onTap: !_canEdit
+                                ? null
+                                : () => _changeDraft(() => _emoji = emoji),
                             child: AnimatedContainer(
                               duration: motionDuration(context, 160),
                               width: 48,
@@ -2177,7 +2203,8 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                           return ColorChoice(
                             value: value,
                             selected: selected,
-                            onSelected: () => setState(() => _color = value),
+                            onSelected: () =>
+                                _changeDraft(() => _color = value),
                           );
                         }).toList(),
                       ),
@@ -2206,16 +2233,18 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                             child: Text('每月 N 天'),
                           ),
                         ],
-                        onChanged: (value) => setState(() {
-                          _scheduleType = value!;
-                          _scheduleCount = _scheduleCount.clamp(
-                            1,
-                            value == 'week' ? 7 : 31,
-                          );
-                          if (value == 'daily' || value == 'weekdays') {
-                            _scheduleCount = 1;
-                          }
-                        }),
+                        onChanged: !_canEdit
+                            ? null
+                            : (value) => _changeDraft(() {
+                                _scheduleType = value!;
+                                _scheduleCount = _scheduleCount.clamp(
+                                  1,
+                                  value == 'week' ? 7 : 31,
+                                );
+                                if (value == 'daily' || value == 'weekdays') {
+                                  _scheduleCount = 1;
+                                }
+                              }),
                       ),
                       if (_scheduleType == 'weekdays')
                         Wrap(
@@ -2225,13 +2254,15 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                               FilterChip(
                                 label: Text('周${chineseWeekdays[day - 1]}'),
                                 selected: _weekdays.contains(day),
-                                onSelected: (selected) => setState(() {
-                                  if (selected) {
-                                    _weekdays.add(day);
-                                  } else {
-                                    _weekdays.remove(day);
-                                  }
-                                }),
+                                onSelected: !_canEdit
+                                    ? null
+                                    : (selected) => _changeDraft(() {
+                                        if (selected) {
+                                          _weekdays.add(day);
+                                        } else {
+                                          _weekdays.remove(day);
+                                        }
+                                      }),
                               ),
                           ],
                         ),
@@ -2263,9 +2294,11 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                                   max: _scheduleType == 'week' ? 7 : 31,
                                   divisions: _scheduleType == 'week' ? 6 : 30,
                                   label: '$_scheduleCount 天',
-                                  onChanged: (value) => setState(
-                                    () => _scheduleCount = value.round(),
-                                  ),
+                                  onChanged: !_canEdit
+                                      ? null
+                                      : (value) => _changeDraft(
+                                          () => _scheduleCount = value.round(),
+                                        ),
                                 ),
                                 Row(
                                   mainAxisAlignment:
@@ -2299,21 +2332,32 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                               ? const Icon(Icons.chevron_right_rounded)
                               : IconButton(
                                   tooltip: '清除提醒',
-                                  onPressed: () =>
-                                      setState(() => _reminder = null),
+                                  onPressed: !_canEdit
+                                      ? null
+                                      : () => _changeDraft(
+                                          () => _reminder = null,
+                                        ),
                                   icon: const Icon(Icons.close_rounded),
                                 ),
-                          onTap: () async {
-                            final selected = await showTimePicker(
-                              context: context,
-                              initialTime:
-                                  _reminder ??
-                                  const TimeOfDay(hour: 21, minute: 30),
-                            );
-                            if (selected != null) {
-                              setState(() => _reminder = selected);
-                            }
-                          },
+                          onTap: !_canEdit
+                              ? null
+                              : () async {
+                                  if (!mounted ||
+                                      !_canEdit ||
+                                      ModalRoute.of(context)?.isCurrent !=
+                                          true) {
+                                    return;
+                                  }
+                                  final selected = await showTimePicker(
+                                    context: context,
+                                    initialTime:
+                                        _reminder ??
+                                        const TimeOfDay(hour: 21, minute: 30),
+                                  );
+                                  if (selected != null) {
+                                    _changeDraft(() => _reminder = selected);
+                                  }
+                                },
                         ),
                       ),
                       const SizedBox(height: 22),
@@ -2345,10 +2389,16 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.add_rounded),
+                      : Icon(_saved ? Icons.check_rounded : Icons.add_rounded),
                   label: Padding(
                     padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Text(_editing ? '保存修改' : '开始这个习惯'),
+                    child: Text(
+                      _saved
+                          ? '完成'
+                          : _editing
+                          ? '保存修改'
+                          : '开始这个习惯',
+                    ),
                   ),
                 ),
               ),
@@ -2390,6 +2440,13 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
     if (!mounted || _saving) return;
     final route = ModalRoute.of(context);
     if (route?.isCurrent != true) return;
+    if (_saved) {
+      Navigator.pop(context);
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final controller = widget.controller;
     final title = _titleController.text.trim();
     if (title.isEmpty || title.length > 80) {
       ScaffoldMessenger.of(
@@ -2462,14 +2519,17 @@ class _AddHabitSheetState extends State<AddHabitSheet> {
             : null,
       );
     }
-    if (!mounted) return;
-    if (!saved || route?.isCurrent != true) {
-      setState(() => _saving = false);
+    if (!saved) {
+      if (mounted) setState(() => _saving = false);
       return;
     }
-    final messenger = ScaffoldMessenger.of(context);
-    final controller = widget.controller;
-    Navigator.pop(context);
+    if (mounted) {
+      setState(() {
+        _saved = true;
+        _saving = false;
+      });
+      if (route?.isCurrent == true) navigator.pop();
+    }
     if (reminderTime != null) {
       await controller.requestReminderPermission();
       if (messenger.mounted && controller.reminderError != null) {

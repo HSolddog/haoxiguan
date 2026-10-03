@@ -1,0 +1,372 @@
+{
+  "kind": "host_habit_save_busy_acceptance",
+  "fixtureStatement": "Synthetic MemoryHabitRepository with controlled asynchronous durable writes, production HabitController and production Flutter Habit editor widgets. This is a host widget test, not native device evidence.",
+  "baseline": {
+    "sourceSha": "94a1dda9177cc54dffe8579a1bad1a6bbea80a8b",
+    "treeSha": "11022f82b42d429d7983bb34a212e440b6a74bfc",
+    "habitSourceSha256": "f24c495c437e0daeea9a52ac13c8605b9cf6c99750a8edb05e083b73c19d64bf",
+    "independentPackageSelfBindingVerified": true,
+    "originalSourceBytesVerified": true,
+    "sameFinalTestBytesInOldAndNewPackages": true
+  },
+  "changedFiles": {
+    "lib/ui/habit_app.dart": "e2c2c2d41fa8cb4dce58aa10c4b6f03d68af1dbfcc1e370bf5ce02da81f6eca0",
+    "test/habit_save_busy_test.dart": "68d93a16d5187b96f71edc8be887a55cb34da498d324605dda54b0330930c9a6"
+  },
+  "scope": {
+    "productionRegion": "_AddHabitSheetState only",
+    "outsideEditorByteExact": true,
+    "outsideEditorBytes": 92210,
+    "outsideEditorSha256": "5912979497c0079546658d3e17c9c1134743d773b54eb2ff0384bc7aaa102149"
+  },
+  "behavior": {
+    "mutableInputsAndPickersFrozenDuringSave": true,
+    "successfulCoveredSaveMarkedComplete": true,
+    "completedSheetDoneClosesOnlyOriginalRoute": true,
+    "completedSheetDoesNotCreateSecondHabit": true,
+    "permissionRequestedOnceAfterSuccessfulPersistence": true,
+    "permissionDenialAndRebuildFailureStillShown": true,
+    "failedWritePreservesExistingEntryAndNoteAndAllowsRetry": true
+  },
+  "counterfactual": {
+    "tests": 7,
+    "behaviorAssertionsFailed": 6,
+    "controlPassed": 1,
+    "exitCode": 1,
+    "durationSeconds": 11.158,
+    "preparationFailuresCountedAsCounterexamples": false,
+    "observations": [
+      {
+        "case": "busy_date_picker",
+        "expected": {
+          "pickerOpened": false,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "pickerOpened": true,
+          "writes": 2,
+          "newHabits": 2
+        }
+      },
+      {
+        "case": "busy_time_picker",
+        "expected": {
+          "pickerOpened": false,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "pickerOpened": true,
+          "writes": 2,
+          "newHabits": 2
+        }
+      },
+      {
+        "case": "busy_keyboard_and_dropdown",
+        "expected": {
+          "inputAccepted": false,
+          "titleUnchanged": true,
+          "fieldDisabled": true,
+          "dropdownDisabled": true,
+          "writes": 1
+        },
+        "actual": {
+          "inputAccepted": true,
+          "titleUnchanged": false,
+          "fieldDisabled": false,
+          "dropdownDisabled": false,
+          "writes": 1
+        }
+      },
+      {
+        "case": "covered_success_returns_once",
+        "expected": {
+          "writes": 1,
+          "newHabits": 1,
+          "ownerActive": false,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 2,
+          "newHabits": 2,
+          "ownerActive": false,
+          "baseCurrent": true
+        }
+      },
+      {
+        "case": "failed_create_retry",
+        "expected": {
+          "writes": 2,
+          "newHabits": 1,
+          "ownerActive": false,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 2,
+          "newHabits": 1,
+          "ownerActive": false,
+          "baseCurrent": true
+        }
+      },
+      {
+        "case": "covered_permission_denial",
+        "expected": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 1,
+          "finalPermissions": 1,
+          "persistedAtPermission": 2,
+          "errorShown": true,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 0,
+          "finalPermissions": 1,
+          "persistedAtPermission": 3,
+          "errorShown": false,
+          "writes": 2,
+          "newHabits": 2
+        }
+      },
+      {
+        "case": "covered_permission_rebuild",
+        "expected": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 1,
+          "finalPermissions": 1,
+          "persistedAtPermission": 2,
+          "errorShown": true,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 0,
+          "finalPermissions": 1,
+          "persistedAtPermission": 3,
+          "errorShown": false,
+          "writes": 2,
+          "newHabits": 2
+        }
+      }
+    ]
+  },
+  "corrected": {
+    "tests": 7,
+    "passed": 7,
+    "exitCode": 0,
+    "durationSeconds": 9.584,
+    "observations": [
+      {
+        "case": "busy_date_picker",
+        "expected": {
+          "pickerOpened": false,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "pickerOpened": false,
+          "writes": 1,
+          "newHabits": 1
+        }
+      },
+      {
+        "case": "busy_time_picker",
+        "expected": {
+          "pickerOpened": false,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "pickerOpened": false,
+          "writes": 1,
+          "newHabits": 1
+        }
+      },
+      {
+        "case": "busy_keyboard_and_dropdown",
+        "expected": {
+          "inputAccepted": false,
+          "titleUnchanged": true,
+          "fieldDisabled": true,
+          "dropdownDisabled": true,
+          "writes": 1
+        },
+        "actual": {
+          "inputAccepted": false,
+          "titleUnchanged": true,
+          "fieldDisabled": true,
+          "dropdownDisabled": true,
+          "writes": 1
+        }
+      },
+      {
+        "case": "covered_success_returns_once",
+        "expected": {
+          "writes": 1,
+          "newHabits": 1,
+          "ownerActive": false,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 1,
+          "newHabits": 1,
+          "ownerActive": false,
+          "baseCurrent": true
+        }
+      },
+      {
+        "case": "failed_create_retry",
+        "expected": {
+          "writes": 2,
+          "newHabits": 1,
+          "ownerActive": false,
+          "baseCurrent": true
+        },
+        "actual": {
+          "writes": 2,
+          "newHabits": 1,
+          "ownerActive": false,
+          "baseCurrent": true
+        }
+      },
+      {
+        "case": "covered_permission_denial",
+        "expected": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 1,
+          "finalPermissions": 1,
+          "persistedAtPermission": 2,
+          "errorShown": true,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 1,
+          "finalPermissions": 1,
+          "persistedAtPermission": 2,
+          "errorShown": true,
+          "writes": 1,
+          "newHabits": 1
+        }
+      },
+      {
+        "case": "covered_permission_rebuild",
+        "expected": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 1,
+          "finalPermissions": 1,
+          "persistedAtPermission": 2,
+          "errorShown": true,
+          "writes": 1,
+          "newHabits": 1
+        },
+        "actual": {
+          "beforeSavePermissions": 0,
+          "afterSavePermissions": 1,
+          "finalPermissions": 1,
+          "persistedAtPermission": 2,
+          "errorShown": true,
+          "writes": 1,
+          "newHabits": 1
+        }
+      }
+    ]
+  },
+  "related": {
+    "tests": 43,
+    "exitCode": 0,
+    "durationSeconds": 16.308,
+    "files": [
+      "test/editor_route_lifetime_test.dart",
+      "test/habit_design_flow_test.dart",
+      "test/widget_test.dart"
+    ]
+  },
+  "analysis": {
+    "items": 2,
+    "issues": 0,
+    "exitCode": 0,
+    "durationSeconds": 4.462
+  },
+  "format": {
+    "files": 2,
+    "changed": 0,
+    "exitCode": 0,
+    "durationSeconds": 1.314
+  },
+  "intermediateAttempts": {
+    "firstOldAttempt": "Preparation only: missing independent package_graph, zero tests; existing matching graph copied without network/source changes.",
+    "firstRelatedAttempt": "Invalid nonexistent extra test filename; 37 assertions passed but overall load failed, not counted as a passing group.",
+    "firstAnalyzeAttempt": "Four required-brace style diagnostics, subsequently corrected."
+  },
+  "rawEvidenceHashes": [
+    {
+      "name": "habit-save-busy-old.log",
+      "bytes": 546,
+      "sha256": "b536fc9476bb2f41ba21f75763635d85c2bbb6f79a603e38915448f03fcbe684"
+    },
+    {
+      "name": "habit-save-busy-old-real.log",
+      "bytes": 16378,
+      "sha256": "e847f65ac30a6e8899aa827b07d46b1843c7effe0dc0a6c9c64e8b27d515df9a"
+    },
+    {
+      "name": "habit-save-busy-old-final.log",
+      "bytes": 16091,
+      "sha256": "777feecb4ca20c28d389e8b4370810015ce3b61e45fc73919aa40d0c94eab0bc"
+    },
+    {
+      "name": "habit-save-busy-new.log",
+      "bytes": 2304,
+      "sha256": "4077f9c1e5121c59948230a0448e20973651b2e55d3978ef314e0e467b2d0716"
+    },
+    {
+      "name": "habit-save-busy-new-final.log",
+      "bytes": 2304,
+      "sha256": "76ce937aecfad32045e67904557a86f03847b469950dbc4f54ac6d00d57a79eb"
+    },
+    {
+      "name": "habit-save-busy-related.log",
+      "bytes": 11492,
+      "sha256": "9604917b2d3c6faac3a7258988868965d929dd681816cd2e1675c9ad48f5648d"
+    },
+    {
+      "name": "habit-save-busy-related-final.log",
+      "bytes": 12255,
+      "sha256": "6221fdfcc768cd98348e777cfbd6b01fc3e3e671fee295b0fdb8f45d63f4749f"
+    },
+    {
+      "name": "habit-save-busy-analyze.log",
+      "bytes": 808,
+      "sha256": "daaa1396da7b543e7b76fc24bb22be1ebfc799865a0232226405d4e599f48a99"
+    },
+    {
+      "name": "habit-save-busy-analyze-final.log",
+      "bytes": 109,
+      "sha256": "5f856ba3a79b6a83d977e6fe0a31694c128702d9bf2b963d9fc138a859eca374"
+    },
+    {
+      "name": "habit-save-busy-format.log",
+      "bytes": 133,
+      "sha256": "dfcdd37774988a8730ab9d58b643e8d2c5b67db5404707b7d6806551addac167"
+    },
+    {
+      "name": "habit-save-busy-format-final.log",
+      "bytes": 92,
+      "sha256": "7828eae34f365599963a787bfe756df5fb4168999db1b7ebffef2cedf2fe4261"
+    },
+    {
+      "name": "habit-save-busy-format-check.log",
+      "bytes": 60,
+      "sha256": "8012d7433262f5872d8f3c1ca9fd8f0f6bcd8a5d68be09f3d12792b2bcd5fa73"
+    }
+  ],
+  "diffCheck": {
+    "exitCode": 0,
+    "sha256": "9fa3b6ead7afc298499f30c5b70014c78b6686a8269611537606fa5a7c02b6a2"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "scope": [
+    "Legacy JSON preview rejects an idle dismissed callback and never pops a newer route after preview completion.",
+    "Trash restore/delete use the original current route, serialize writes, and accept each confirmation at most once.",
+    "Canceled stale trash confirm/export callbacks do no work; real failed storage keeps the original snapshot and allows retry.",
+    "WebDAV preserves initial local load; dismissed save/backup/disconnect callbacks do no credential or network work.",
+    "WebDAV waits for the independent probe cleanup, then checks the original route before upload, readback, or enabling configuration."
+  ],
+  "sourceSha256": {
+    "lib/ui/legacy_restore_dialog.dart": "a92259e95c35068031b64f51f815463ee2189061f8a0387d6672cf60c27f6cdb",
+    "lib/ui/trash_screen.dart": "6e652cea2f550504aeb8f1f0e7d62eb5b9f249dbe3fa6ef02c732ebbde15538e",
+    "lib/ui/webdav_screen.dart": "949d268a12f3f550706a27cd2a1b1f8317b115df76645857006da11c41d3444b",
+    "test/dismissed_page_action_test.dart": "42060c8a2726a036d3064f28446ef13f2e6780ab41787fcb958b670ab0a865af"
+  },
+  "originalBaseGitCommit": "f047d1f6b5b76bc8709dc2a88df003080f8bf3ba",
+  "results": {
+    "newTargeted": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    "relatedRegression": {
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    "originalSourceCounterfactual": {
+      "passed": 1,
+      "failed": 15,
+      "exitCode": 1,
+      "expectedExitCode": 1,
+      "compiledAndRanActualAssertions": true,
+      "byteIdenticalTest": true,
+      "normalWebdavSavePositiveCasePassed": true
+    },
+    "analyze": {
+      "issues": 0,
+      "exitCode": 0
+    },
+    "format": {
+      "files": 4,
+      "changed": 0,
+      "exitCode": 0
+    }
+  },
+  "limits": [
+    "Tests use synthetic in-memory repositories/credential stores and a synthetic WebDAV client; no external account or user files are used.",
+    "The legacy child-result navigation test exercises the caller continuation; genuine successful restore remains covered by the existing legacy restore suite.",
+    "The stale backup test traps any credential read locally before real transport construction; it demonstrates zero operation entry after dismissal.",
+    "Already-authorized durable writes may finish after navigation changes. This change does not promise rollback after store.save has begun.",
+    "Real TLS/WebDAV server interoperability and broad native/end-to-end acceptance are separate validation suites."
+  ],
+  "fullLocalProofSha256": "bae4d019a8d81788209de502fa650f8d44e5da36ac8b826034e31aaa41b02776"
+}
