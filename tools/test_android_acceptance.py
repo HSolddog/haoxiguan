@@ -19,6 +19,12 @@ def result(stdout=b'', code=0, stderr=b''):
     return subprocess.CompletedProcess(['adb'], code, stdout, stderr)
 
 
+def process_list(*pids):
+    # Actual Android 7 toolbox output has an unlabelled state before NAME.
+    return ('USER PID PPID VSIZE RSS WCHAN PC NAME\nroot 1 0 100 50 0 0 S /init\n' + ''.join(
+        f'u0_a62 {pid} 1 100 50 0 0 S {driver.package}\n' for pid in pids)).encode()
+
+
 class AndroidAcceptanceDriverTest(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -69,12 +75,12 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
                 driver.shell('getprop', 'sys.boot_completed')
             self.assertEqual(run.call_count, 3)
 
-    def test_reopen_waits_for_stopped_flag_and_two_consecutive_ready_reads(self):
-        healthy = [result(b'1'), result(b'Service activity: found'), result(b'User 0: installed=true stopped=true')]
+    def test_reopen_waits_for_old_pid_exit_and_two_consecutive_ready_reads(self):
+        healthy = [result(b'1'), result(b'Service activity: found'), result(process_list())]
         replies = [result(code=1), healthy[1], healthy[2], *healthy,
-                   healthy[0], healthy[1], result(b'User 0: stopped=false'), *healthy, *healthy]
+                   healthy[0], healthy[1], result(process_list(2976)), *healthy, *healthy]
         with patch.object(driver, 'command', side_effect=replies) as command, patch.object(driver.time, 'sleep'):
-            driver.wait_for_reopen()
+            driver.wait_for_reopen({2976})
         self.assertEqual(command.call_count, 15)
         self.assertFalse(any('am' in call.args for call in command.call_args_list))
         self.assertEqual([event['consecutive'] for event in self.events()], [0, 1, 0, 1, 2])
@@ -82,9 +88,76 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
     def test_reopen_wait_has_deadline_and_does_not_start_activity(self):
         with patch.object(driver, 'command', return_value=result(code=255)) as command, patch.object(driver.time, 'monotonic', side_effect=range(100)), patch.object(driver.time, 'sleep'):
             with self.assertRaises(TimeoutError):
-                driver.wait_for_reopen(timeout=5)
+                driver.wait_for_reopen({2976}, timeout=5)
         self.assertLessEqual(command.call_count, 9)
         self.assertFalse(any('am' in call.args for call in command.call_args_list))
+
+    def test_background_replacement_pid_does_not_block_reopen(self):
+        healthy = [result(b'1'), result(b'Service activity: found'), result(process_list(3525))]
+        with patch.object(driver, 'command', side_effect=healthy * 2) as command, patch.object(driver.time, 'sleep'):
+            driver.wait_for_reopen({2976})
+        self.assertEqual(command.call_count, 6)
+        self.assertEqual(self.events()[-1]['previousPids'], [2976])
+        self.assertEqual(self.events()[-1]['currentPids'], [3525])
+
+    def test_original_pid_still_alive_fails_even_if_a_new_pid_exists(self):
+        def command(*values, **kwargs):
+            if 'getprop' in values:
+                return result(b'1')
+            if 'service' in values:
+                return result(b'Service activity: found')
+            return result(process_list(2976, 3525))
+        with patch.object(driver, 'command', side_effect=command), patch.object(driver.time, 'monotonic', side_effect=range(100)), patch.object(driver.time, 'sleep'):
+            with self.assertRaises(TimeoutError):
+                driver.wait_for_reopen({2976}, timeout=15)
+        self.assertFalse(any(event['ready'] for event in self.events()))
+
+    def test_failed_or_malformed_reads_never_count_as_pid_disappearance(self):
+        healthy = [result(b'1'), result(b'Service activity: found'), result(process_list(3525))]
+        for broken in (result(process_list(), code=255), result(b''), result(b'USER PID NAME\n'),
+                       result(b'USER PID NAME\nu0_a62'), result(b'closed transport')):
+            with self.subTest(broken=broken.stdout):
+                replies = [*healthy, healthy[0], healthy[1], broken, *healthy, *healthy]
+                with patch.object(driver, 'command', side_effect=replies) as command, patch.object(driver.time, 'sleep'):
+                    driver.wait_for_reopen({2976})
+                self.assertEqual(command.call_count, 12)
+                events = self.events()[-4:]
+                self.assertEqual([e['consecutive'] for e in events], [1, 0, 1, 2])
+                self.assertIsNone(events[1]['currentPids'])
+                self.assertTrue(events[1]['readError'])
+
+    def test_reopen_requires_original_process_identity(self):
+        with patch.object(driver, 'command') as command:
+            with self.assertRaises(ValueError):
+                driver.wait_for_reopen(set())
+        command.assert_not_called()
+
+    def test_timed_out_read_resets_the_consecutive_ready_observations(self):
+        healthy = [result(b'1'), result(b'Service activity: found'), result(process_list(3525))]
+        replies = [*healthy, subprocess.TimeoutExpired(['adb', 'getprop'], 5), *healthy, *healthy]
+        with patch.object(driver, 'command', side_effect=replies), patch.object(driver.time, 'sleep'):
+            driver.wait_for_reopen({2976})
+        self.assertEqual([e['consecutive'] for e in self.events()], [1, 0, 1, 2])
+        self.assertIsNone(self.events()[1]['currentPids'])
+
+    def test_process_parser_tracks_exact_app_and_colon_process_names(self):
+        text = (process_list(2976).decode() +
+                f'u0_a62 3525 1 100 50 0 0 S {driver.package}:worker\n' +
+                f'u0_a62 4000 1 100 50 0 0 S {driver.package}.other\n')
+        self.assertEqual(driver.app_process_ids(text), {2976, 3525})
+        modern = f'USER PID PPID VSZ RSS WCHAN ADDR S NAME\nu0_a62 2976 1 100 50 0 0 S {driver.package}\n'
+        self.assertEqual(driver.app_process_ids(modern), {2976})
+        with self.assertRaises(ValueError):
+            driver.app_process_ids('UID PID PPID C STIME TTY TIME CMD\nroot 1 0 0 00:00 ? 00:00 /init\n')
+        self.assertEqual(driver.process_list_command(), ('ps',))
+        driver.args.api = 35
+        self.assertEqual(driver.process_list_command(), ('ps', '-A'))
+
+    def test_android7_missing_or_invalid_unlabelled_state_is_not_an_empty_pid_set(self):
+        header = 'USER PID PPID VSIZE RSS WCHAN PC NAME\n'
+        for state in ('', 'SS', '0', 'S extra'):
+            with self.subTest(state=state), self.assertRaises(ValueError):
+                driver.app_process_ids(header + f'u0_a62 2976 1 100 50 0 0 {state} {driver.package}\n')
 
     def test_exited_emulator_fails_before_any_launch(self):
         driver.process.poll.return_value = -9

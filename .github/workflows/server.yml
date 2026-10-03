@@ -60,6 +60,49 @@ jobs:
           path: server/dist/
           retention-days: 14
 
+  # Standard ARM64 runners are free for public repositories. Keep this guard
+  # if repository visibility ever changes; no paid/larger runner is requested.
+  arm64-smoke:
+    needs: verify
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: sync-server-${{ github.sha }}
+          path: server/dist/
+      - name: Verify native ARM64 and the same checked server artifact
+        working-directory: server
+        run: |
+          test "$RUNNER_ARCH" = "ARM64"
+          test "$(uname -m)" = "aarch64"
+          sha256sum --check dist/SHA256SUMS
+          docker build --platform=linux/arm64 --build-arg TARGETARCH=arm64 -t haoxiguan-sync:arm64-smoke .
+          test "$(docker image inspect --format '{{.Architecture}}' haoxiguan-sync:arm64-smoke)" = "arm64"
+      - name: Native ARM64 non-root restart and offline restore
+        run: |
+          python3 tools/container_smoke.py --image haoxiguan-sync:arm64-smoke --output server/dist/container-smoke-arm64.json
+          python3 - <<'PY'
+          import json, os, platform
+          from pathlib import Path
+          report = Path('server/dist/container-smoke-arm64.json')
+          result = json.loads(report.read_text())
+          result.update({'sourceCommit': os.environ['GITHUB_SHA'],
+                         'runnerArchitecture': os.environ['RUNNER_ARCH'],
+                         'kernelArchitecture': platform.machine(),
+                         'imageArchitecture': 'arm64',
+                         'scope': 'native ARM64 lifecycle smoke; not an ARM64 capacity benchmark'})
+          report.write_text(json.dumps(result, indent=2)+'\n')
+          print('ARM64_SMOKE_REPORT=' + json.dumps(result, separators=(',', ':')))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('Native ARM64 lifecycle evidence\n\n```json\n'+report.read_text()+'```\n')
+          PY
+      # JSON is retained in logs/summary, which do not consume artifact storage.
+
   capacity:
     needs: verify
     runs-on: ubuntu-24.04

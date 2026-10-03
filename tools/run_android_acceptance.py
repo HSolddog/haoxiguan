@@ -26,14 +26,48 @@ def require_emulator(stage):
         raise RuntimeError(f'emulator exited with status {code} during {stage}; inspect emulator.log')
 
 
-def wait_for_reopen(timeout=45):
+def process_list_command():
+    # Android 7 toolbox ps lists all processes; Android 8+ toybox needs -A.
+    return ('ps',) if args.api < 26 else ('ps', '-A')
+
+
+def app_process_ids(output):
+    lines = [line.split() for line in output.splitlines() if line.strip()]
+    if len(lines) < 2 or lines[0].count('PID') != 1:
+        raise ValueError('process list is missing its header or process rows')
+    header = lines[0]
+    # Both selected Android commands use NAME (argv[0]). Toybox CMD is the
+    # possibly truncated thread name and cannot prove package PID absence.
+    name_columns = [i for i, name in enumerate(header) if name == 'NAME']
+    if len(name_columns) != 1:
+        raise ValueError('process list has no unambiguous name column')
+    pid_column, name_column = header.index('PID'), name_columns[0]
+    # AOSP Android 7 toolbox ps.c prints an unlabelled state between PC and
+    # NAME. Match only that exact header; guessing the last field would accept
+    # malformed/truncated rows as proof that a previous PID disappeared.
+    legacy = header == ['USER', 'PID', 'PPID', 'VSIZE', 'RSS', 'WCHAN', 'PC', 'NAME']
+    pids = set()
+    for row in lines[1:]:
+        if len(row) != len(header) + (1 if legacy else 0) or not row[pid_column].isdigit():
+            raise ValueError('process list contains an incomplete row')
+        if legacy and not re.fullmatch(r'[A-Za-z]', row[name_column]):
+            raise ValueError('Android 7 process list has an invalid unlabelled state')
+        name = row[name_column + (1 if legacy else 0)]
+        if name == package or name.startswith(package + ':'):
+            pids.add(int(row[pid_column]))
+    return pids
+
+
+def wait_for_reopen(previous_pids, timeout=45):
     """Observe a completed force-stop and two healthy reads before one launch.
 
     Never repeat am start/force-stop: even a closed ADB connection may have
     delivered the mutation. Persistent disconnection or an exited AVD fails.
     """
+    if not previous_pids:
+        raise ValueError('force-stop requires a nonempty snapshot of the original app processes')
     deadline = time.monotonic() + timeout
-    failure = 'force-stop did not reach a stable Android framework with the package marked stopped'
+    failure = 'force-stop did not end the original app processes with a stable Android framework'
 
     def read(*values):
         remaining = deadline - time.monotonic()
@@ -45,18 +79,32 @@ def wait_for_reopen(timeout=45):
     while time.monotonic() < deadline:
         require_emulator('force-stop readiness')
         ready = False
+        current_pids = None
+        boot_ready = activity_ready = False
+        read_error = None
         try:
             boot = read('getprop', 'sys.boot_completed')
             service = read('service', 'check', 'activity')
-            installed = read('dumpsys', 'package', package)
-            stopped = re.search(r'User 0:[^\n]*\bstopped=true\b', installed.stdout.decode(errors='replace'))
-            ready = (all(r.returncode == 0 for r in (boot, service, installed)) and
-                     boot.stdout.strip() == b'1' and b'Service activity: found' in service.stdout and
-                     bool(stopped))
-        except subprocess.TimeoutExpired:
-            pass
+            processes = read(*process_list_command())
+            boot_ready = boot.returncode == 0 and boot.stdout.strip() == b'1'
+            activity_ready = service.returncode == 0 and b'Service activity: found' in service.stdout
+            if processes.returncode == 0:
+                current_pids = app_process_ids(processes.stdout.decode(errors='replace'))
+            else:
+                read_error = f'process list exit {processes.returncode}'
+            # Android 7 can start a NEW SystemJobService process just after a
+            # successful force-stop. Package stopped=true is not stable then.
+            # Prove the previous process lifetime ended, allowing that new PID;
+            # the next launch must still produce a new, fully passing report.
+            ready = (boot_ready and activity_ready and current_pids is not None and
+                     previous_pids.isdisjoint(current_pids))
+        except (subprocess.TimeoutExpired, ValueError) as error:
+            read_error = str(error)
         stable = stable + 1 if ready else 0
-        event('force-stop-readiness', ready=ready, consecutive=stable)
+        event('force-stop-readiness', ready=ready, consecutive=stable,
+              bootReady=boot_ready, activityReady=activity_ready,
+              previousPids=sorted(previous_pids),
+              currentPids=None if current_pids is None else sorted(current_pids), readError=read_error)
         if stable == 2:
             return
         time.sleep(min(1, max(0, deadline - time.monotonic())))
@@ -369,8 +417,12 @@ def main(argv=None):
                                    results[-1]['runId'] if results else None)
             results.append(value)
             (args.output/'completed-phases.json').write_text(json.dumps(results, indent=2)+'\n')
+            original_pids = app_process_ids(shell(*process_list_command()))
+            if not original_pids:
+                raise RuntimeError('app process disappeared before the requested force-stop')
+            event('force-stop', build=build, previousPids=sorted(original_pids))
             shell('am', 'force-stop', package)
-            wait_for_reopen()
+            wait_for_reopen(original_pids)
             value = start_and_wait(build, 'reopen', value['runId'])
             results.append(value)
             (args.output/'completed-phases.json').write_text(json.dumps(results, indent=2)+'\n')

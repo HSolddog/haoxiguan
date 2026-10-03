@@ -114,17 +114,37 @@ class SyncEntities {
             (a['id'] as String).compareTo(b['id'] as String),
       );
     }
-    final raw = jsonEncode(
-      CategoryMetadata.normalize({
-        ...local,
-        'version': SnapshotCodec.currentVersion,
-        'categories': <dynamic>[],
-        'habits': [
-          for (final id in order)
-            if (habits[id] != null) habits[id],
-        ],
-      }),
-    );
+    final selected = CategoryMetadata.normalize({
+      ...local,
+      'version': SnapshotCodec.currentVersion,
+      'categories': <dynamic>[],
+      'habits': [
+        for (final id in order)
+          if (habits[id] != null) habits[id],
+      ],
+    });
+    final selectedCategories = CategoryMetadata.categories(selected);
+    final selectedIds = {
+      for (final habit in selected['habits'] as List)
+        (habit as Map)['categoryId'] as String,
+    };
+    // A habit reassignment/deletion does not delete its local category. Keep
+    // unreferenced descriptors, including extensions, without letting an old
+    // local projection override the category chosen by the entity merge.
+    // Legacy label edits can leave an unreferenced old categoryInfo in the
+    // normalized projection. It cannot replace or resurrect a local category.
+    final categories = [
+      ...selectedCategories.where(
+        (category) => selectedIds.contains(category.id),
+      ),
+      ...CategoryMetadata.categories(
+        local,
+      ).where((category) => !selectedIds.contains(category.id)),
+    ]..sort(CategoryMetadata.compare);
+    final raw = jsonEncode({
+      ...selected,
+      'categories': categories.map((category) => category.toJson()).toList(),
+    });
     SnapshotCodec.decode(raw);
     return raw;
   }
