@@ -1,0 +1,102 @@
+{
+  "sourceSha": "809045fd41259241dcfa40130d2c81589fbf3dc0",
+  "sourceTree": "4c2dbc5bb9e119bdf6c9264e687bbd52349eefe1",
+  "mergeSha": "a2da89465b3d69b5f492139765cc4ee89863ffe1",
+  "mergeTree": "4c2dbc5bb9e119bdf6c9264e687bbd52349eefe1",
+  "mergeParents": [
+    "8e390aa8bc1bf438e6f6a6c7cdf7ee10d773776a",
+    "809045fd41259241dcfa40130d2c81589fbf3dc0"
+  ],
+  "runId": 37142406656,
+  "runUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37142406656",
+  "jobName": "native-sync",
+  "sdkInt": 35,
+  "status": "completed",
+  "conclusion": "failure",
+  "nativePassed": false,
+  "artifacts": [
+    {
+      "id": 11280799780,
+      "name": "android-native-sync-api-35-a2da89465b3d69b5f492139765cc4ee89863ffe1",
+      "digest": "sha256:59dc2e3bd7b6766cdb5d173acec7d9c79c138e78e1f69283d9dc0ac25bb12313",
+      "sizeInBytes": 3029,
+      "localArchive": "native-sync-37142406656.zip",
+      "localDigestVerified": true,
+      "extractedDirectory": "native-sync-ci-37142406656-artifact"
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "path": "native-sync-ci-37142406656-job.log",
+      "sha256": "8bcb5330c1a04c82213528df2a46be40e9492ae77d8b13fd6a64dd1c17ae3d1d"
+    },
+    {
+      "path": "native-sync-ci-37142406656-report-audit.json",
+      "sha256": "25cb978b7e94d4b8ee380fa3b141bd6e2a5911a920a965c279741ab4e226b247"
+    },
+    {
+      "path": "native-sync-ci-37142406656-artifact\\driver-events.jsonl",
+      "sha256": "4a25faf96bdac3a0a6fca76f3c6342f966a06f0984a0d8068446e71b92998fe6"
+    },
+    {
+      "path": "native-sync-ci-37142406656-artifact\\failure.json",
+      "sha256": "5ea261f01c7583f8d4222c1c8453248138949fe877896097ec1294d6911c265a"
+    },
+    {
+      "path": "native-sync-ci-37142406656-artifact\\report-a.json",
+      "sha256": "2162a802e249fdad7a5205f9c5f0d1b89cf184b05632f8655a5b18f1f648de7a"
+    },
+    {
+      "path": "native-sync-ci-37142406656-artifact\\report-b.json",
+      "sha256": "8b256b9fb4c4e6912be6fe278067658bd7502e8a51c76f5add5a94880e7671b3"
+    }
+  ],
+  "jobId": 111261668508,
+  "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37142406656/job/111261668508",
+  "jobStartedAt": "2026-10-03T18:10:07Z",
+  "fixtureArtifacts": [
+    {
+      "id": 11281785111,
+      "name": "android-sync-acceptance-a2da89465b3d69b5f492139765cc4ee89863ffe1",
+      "sizeInBytes": 108768401,
+      "digest": "sha256:e22b9918e652bfd21915c1a0406136b6242753843116252a0f7f336a868c737a",
+      "sourceSha": "809045fd41259241dcfa40130d2c81589fbf3dc0"
+    }
+  ],
+  "actualFailure": {
+    "role": "B",
+    "runId": "606e0133babf43ef81e6008ffb65627a",
+    "lastObservedRunningStage": "awaitingRecoveryJoin",
+    "failedReportSequence": 29,
+    "savedErrorCode": "exception_state",
+    "diagnostic": {
+      "failureCode": "exception_state",
+      "lastStage": "awaitingRecoveryJoin",
+      "lastAction": "choose_remote_item",
+      "frameworkFailure": "none"
+    },
+    "passedFlags": [
+      "realSyncScreen",
+      "realTlsTransport",
+      "productionStorage",
+      "recoverySafVerified",
+      "initialPreviewCancelled"
+    ],
+    "evidenceKeys": [
+      "cancel"
+    ],
+    "peerRole": "A",
+    "peerStage": "awaitingReplicaImport",
+    "peerPassedFlags": [
+      "realSyncScreen",
+      "realTlsTransport",
+      "productionStorage",
+      "recoverySafVerified",
+      "initialPreviewCancelled",
+      "initialPreviewConfirmed",
+      "fullFactsTransferred"
+    ],
+    "sdkInt": 35,
+    "emulatorExited": false
+  }
+}

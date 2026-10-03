@@ -18,6 +18,306 @@ import 'package:haoxiguan/ui/backup_restore_dialog.dart';
 
 final acceptanceNavigator = GlobalKey<NavigatorState>();
 
+const notificationStages = [
+  'awaitingNotificationDeny',
+  'awaitingNotificationGrant',
+  'awaitingChannelDisable',
+  'awaitingChannelEnable',
+];
+
+/// Only the isolated fixture's four Settings waits may survive OS revocation.
+/// Stored SQL/model expectations are captured before navigation, never on resume.
+class SettingsCheckpoint {
+  SettingsCheckpoint._(this.data);
+  final Map<String, Object?> data;
+  Map<String, Object?> get result =>
+      (data['result']! as Map).cast<String, Object?>();
+  Map<String, Object?> get database =>
+      (data['database']! as Map).cast<String, Object?>();
+  String get stage => data['stage']! as String;
+  String get original => data['original']! as String;
+  String get model => data['model']! as String;
+  int get processId => data['pid']! as int;
+  DateTime get deadline => DateTime.fromMillisecondsSinceEpoch(
+    data['deadlineMs']! as int,
+    isUtc: true,
+  );
+
+  factory SettingsCheckpoint.decode(String raw, {required String build}) {
+    final decoded = jsonDecode(raw);
+    void require(bool valid, String label) {
+      if (!valid) throw FormatException('invalid Settings checkpoint: $label');
+    }
+
+    require(decoded is Map, 'object');
+    final value = (decoded as Map).cast<String, Object?>();
+    require(value['version'] is int && value['version'] == 1, 'version');
+    require(
+      value['package'] == 'com.haoxiguan.haoxiguan.acceptance',
+      'isolated package',
+    );
+    require(build == '10002' && value['build'] == build, 'build');
+    require(value['schema'] is int && value['schema'] == 3, 'schema');
+    require(value['pid'] is int && (value['pid']! as int) > 0, 'PID');
+    require(
+      value['deadlineMs'] is int && (value['deadlineMs']! as int) > 0,
+      'deadline',
+    );
+    require(
+      value['stage'] is String && notificationStages.contains(value['stage']),
+      'stage',
+    );
+    require(value['result'] is Map, 'result');
+    final result = (value['result']! as Map).cast<String, Object?>();
+    require(
+      result['runId'] is String &&
+          RegExp(r'^\d+$').hasMatch(result['runId']! as String),
+      'runId',
+    );
+    require(
+      result['runId'] == value['runId'] &&
+          result['build'] == build &&
+          result['phase'] == 'reopen' &&
+          result['status'] == 'running' &&
+          result['stage'] == value['stage'] &&
+          result['notificationCheckpointVersion'] is int &&
+          result['notificationCheckpointVersion'] == 1,
+      'report identity',
+    );
+    for (final field in ['original', 'model']) {
+      require(
+        value[field] is String && jsonDecode(value[field]! as String) is Map,
+        field,
+      );
+    }
+    require(value['database'] is Map, 'database');
+    final database = value['database']! as Map;
+    require(
+      database['snapshotRaw'] is String &&
+          jsonDecode(database['snapshotRaw'] as String) is Map &&
+          database['tables'] is Map &&
+          (database['tables'] as Map).containsKey('sqlite_sequence'),
+      'full SQL observation',
+    );
+    require(
+      result['nativeReminderStorageEvidence'] is Map,
+      'original storage evidence',
+    );
+    final storage = result['nativeReminderStorageEvidence']! as Map;
+    require(
+      storage['originalControllerRaw'] == value['original'] &&
+          storage['originalStored'] is Map,
+      'original baseline',
+    );
+    for (final flag in [
+      'safExportReadback',
+      'safOpenDecrypt',
+      'safSizeLimit',
+      'nativeReminderScheduling',
+      'nativeRestorePreviewCancel',
+      'nativeRestoreProtection',
+      'nativeRestoreConfirm',
+      'nativeRestoreReopen',
+      'nativeReminderCheckpointInitialReady',
+    ]) {
+      require(result[flag] == true, flag);
+    }
+    final step = notificationStages.indexOf(value['stage']! as String);
+    final flags = [
+      'nativeDeniedHabitSaved',
+      'nativeAppPermissionDiagnosis',
+      'nativeAppPermissionRecovery',
+      'nativeChannelInitialEnabled',
+      'nativeChannelDiagnosis',
+      'nativeChannelRecovery',
+    ];
+    for (var index = 0; index < flags.length; index++) {
+      final completed = index < 2
+          ? step >= 1
+          : index == 2
+          ? step >= 2
+          : index == 3
+          ? step >= 2
+          : index == 4
+          ? step >= 3
+          : false;
+      require(
+        completed
+            ? result[flags[index]] == true
+            : !result.containsKey(flags[index]),
+        flags[index],
+      );
+    }
+    if (step == 0) {
+      require(
+        !result.containsKey('notificationApiLevel'),
+        'SDK before acknowledgement',
+      );
+    } else {
+      require(
+        result['notificationApiLevel'] is int &&
+            (result['notificationApiLevel']! as int) >= 24 &&
+            (result['notificationApiLevel']! as int) < 1000,
+        'SDK',
+      );
+      require(
+        step < 2 || (result['notificationApiLevel']! as int) >= 26,
+        'channel SDK',
+      );
+      require(
+        storage['createdControllerRaw'] is String &&
+            storage['createdStored'] is Map &&
+            storage['freshControllerRaw'] is String,
+        'committed denied habit evidence',
+      );
+      require(
+        canonical(jsonDecode(storage['freshControllerRaw'] as String)) ==
+            canonical(jsonDecode(storage['createdControllerRaw'] as String)),
+        'complete fresh committed model',
+      );
+    }
+    final stored = storage[step == 0 ? 'originalStored' : 'createdStored'];
+    final model =
+        storage[step == 0 ? 'originalControllerRaw' : 'createdControllerRaw'];
+    require(
+      nativeSnapshotDifferencePaths(value['database'], stored).isEmpty,
+      'stage SQL baseline',
+    );
+    require(
+      model is String &&
+          canonical(jsonDecode(value['model']! as String)) ==
+              canonical(jsonDecode(model)),
+      'stage model baseline',
+    );
+    return SettingsCheckpoint._(value);
+  }
+
+  static SettingsCheckpoint create(
+    Map<String, Object?> result,
+    Map<String, Object?> database,
+    String model,
+    String original, {
+    required int processId,
+    required DateTime deadline,
+  }) => SettingsCheckpoint.decode(
+    jsonEncode({
+      'version': 1,
+      'package': 'com.haoxiguan.haoxiguan.acceptance',
+      'build': result['build'],
+      'schema': 3,
+      'runId': result['runId'],
+      'stage': result['stage'],
+      'pid': processId,
+      'deadlineMs': deadline.toUtc().millisecondsSinceEpoch,
+      'original': original,
+      'model': model,
+      'database': database,
+      'result': result,
+    }),
+    build: result['build']! as String,
+  );
+
+  Future<void> write(File file) => writeAtomic(file, jsonEncode(data));
+}
+
+Future<void> writeAtomic(File file, String raw) async {
+  final pending = File('${file.path}.pending');
+  await pending.writeAsString(raw, flush: true);
+  await pending.rename(file.path);
+}
+
+class CheckpointConflict extends FormatException {
+  CheckpointConflict(this.previous, String message) : super(message);
+  final Map<String, Object?> previous;
+}
+
+class FailedCheckpointConflict extends CheckpointConflict {
+  FailedCheckpointConflict(Map<String, Object?> previous)
+    : super(previous, 'terminal failed logical run cannot be replayed');
+}
+
+Future<SettingsCheckpoint?> readSettingsCheckpoint(
+  Directory directory,
+  String build,
+  File report,
+) async {
+  final file = File('${directory.path}/acceptance-settings-checkpoint.json');
+  final previous = await report.exists()
+      ? jsonDecode(await report.readAsString())
+      : null;
+  if (previous is Map &&
+      previous['build'] == build &&
+      previous['status'] == 'failed') {
+    throw FailedCheckpointConflict(previous.cast<String, Object?>());
+  }
+  if (!await file.exists()) {
+    if (previous is Map &&
+        previous['build'] == build &&
+        previous['status'] == 'running') {
+      throw CheckpointConflict(
+        previous.cast<String, Object?>(),
+        'missing continuation for an unfinished logical run; refusing a fresh replay',
+      );
+    }
+    return null;
+  }
+  late SettingsCheckpoint checkpoint;
+  try {
+    checkpoint = SettingsCheckpoint.decode(
+      await file.readAsString(),
+      build: build,
+    );
+  } on FormatException catch (error) {
+    if (previous is Map &&
+        previous['build'] == build &&
+        previous['status'] == 'running') {
+      throw CheckpointConflict(previous.cast<String, Object?>(), error.message);
+    }
+    rethrow;
+  }
+  if (previous != null) {
+    if (previous is! Map ||
+        previous['runId'] != checkpoint.result['runId'] ||
+        previous['build'] != build ||
+        previous['status'] != 'running') {
+      throw const FormatException(
+        'Settings checkpoint conflicts with terminal or unrelated report',
+      );
+    }
+  }
+  return checkpoint;
+}
+
+Future<Map<String, Object?>> verifyCheckpointStorage(
+  SettingsCheckpoint checkpoint,
+  SqliteHabitRepository repository,
+  HabitController controller,
+) async {
+  final version = await repository.database
+      .customSelect('PRAGMA user_version')
+      .getSingle();
+  check(
+    version.data.values.single == 3,
+    'checkpoint resumes the real schema3 database',
+  );
+  final actual = await nativeDatabaseEvidence(repository);
+  final difference = nativeSnapshotDifferencePaths(checkpoint.database, actual);
+  check(
+    difference.isEmpty,
+    'checkpoint SQL snapshot and every table unchanged',
+  );
+  final model = controller.exportJson();
+  final unchanged =
+      canonical(jsonDecode(model)) == canonical(jsonDecode(checkpoint.model));
+  check(unchanged, 'checkpoint complete controller model unchanged');
+  return {
+    'actualDatabase': actual,
+    'actualModelRaw': model,
+    'databaseDifferencePaths': difference,
+    'completeModelUnchanged': unchanged,
+  };
+}
+
 // Built ONLY with a separate acceptance application ID by the CI workflow.
 // Never install this entrypoint over a user's normal application.
 Future<void> main() async {
@@ -41,8 +341,18 @@ Future<void> main() async {
     'status': 'running',
     'runId': DateTime.now().toUtc().microsecondsSinceEpoch.toString(),
   };
-  await report.writeAsString(jsonEncode(result), flush: true);
   try {
+    final continuation = await readSettingsCheckpoint(
+      directory,
+      result['build']! as String,
+      report,
+    );
+    if (continuation != null) {
+      result
+        ..clear()
+        ..addAll(continuation.result);
+    }
+    await writeAtomic(report, jsonEncode(result));
     repository = await SqliteHabitRepository.open();
     final date = DateTime(2026, 7, 13, 10, 30);
     controller = HabitController(
@@ -50,241 +360,267 @@ Future<void> main() async {
       clock: () => date,
       timezoneId: () => 'Asia/Shanghai',
     );
-    await controller.load();
-    check(controller.loaded, 'open');
-    const secrets = FlutterSecureStorage(
-      aOptions: AndroidOptions(
-        resetOnError: false,
-        migrateWithBackup: true,
-        storageNamespace: 'acceptance_only',
-      ),
-    );
-    if (!await baseline.exists()) {
-      check(controller.habits.isEmpty, 'fresh installation must be empty');
-      for (final type in ['boolean', 'count', 'duration']) {
-        check(
-          await controller.addHabit(
-            title: 'acceptance-$type',
-            emoji: '🌱',
-            colorValue: 0xff5f8068,
-            weekdays: {1, 2, 3, 4, 5, 6, 7},
-            recordType: type,
-            reminderTime: type == 'boolean' ? '23:59' : null,
-            scale: type == 'count' ? 1000 : 1,
-            dailyTarget: type == 'count'
-                ? 300
-                : type == 'duration'
-                ? 90
-                : 1,
-            unit: type == 'duration' ? '秒' : '次',
-          ),
-          'create $type',
-        );
-      }
-      final habits = controller.habits;
-      check(await controller.markCompleted(habits[0].id, date), 'complete');
-      check(await controller.addValue(habits[1].id, date, 100), 'count first');
-      check(await controller.addValue(habits[1].id, date, 200), 'count second');
-      check(await controller.addValue(habits[2].id, date, 90), 'duration');
+    if (continuation != null) {
+      await controller.load();
+      check(controller.loaded, 'resume real SQLite');
       check(
-        await controller.setNote(habits[1].id, date, '离线验收：更新和重开必须保留'),
-        'note',
-      );
-      await secrets.write(
-        key: 'retained',
-        value: 'synthetic-keystore-upgrade-fixture',
-      );
-      await baseline.writeAsString(
-        canonical(jsonDecode(controller.exportJson())),
-        flush: true,
-      );
-      result['phase'] = 'create';
-    } else {
-      check(
-        canonical(jsonDecode(controller.exportJson())) ==
+        canonical(jsonDecode(continuation.original)) ==
             await baseline.readAsString(),
-        'all business data survived reopening/upgrade',
+        'checkpoint original equals the retained upgrade baseline',
+      );
+      const secrets = FlutterSecureStorage(
+        aOptions: AndroidOptions(
+          resetOnError: false,
+          migrateWithBackup: true,
+          storageNamespace: 'acceptance_only',
+        ),
       );
       check(
         await secrets.read(key: 'retained') ==
             'synthetic-keystore-upgrade-fixture',
-        'Keystore survived reopening/upgrade',
+        'checkpoint resume retains real Keystore secret',
       );
-      result['phase'] = 'reopen';
-    }
-    final habits = controller.habits;
-    check(habits.length == 3, 'habit count');
-    check(
-      habits.firstWhere((h) => h.recordType == 'boolean').isCompletedOn(date),
-      'boolean preserved',
-    );
-    check(
-      habits.firstWhere((h) => h.recordType == 'count').valueOn(date) == 300,
-      'exact count preserved',
-    );
-    check(
-      habits.firstWhere((h) => h.recordType == 'duration').valueOn(date) == 90,
-      'duration preserved',
-    );
-    final raw = controller.exportJson();
-    final encrypted = await BackupCodec.encrypt(
-      raw,
-      'public synthetic native test password',
-    );
-    final restored = await BackupCodec.decrypt(
-      encrypted,
-      'public synthetic native test password',
-    );
-    check(
-      canonical(jsonDecode(restored)) == canonical(jsonDecode(raw)),
-      'native crypto round trip',
-    );
-    if (result['build'] == '10002') {
-      final name = 'hgw-${result['runId']}.hgb';
-      final files = PlatformBackupFiles();
-      result.addAll({'stage': 'awaitingDocumentSave', 'documentName': name});
-      await report.writeAsString(jsonEncode(result), flush: true);
-      check(await files.save(encrypted, name), 'SAF export and readback');
-      result['stage'] = 'awaitingDocumentOpen';
-      await report.writeAsString(jsonEncode(result), flush: true);
-      final picked = await files.open();
-      check(picked != null, 'SAF selected encrypted backup');
-      final document = await BackupCodec.decryptWithMetadata(
-        picked!,
+      final encrypted = await BackupCodec.encrypt(
+        continuation.original,
         'public synthetic native test password',
       );
-      final fromDocument = document.snapshot;
       check(
-        canonical(jsonDecode(fromDocument)) == canonical(jsonDecode(raw)),
-        'SAF opened backup decrypted to the complete original data',
+        canonical(
+              jsonDecode(
+                await BackupCodec.decrypt(
+                  encrypted,
+                  'public synthetic native test password',
+                ),
+              ),
+            ) ==
+            canonical(jsonDecode(continuation.original)),
+        'checkpoint resume native crypto round trip',
       );
-      await verifyNativeRestore(directory, report, result, document, date);
-      check(
-        canonical(jsonDecode(controller.exportJson())) ==
-            canonical(jsonDecode(raw)),
-        'independent restore did not change the upgrade fixture',
-      );
-      final oversizedName = 'hgw-oversize-${result['runId']}.hgb';
-      result.addAll({
-        'safExportReadback': true,
-        'safOpenDecrypt': true,
-        'stage': 'awaitingOversizeSave',
-        'documentName': oversizedName,
-      });
-      await report.writeAsString(jsonEncode(result), flush: true);
-      // Register the synthetic document through SAF even on Android 7, whose
-      // Downloads provider does not list arbitrary adb-created files. The driver
-      // then expands the same file without trusting the provider's old SIZE.
-      check(
-        await files.save(encrypted, oversizedName),
-        'SAF oversized fixture placeholder',
-      );
-      result['stage'] = 'awaitingOversizeOpen';
-      await report.writeAsString(jsonEncode(result), flush: true);
-      var rejected = false;
-      try {
-        await files.open();
-      } on FormatException catch (error) {
-        rejected = error.message == '文件超过 50 MiB';
-      }
-      check(rejected, 'oversized SAF document rejected before Dart allocation');
-      check(
-        canonical(jsonDecode(controller.exportJson())) ==
-            canonical(jsonDecode(raw)),
-        'failed file import left application data unchanged',
-      );
-      result['safSizeLimit'] = true;
       final reminders = LocalReminderService(handleLaunchActions: false);
-      await reminders.syncAll(controller.habits);
-      final notifications = FlutterLocalNotificationsPlugin();
-      check(
-        await notifications
-                .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin
-                >()!
-                .areNotificationsEnabled() ==
-            true,
-        'native notification permission',
-      );
-      final scheduled = await notifications.pendingNotificationRequests();
-      check(scheduled.isNotEmpty, 'native notification schedule');
-      for (final item in scheduled) {
-        final payload = jsonDecode(item.payload!) as Map;
-        check(
-          payload['v'] == 1 &&
-              payload['habitId'] == habits.first.id &&
-              DateTime.tryParse(payload['date'] as String) != null,
-          'native reminders carry an explicit behavior date',
-        );
-      }
-      result['nativeReminderScheduling'] = true;
       await verifyNativeReminderAccess(
         directory,
         report,
         result,
         repository,
         reminders,
-        raw,
+        continuation.original,
         date,
+        continuation: continuation,
       );
+      await finishNativeReminders(
+        report,
+        result,
+        controller,
+        reminders,
+        baseline,
+      );
+    } else {
       await controller.load();
-      check(
-        canonical(jsonDecode(controller.exportJson())) ==
-            await baseline.readAsString(),
-        'permission scenarios preserved the original upgrade baseline',
+      check(controller.loaded, 'open');
+      const secrets = FlutterSecureStorage(
+        aOptions: AndroidOptions(
+          resetOnError: false,
+          migrateWithBackup: true,
+          storageNamespace: 'acceptance_only',
+        ),
       );
-      await reminders.syncAll(controller.habits);
-      await Workmanager().initialize(backgroundDispatcher);
-      // A forced JobScheduler job cannot bypass WorkManager's own periodic
-      // clock. Use a real one-off system task with the production dispatcher.
-      // Cancel the isolated fixture's previous work before clearing reminders.
-      await Workmanager().cancelAll();
-      final cancelled = DateTime.now().add(const Duration(seconds: 10));
-      while (await Workmanager().isScheduledByUniqueName(
-            'haoxiguan-reminders-v1',
-          ) ||
-          await Workmanager().isScheduledByUniqueName('haoxiguan-backup-v1')) {
-        check(DateTime.now().isBefore(cancelled), 'fixture work cancelled');
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-      }
-      await DeviceTaskLock.run('reminders', notifications.cancelAll);
-      result['stage'] = 'awaitingBackgroundReschedule';
-      await report.writeAsString(jsonEncode(result), flush: true);
-      await Workmanager().registerOneOffTask(
-        'acceptance-reminders-${result['runId']}',
-        'reminders',
-      );
-      final deadline = DateTime.now().add(const Duration(seconds: 75));
-      var renewed = false;
-      while (DateTime.now().isBefore(deadline)) {
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        if ((await notifications.pendingNotificationRequests()).isNotEmpty) {
-          renewed = true;
-          break;
+      if (!await baseline.exists()) {
+        check(controller.habits.isEmpty, 'fresh installation must be empty');
+        for (final type in ['boolean', 'count', 'duration']) {
+          check(
+            await controller.addHabit(
+              title: 'acceptance-$type',
+              emoji: '🌱',
+              colorValue: 0xff5f8068,
+              weekdays: {1, 2, 3, 4, 5, 6, 7},
+              recordType: type,
+              reminderTime: type == 'boolean' ? '23:59' : null,
+              scale: type == 'count' ? 1000 : 1,
+              dailyTarget: type == 'count'
+                  ? 300
+                  : type == 'duration'
+                  ? 90
+                  : 1,
+              unit: type == 'duration' ? '秒' : '次',
+            ),
+            'create $type',
+          );
         }
+        final habits = controller.habits;
+        check(await controller.markCompleted(habits[0].id, date), 'complete');
+        check(
+          await controller.addValue(habits[1].id, date, 100),
+          'count first',
+        );
+        check(
+          await controller.addValue(habits[1].id, date, 200),
+          'count second',
+        );
+        check(await controller.addValue(habits[2].id, date, 90), 'duration');
+        check(
+          await controller.setNote(habits[1].id, date, '离线验收：更新和重开必须保留'),
+          'note',
+        );
+        await secrets.write(
+          key: 'retained',
+          value: 'synthetic-keystore-upgrade-fixture',
+        );
+        await baseline.writeAsString(
+          canonical(jsonDecode(controller.exportJson())),
+          flush: true,
+        );
+        result['phase'] = 'create';
+      } else {
+        check(
+          canonical(jsonDecode(controller.exportJson())) ==
+              await baseline.readAsString(),
+          'all business data survived reopening/upgrade',
+        );
+        check(
+          await secrets.read(key: 'retained') ==
+              'synthetic-keystore-upgrade-fixture',
+          'Keystore survived reopening/upgrade',
+        );
+        result['phase'] = 'reopen';
       }
-      check(renewed, 'real WorkManager isolate rebuilt pending reminders');
-      result['workManagerRenewal'] = true;
-      await initializeBackgroundTasks();
-      final registered = DateTime.now().add(const Duration(seconds: 10));
-      while (!(await Workmanager().isScheduledByUniqueName(
-            'haoxiguan-reminders-v1',
-          )) ||
-          !(await Workmanager().isScheduledByUniqueName(
-            'haoxiguan-backup-v1',
-          ))) {
-        check(DateTime.now().isBefore(registered), 'periodic tasks registered');
-        await Future<void>.delayed(const Duration(milliseconds: 200));
+      final habits = controller.habits;
+      check(habits.length == 3, 'habit count');
+      check(
+        habits.firstWhere((h) => h.recordType == 'boolean').isCompletedOn(date),
+        'boolean preserved',
+      );
+      check(
+        habits.firstWhere((h) => h.recordType == 'count').valueOn(date) == 300,
+        'exact count preserved',
+      );
+      check(
+        habits.firstWhere((h) => h.recordType == 'duration').valueOn(date) ==
+            90,
+        'duration preserved',
+      );
+      final raw = controller.exportJson();
+      final encrypted = await BackupCodec.encrypt(
+        raw,
+        'public synthetic native test password',
+      );
+      final restored = await BackupCodec.decrypt(
+        encrypted,
+        'public synthetic native test password',
+      );
+      check(
+        canonical(jsonDecode(restored)) == canonical(jsonDecode(raw)),
+        'native crypto round trip',
+      );
+      if (result['build'] == '10002') {
+        final name = 'hgw-${result['runId']}.hgb';
+        final files = PlatformBackupFiles();
+        result.addAll({'stage': 'awaitingDocumentSave', 'documentName': name});
+        await report.writeAsString(jsonEncode(result), flush: true);
+        check(await files.save(encrypted, name), 'SAF export and readback');
+        result['stage'] = 'awaitingDocumentOpen';
+        await report.writeAsString(jsonEncode(result), flush: true);
+        final picked = await files.open();
+        check(picked != null, 'SAF selected encrypted backup');
+        final document = await BackupCodec.decryptWithMetadata(
+          picked!,
+          'public synthetic native test password',
+        );
+        final fromDocument = document.snapshot;
+        check(
+          canonical(jsonDecode(fromDocument)) == canonical(jsonDecode(raw)),
+          'SAF opened backup decrypted to the complete original data',
+        );
+        await verifyNativeRestore(directory, report, result, document, date);
+        check(
+          canonical(jsonDecode(controller.exportJson())) ==
+              canonical(jsonDecode(raw)),
+          'independent restore did not change the upgrade fixture',
+        );
+        final oversizedName = 'hgw-oversize-${result['runId']}.hgb';
+        result.addAll({
+          'safExportReadback': true,
+          'safOpenDecrypt': true,
+          'stage': 'awaitingOversizeSave',
+          'documentName': oversizedName,
+        });
+        await report.writeAsString(jsonEncode(result), flush: true);
+        // Register the synthetic document through SAF even on Android 7, whose
+        // Downloads provider does not list arbitrary adb-created files. The driver
+        // then expands the same file without trusting the provider's old SIZE.
+        check(
+          await files.save(encrypted, oversizedName),
+          'SAF oversized fixture placeholder',
+        );
+        result['stage'] = 'awaitingOversizeOpen';
+        await report.writeAsString(jsonEncode(result), flush: true);
+        var rejected = false;
+        try {
+          await files.open();
+        } on FormatException catch (error) {
+          rejected = error.message == '文件超过 50 MiB';
+        }
+        check(
+          rejected,
+          'oversized SAF document rejected before Dart allocation',
+        );
+        check(
+          canonical(jsonDecode(controller.exportJson())) ==
+              canonical(jsonDecode(raw)),
+          'failed file import left application data unchanged',
+        );
+        result['safSizeLimit'] = true;
+        final reminders = LocalReminderService(handleLaunchActions: false);
+        await reminders.syncAll(controller.habits);
+        final notifications = FlutterLocalNotificationsPlugin();
+        check(
+          await notifications
+                  .resolvePlatformSpecificImplementation<
+                    AndroidFlutterLocalNotificationsPlugin
+                  >()!
+                  .areNotificationsEnabled() ==
+              true,
+          'native notification permission',
+        );
+        final scheduled = await notifications.pendingNotificationRequests();
+        check(scheduled.isNotEmpty, 'native notification schedule');
+        for (final item in scheduled) {
+          final payload = jsonDecode(item.payload!) as Map;
+          check(
+            payload['v'] == 1 &&
+                payload['habitId'] == habits.first.id &&
+                DateTime.tryParse(payload['date'] as String) != null,
+            'native reminders carry an explicit behavior date',
+          );
+        }
+        result['nativeReminderScheduling'] = true;
+        await verifyNativeReminderAccess(
+          directory,
+          report,
+          result,
+          repository,
+          reminders,
+          raw,
+          date,
+        );
+        await finishNativeReminders(
+          report,
+          result,
+          controller,
+          reminders,
+          baseline,
+        );
       }
-      result['periodicTasksRegistered'] = true;
-      result.remove('stage');
     }
+    final checkpointFile = File(
+      '${directory.path}/acceptance-settings-checkpoint.json',
+    );
+    if (await checkpointFile.exists()) await checkpointFile.delete();
     final version = await repository.database
         .customSelect('PRAGMA user_version')
         .getSingle();
     result.addAll({
       'status': 'passed',
-      'habits': habits.length,
+      'habits': controller.habits.length,
       'schema': version.data.values.single,
       'nativeCrypto': true,
       'keystore': true,
@@ -292,20 +628,41 @@ Future<void> main() async {
       'syncConfigured': false,
     });
   } catch (error, stack) {
-    result.addAll({
-      'status': 'failed',
-      'error': error.toString(),
-      'stack': stack.toString(),
-    });
+    // A failed logical run must never be revived from an earlier running wait.
+    final checkpointFile = File(
+      '${directory.path}/acceptance-settings-checkpoint.json',
+    );
+    try {
+      if (await checkpointFile.exists()) await checkpointFile.delete();
+    } on FileSystemException {
+      // The terminal report below still makes a surviving checkpoint invalid.
+    }
+    if (error is CheckpointConflict) {
+      final rejected = File(
+        '${directory.path}/acceptance-rejected-continuation.json',
+      );
+      if (!await rejected.exists()) {
+        await writeAtomic(rejected, jsonEncode(error.previous));
+      }
+      result
+        ..clear()
+        ..addAll(error.previous);
+    }
+    if (error is FailedCheckpointConflict) {
+      result['continuationRejected'] = error.message;
+    } else {
+      result.addAll({
+        'status': 'failed',
+        'error': error.toString(),
+        'stack': stack.toString(),
+      });
+    }
   } finally {
     controller?.dispose();
     await repository?.close();
     acceptanceSemantics.dispose();
   }
-  await report.writeAsString(
-    const JsonEncoder.withIndent('  ').convert(result),
-    flush: true,
-  );
+  await writeAtomic(report, const JsonEncoder.withIndent('  ').convert(result));
   runApp(
     MaterialApp(
       home: Scaffold(
@@ -318,6 +675,65 @@ Future<void> main() async {
       ),
     ),
   );
+}
+
+Future<void> finishNativeReminders(
+  File report,
+  Map<String, Object?> result,
+  HabitController controller,
+  LocalReminderService reminders,
+  File baseline,
+) async {
+  final notifications = FlutterLocalNotificationsPlugin();
+  await controller.load();
+  check(
+    canonical(jsonDecode(controller.exportJson())) ==
+        await baseline.readAsString(),
+    'permission scenarios preserved the original upgrade baseline',
+  );
+  await reminders.syncAll(controller.habits);
+  await Workmanager().initialize(backgroundDispatcher);
+  // A forced JobScheduler job cannot bypass WorkManager's own periodic
+  // clock. Use a real one-off system task with the production dispatcher.
+  // Cancel the isolated fixture's previous work before clearing reminders.
+  await Workmanager().cancelAll();
+  final cancelled = DateTime.now().add(const Duration(seconds: 10));
+  while (await Workmanager().isScheduledByUniqueName(
+        'haoxiguan-reminders-v1',
+      ) ||
+      await Workmanager().isScheduledByUniqueName('haoxiguan-backup-v1')) {
+    check(DateTime.now().isBefore(cancelled), 'fixture work cancelled');
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  }
+  await DeviceTaskLock.run('reminders', notifications.cancelAll);
+  result['stage'] = 'awaitingBackgroundReschedule';
+  await report.writeAsString(jsonEncode(result), flush: true);
+  await Workmanager().registerOneOffTask(
+    'acceptance-reminders-${result['runId']}',
+    'reminders',
+  );
+  final deadline = DateTime.now().add(const Duration(seconds: 75));
+  var renewed = false;
+  while (DateTime.now().isBefore(deadline)) {
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    if ((await notifications.pendingNotificationRequests()).isNotEmpty) {
+      renewed = true;
+      break;
+    }
+  }
+  check(renewed, 'real WorkManager isolate rebuilt pending reminders');
+  result['workManagerRenewal'] = true;
+  await initializeBackgroundTasks();
+  final registered = DateTime.now().add(const Duration(seconds: 10));
+  while (!(await Workmanager().isScheduledByUniqueName(
+        'haoxiguan-reminders-v1',
+      )) ||
+      !(await Workmanager().isScheduledByUniqueName('haoxiguan-backup-v1'))) {
+    check(DateTime.now().isBefore(registered), 'periodic tasks registered');
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  }
+  result['periodicTasksRegistered'] = true;
+  result.remove('stage');
 }
 
 /// The settings driver acknowledges only navigation. All permission/channel
@@ -342,15 +758,67 @@ Future<int> settingsStage(
   HabitController controller,
   String stage, {
   bool channel = false,
+  required SqliteHabitRepository repository,
+  required String original,
+  SettingsCheckpoint? continuation,
 }) async {
-  check(
-    await controller.openReminderSettings(channel: channel),
-    'production settings navigation for $stage',
-  );
   result['stage'] = stage;
-  await report.writeAsString(jsonEncode(result), flush: true);
+  result['notificationCheckpointVersion'] = 1;
+  SettingsCheckpoint checkpoint;
+  final resuming = continuation?.stage == stage;
+  if (resuming) {
+    checkpoint = continuation!;
+    final observed = await verifyCheckpointStorage(
+      checkpoint,
+      repository,
+      controller,
+    );
+    final observations =
+        (result['notificationProcessResumes'] ??= <Object?>[]) as List;
+    observations.add({
+      'runId': result['runId'],
+      'stage': stage,
+      'previousPid': checkpoint.processId,
+      'pid': pid,
+      ...observed,
+    });
+    checkpoint = SettingsCheckpoint.create(
+      result,
+      checkpoint.database,
+      checkpoint.model,
+      checkpoint.original,
+      processId: pid,
+      deadline: checkpoint.deadline,
+    );
+  } else {
+    final version = await repository.database
+        .customSelect('PRAGMA user_version')
+        .getSingle();
+    check(
+      version.data.values.single == 3,
+      'Settings checkpoint requires actual schema3',
+    );
+    checkpoint = SettingsCheckpoint.create(
+      result,
+      await nativeDatabaseEvidence(repository),
+      controller.exportJson(),
+      original,
+      processId: pid,
+      deadline: DateTime.now().toUtc().add(const Duration(seconds: 120)),
+    );
+  }
+  await checkpoint.write(
+    File('${directory.path}/acceptance-settings-checkpoint.json'),
+  );
+  await writeAtomic(report, jsonEncode(result));
+  if (!resuming) {
+    check(
+      await controller.openReminderSettings(channel: channel),
+      'production settings navigation for $stage',
+    );
+  }
   final control = File('${directory.path}/acceptance-control.json');
-  final deadline = DateTime.now().add(const Duration(seconds: 120));
+  final deadline = checkpoint.deadline;
   while (DateTime.now().isBefore(deadline)) {
     try {
       final api = controlApiLevel(
@@ -455,8 +923,9 @@ Future<void> verifyNativeReminderAccess(
   SqliteHabitRepository repository,
   LocalReminderService reminders,
   String original,
-  DateTime date,
-) async {
+  DateTime date, {
+  SettingsCheckpoint? continuation,
+}) async {
   final controller = HabitController(
     repository,
     clock: () => date,
@@ -473,183 +942,233 @@ Future<void> verifyNativeReminderAccess(
   final originalIds = originalHabits
       .map((habit) => (habit as Map)['id'])
       .toSet();
+  final step = continuation == null
+      ? 0
+      : notificationStages.indexOf(continuation.stage);
+  var api = continuation == null || step == 0
+      ? 0
+      : result['notificationApiLevel']! as int;
   try {
     await controller.load();
     check(controller.loaded, 'notification fixture opens real SQLite');
-    check(
-      canonical(jsonDecode(controller.exportJson())) ==
-          canonical(originalDocument),
-      'notification fixture reads the complete original model snapshot',
-    );
-    final originalStored = await nativeDatabaseEvidence(repository);
-    final storageEvidence = <String, Object?>{
-      'originalControllerRaw': original,
-      'originalStored': originalStored,
-    };
+    if (continuation != null) {
+      await verifyCheckpointStorage(continuation, repository, controller);
+    }
+    if (step == 0) {
+      check(
+        canonical(jsonDecode(controller.exportJson())) ==
+            canonical(originalDocument),
+        'notification fixture reads the complete original model snapshot',
+      );
+    }
+    final originalStored = continuation == null
+        ? await nativeDatabaseEvidence(repository)
+        : ((result['nativeReminderStorageEvidence']! as Map)['originalStored']!
+                  as Map)
+              .cast<String, Object?>();
+    final storageEvidence = continuation == null
+        ? <String, Object?>{
+            'originalControllerRaw': original,
+            'originalStored': originalStored,
+          }
+        : (result['nativeReminderStorageEvidence']! as Map)
+              .cast<String, Object?>();
     result['nativeReminderStorageEvidence'] = storageEvidence;
-    check(await controller.rebuildReminders(), 'initial notifications ready');
-    final api = await settingsStage(
-      directory,
-      report,
-      result,
-      controller,
-      'awaitingNotificationDeny',
-    );
-    result['notificationApiLevel'] = api;
-    await expectReminderAccess(controller, ReminderAccess.appPermissionDenied);
-    check(
-      await android.areNotificationsEnabled() == false,
-      'Android independently reports app notifications denied',
-    );
-    check(
-      await controller.addHabit(
-        title: 'acceptance-denied-${result['runId']}',
-        emoji: '🌱',
-        colorValue: 0xff5f8068,
-        weekdays: {1, 2, 3, 4, 5, 6, 7},
-        reminderTime: '23:59',
-      ),
-      'habit creation succeeds while app notifications are denied',
-    );
+    if (step == 0) {
+      if (continuation == null) {
+        check(
+          await controller.rebuildReminders(),
+          'initial notifications ready',
+        );
+        result['nativeReminderCheckpointInitialReady'] = true;
+      }
+      api = await settingsStage(
+        directory,
+        report,
+        result,
+        controller,
+        'awaitingNotificationDeny',
+        repository: repository,
+        original: original,
+        continuation: continuation,
+      );
+      result['notificationApiLevel'] = api;
+      await expectReminderAccess(
+        controller,
+        ReminderAccess.appPermissionDenied,
+      );
+      check(
+        await android.areNotificationsEnabled() == false,
+        'Android independently reports app notifications denied',
+      );
+      check(
+        await controller.addHabit(
+          title: 'acceptance-denied-${result['runId']}',
+          emoji: '🌱',
+          colorValue: 0xff5f8068,
+          weekdays: {1, 2, 3, 4, 5, 6, 7},
+          reminderTime: '23:59',
+        ),
+        'habit creation succeeds while app notifications are denied',
+      );
+      final added = controller.habits.singleWhere(
+        (habit) => !originalIds.contains(habit.id),
+      );
+      final createdSnapshot = controller.exportJson();
+      final createdStored = await nativeDatabaseEvidence(repository);
+      storageEvidence.addAll({
+        'createdControllerRaw': createdSnapshot,
+        'createdStored': createdStored,
+        'representationDifferencePaths': nativeSnapshotDifferencePaths(
+          jsonDecode(createdStored['snapshotRaw']! as String),
+          jsonDecode(createdSnapshot),
+        ),
+      });
+      check(
+        !await controller.rebuildReminders(),
+        'denied rebuild is unsuccessful',
+      );
+      check(
+        controller.reminderError == ReminderAccess.appPermissionDenied.message,
+        'denied notification explains the real cause and retained data',
+      );
+      check(
+        (await plugin.pendingNotificationRequests()).isEmpty,
+        'denied notification leaves no pending reminder',
+      );
+      // Read with a fresh native SQLite executor, not the controller's cache.
+      final reopened = await SqliteHabitRepository.open();
+      final reopenedController = HabitController(
+        reopened,
+        clock: () => date,
+        timezoneId: () => 'Asia/Shanghai',
+      );
+      try {
+        await reopenedController.load();
+        check(reopenedController.loaded, 'fresh SQLite controller opened');
+        final savedRaw = reopenedController.exportJson();
+        storageEvidence['freshControllerRaw'] = savedRaw;
+        final saved = jsonDecode(savedRaw) as Map;
+        final savedHabits = saved['habits'] as List;
+        check(
+          canonical(saved) == canonical(jsonDecode(createdSnapshot)),
+          'fresh SQLite controller preserves the complete committed model snapshot',
+        );
+        check(
+          canonical(
+                savedHabits.singleWhere((habit) => habit['id'] == added.id),
+              ) ==
+              canonical(added.toJson()),
+          'denied habit and reminder preference were committed to SQLite',
+        );
+        check(
+          canonical(
+                savedHabits
+                    .where((habit) => originalIds.contains(habit['id']))
+                    .toList(),
+              ) ==
+              canonical(originalHabits),
+          'denied creation preserves all prior habits, records and notes',
+        );
+      } finally {
+        reopenedController.dispose();
+        await reopened.close();
+      }
+      result['nativeDeniedHabitSaved'] = true;
+      result['nativeAppPermissionDiagnosis'] = true;
+    }
     final added = controller.habits.singleWhere(
       (habit) => !originalIds.contains(habit.id),
     );
-    final createdSnapshot = controller.exportJson();
-    final createdStored = await nativeDatabaseEvidence(repository);
-    storageEvidence.addAll({
-      'createdControllerRaw': createdSnapshot,
-      'createdStored': createdStored,
-      'representationDifferencePaths': nativeSnapshotDifferencePaths(
-        jsonDecode(createdStored['snapshotRaw']! as String),
-        jsonDecode(createdSnapshot),
-      ),
-    });
-    check(
-      !await controller.rebuildReminders(),
-      'denied rebuild is unsuccessful',
-    );
-    check(
-      controller.reminderError == ReminderAccess.appPermissionDenied.message,
-      'denied notification explains the real cause and retained data',
-    );
-    check(
-      (await plugin.pendingNotificationRequests()).isEmpty,
-      'denied notification leaves no pending reminder',
-    );
-    // Read with a fresh native SQLite executor, not the controller's cache.
-    final reopened = await SqliteHabitRepository.open();
-    final reopenedController = HabitController(
-      reopened,
-      clock: () => date,
-      timezoneId: () => 'Asia/Shanghai',
-    );
-    try {
-      await reopenedController.load();
-      check(reopenedController.loaded, 'fresh SQLite controller opened');
-      final savedRaw = reopenedController.exportJson();
-      storageEvidence['freshControllerRaw'] = savedRaw;
-      final saved = jsonDecode(savedRaw) as Map;
-      final savedHabits = saved['habits'] as List;
-      check(
-        canonical(saved) == canonical(jsonDecode(createdSnapshot)),
-        'fresh SQLite controller preserves the complete committed model snapshot',
-      );
-      check(
-        canonical(
-              savedHabits.singleWhere((habit) => habit['id'] == added.id),
-            ) ==
-            canonical(added.toJson()),
-        'denied habit and reminder preference were committed to SQLite',
-      );
-      check(
-        canonical(
-              savedHabits
-                  .where((habit) => originalIds.contains(habit['id']))
-                  .toList(),
-            ) ==
-            canonical(originalHabits),
-        'denied creation preserves all prior habits, records and notes',
-      );
-    } finally {
-      reopenedController.dispose();
-      await reopened.close();
-    }
-    result['nativeDeniedHabitSaved'] = true;
-    result['nativeAppPermissionDiagnosis'] = true;
+    final createdStored = (storageEvidence['createdStored']! as Map)
+        .cast<String, Object?>();
 
-    check(
-      await settingsStage(
-            directory,
-            report,
-            result,
-            controller,
-            'awaitingNotificationGrant',
-          ) ==
-          api,
-      'consistent Android SDK across settings stages',
-    );
-    await expectReminderAccess(controller, ReminderAccess.ready);
-    check(await controller.rebuildReminders(), 'regrant rebuild succeeds');
-    check(controller.reminderError == null, 'regrant clears prior denial');
-    check(
-      (await plugin.pendingNotificationRequests()).any(
-        (item) => (jsonDecode(item.payload!) as Map)['habitId'] == added.id,
-      ),
-      'regrant rebuild includes the habit saved under denial',
-    );
-    result['nativeAppPermissionRecovery'] = true;
-
-    if (api >= 26) {
-      final before = await android.getNotificationChannels();
-      check(
-        before?.any(
-              (channel) =>
-                  channel.id == DeviceReminderDiagnostics.channelId &&
-                  channel.importance != Importance.none,
-            ) ==
-            true,
-        'the existing real reminder channel is enabled before user disables it',
-      );
+    if (step <= 1) {
       check(
         await settingsStage(
               directory,
               report,
               result,
               controller,
-              'awaitingChannelDisable',
-              channel: true,
+              'awaitingNotificationGrant',
+              repository: repository,
+              original: original,
+              continuation: continuation,
             ) ==
             api,
-        'consistent channel Android SDK',
+        'consistent Android SDK across settings stages',
       );
-      await expectReminderAccess(controller, ReminderAccess.channelDisabled);
+      await expectReminderAccess(controller, ReminderAccess.ready);
+      check(await controller.rebuildReminders(), 'regrant rebuild succeeds');
+      check(controller.reminderError == null, 'regrant clears prior denial');
       check(
-        await android.areNotificationsEnabled() == true,
-        'app permission remains granted when only channel is disabled',
+        (await plugin.pendingNotificationRequests()).any(
+          (item) => (jsonDecode(item.payload!) as Map)['habitId'] == added.id,
+        ),
+        'regrant rebuild includes the habit saved under denial',
       );
-      final blocked = await android.getNotificationChannels();
-      check(
-        blocked?.any(
-              (channel) =>
-                  channel.id == DeviceReminderDiagnostics.channelId &&
-                  channel.importance == Importance.none,
-            ) ==
-            true,
-        'Android independently reports reminder channel disabled',
-      );
-      check(
-        !await controller.rebuildReminders(),
-        'disabled channel blocks rebuild',
-      );
-      check(
-        controller.reminderError == ReminderAccess.channelDisabled.message,
-        'channel-specific explanation retained',
-      );
-      check(
-        (await plugin.pendingNotificationRequests()).isEmpty,
-        'blocked channel clears pending reminders',
-      );
-      result['nativeChannelDiagnosis'] = true;
+      result['nativeAppPermissionRecovery'] = true;
+    }
+
+    if (api >= 26) {
+      if (step <= 2) {
+        if (continuation?.stage != 'awaitingChannelDisable') {
+          final before = await android.getNotificationChannels();
+          check(
+            before?.any(
+                  (channel) =>
+                      channel.id == DeviceReminderDiagnostics.channelId &&
+                      channel.importance != Importance.none,
+                ) ==
+                true,
+            'the existing real reminder channel is enabled before user disables it',
+          );
+          result['nativeChannelInitialEnabled'] = true;
+        }
+        check(
+          await settingsStage(
+                directory,
+                report,
+                result,
+                controller,
+                'awaitingChannelDisable',
+                channel: true,
+                repository: repository,
+                original: original,
+                continuation: continuation,
+              ) ==
+              api,
+          'consistent channel Android SDK',
+        );
+        await expectReminderAccess(controller, ReminderAccess.channelDisabled);
+        check(
+          await android.areNotificationsEnabled() == true,
+          'app permission remains granted when only channel is disabled',
+        );
+        final blocked = await android.getNotificationChannels();
+        check(
+          blocked?.any(
+                (channel) =>
+                    channel.id == DeviceReminderDiagnostics.channelId &&
+                    channel.importance == Importance.none,
+              ) ==
+              true,
+          'Android independently reports reminder channel disabled',
+        );
+        check(
+          !await controller.rebuildReminders(),
+          'disabled channel blocks rebuild',
+        );
+        check(
+          controller.reminderError == ReminderAccess.channelDisabled.message,
+          'channel-specific explanation retained',
+        );
+        check(
+          (await plugin.pendingNotificationRequests()).isEmpty,
+          'blocked channel clears pending reminders',
+        );
+        result['nativeChannelDiagnosis'] = true;
+      }
       check(
         await settingsStage(
               directory,
@@ -658,6 +1177,9 @@ Future<void> verifyNativeReminderAccess(
               controller,
               'awaitingChannelEnable',
               channel: true,
+              repository: repository,
+              original: original,
+              continuation: continuation,
             ) ==
             api,
         'consistent channel repair Android SDK',
@@ -703,6 +1225,10 @@ Future<void> verifyNativeReminderAccess(
     check(
       canonical(afterSettings) == canonical(createdStored),
       'settings repairs do not rewrite SQLite revision, journal or protection rows',
+    );
+    check(
+      nativeSnapshotDifferencePaths(createdStored, afterSettings).isEmpty,
+      'settings preserve exact SQL table rows and observation order',
     );
     // This only removes the synthetic extra habit after every assertion passed.
     // The original baseline file is never rewritten or recomputed.

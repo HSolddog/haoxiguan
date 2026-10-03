@@ -499,6 +499,35 @@ def drive_document_picker(value):
         if node.get('content-desc') in ('Show roots', 'Show navigation drawer') and tap(node):
             return
 
+notification_stages = ('awaitingNotificationDeny', 'awaitingNotificationGrant',
+                       'awaitingChannelDisable', 'awaitingChannelEnable')
+
+
+def archive_settings_checkpoint(value):
+    """Preserve the pre-navigation checkpoint before any Settings mutation."""
+    raw = command(adb, 'exec-out', 'run-as', package, 'cat',
+                  'files/acceptance-settings-checkpoint.json', timeout=15).stdout
+    try:
+        checkpoint = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise RuntimeError('Settings checkpoint is incomplete or malformed; refusing UI mutation') from error
+    if not isinstance(checkpoint, dict) or not isinstance(checkpoint.get('result'), dict):
+        raise RuntimeError('Settings checkpoint has no saved running result')
+    saved = checkpoint.get('result', {})
+    if (type(checkpoint.get('version')) is not int or checkpoint['version'] != 1 or
+            checkpoint.get('package') != package or checkpoint.get('build') != '10002' or
+            type(checkpoint.get('schema')) is not int or checkpoint['schema'] != 3 or
+            checkpoint.get('runId') != value['runId'] or checkpoint.get('stage') != value['stage'] or
+            type(checkpoint.get('pid')) is not int or checkpoint['pid'] <= 0 or
+            type(checkpoint.get('deadlineMs')) is not int or checkpoint['deadlineMs'] <= 0 or
+            saved.get('runId') != value['runId'] or saved.get('stage') != value['stage'] or
+            saved.get('status') != 'running' or saved.get('build') != '10002'):
+        raise RuntimeError('Settings checkpoint does not match the active isolated run and stage')
+    destination = args.output / f"checkpoint-{value['runId']}-{value['stage']}.json"
+    destination.write_bytes(raw)
+    event('checkpoint-archived', runId=value['runId'], stage=value['stage'], pid=checkpoint['pid'])
+
+
 def start_and_wait(build, phase, previous=None):
     require_emulator(f'{build}/{phase} launch')
     event('launch', build=build, phase=phase, previous=previous)
@@ -507,6 +536,8 @@ def start_and_wait(build, phase, previous=None):
     # SAF and the bounded WorkManager check. Each Dart UI stage also has its
     # own 120s limit. Schema2 keeps its original persistence-only budget.
     deadline = time.monotonic() + (600 if build == 10002 else 240)
+    active_run = None
+    archived = set()
     while time.monotonic() < deadline:
         require_emulator(f'{build}/{phase} report')
         report = command(adb, 'exec-out', 'run-as', package, 'cat',
@@ -514,7 +545,27 @@ def start_and_wait(build, phase, previous=None):
         try:
             value = json.loads(report.stdout)
             (args.output/'last-report.json').write_text(json.dumps(value, ensure_ascii=False, indent=2))
+            if active_run is not None and (value.get('runId') != active_run or value.get('build') != str(build)):
+                event('logical-run-drift', expected=active_run, observed=value.get('runId'), build=value.get('build'))
+                raise RuntimeError('logical run identity changed; refusing further UI mutations')
             if value.get('runId') != previous and value.get('build') == str(build):
+                run_id = value.get('runId')
+                if not isinstance(run_id, str) or not re.fullmatch(r'[0-9]+', run_id):
+                    if run_id is None and active_run is None:
+                        continue
+                    raise RuntimeError('acceptance report has no valid logical run identity')
+                if active_run is None:
+                    active_run = run_id
+                    event('logical-run-bound', runId=run_id, build=build, phase=phase)
+                key = (run_id, value.get('stage'), value.get('status'))
+                if key not in archived:
+                    stage = value.get('stage', value.get('status'))
+                    if not isinstance(stage, str) or not re.fullmatch(r'[A-Za-z]+', stage):
+                        raise RuntimeError('acceptance report has an invalid stage')
+                    (args.output/f'report-{run_id}-{stage}.json').write_bytes(report.stdout)
+                    if value.get('status') == 'running' and value.get('stage') in notification_stages:
+                        archive_settings_checkpoint(value)
+                    archived.add(key)
                 if value.get('status') == 'failed':
                     raise RuntimeError(json.dumps(value, ensure_ascii=False))
                 if value.get('status') == 'passed':

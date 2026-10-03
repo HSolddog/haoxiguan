@@ -30,6 +30,20 @@ const _build = String.fromEnvironment('SYNC_ACCEPTANCE_BUILD');
 const _package = String.fromEnvironment('SYNC_ACCEPTANCE_PACKAGE');
 const _syntheticPassword = 'public synthetic native recovery password';
 
+/// Select the production menu value through its actual label's hit area.
+/// Hit testing excludes selected-value copies behind the popup's barrier.
+Finder nativeSyncChoiceMenuItem(SyncChoice choice) => find
+    .descendant(
+      of: find.byWidgetPredicate(
+        (widget) =>
+            widget is DropdownMenuItem<SyncChoice> &&
+            widget.enabled &&
+            widget.value == choice,
+      ),
+      matching: find.byType(Text),
+    )
+    .hitTestable();
+
 /// Trust only the public certificate issued for this isolated loopback run.
 /// Hostname/expiry/signature checks remain HttpClient's normal TLS checks.
 class SyncAcceptanceHttpOverrides extends HttpOverrides {
@@ -669,7 +683,10 @@ class NativeSyncAcceptance {
     );
     for (final item in decision.items) {
       await tap(find.byKey(ValueKey(item.id)), action: 'choose_remote_item');
-      await tap(find.text('保留远端此项').last, action: 'choose_remote_item');
+      await tap(
+        nativeSyncChoiceMenuItem(SyncChoice.remote),
+        action: 'choose_remote_item',
+      );
     }
     await tap(
       find.descendant(

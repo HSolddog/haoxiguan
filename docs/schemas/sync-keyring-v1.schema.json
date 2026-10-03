@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/sync-keyring-v1.schema.json",
+  "title": "Haoxiguan sync keyring v1",
+  "description": "The six-field client keyring emitted by SyncKeyring.toJson and recovered from authenticated .hgr plaintext. Keys are independent 32-byte addressing and content keys. The current generation must name an existing contentKeys property; that relationship and actual key handling remain runtime checks.",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "vault",
+    "idKey",
+    "currentGeneration",
+    "contentKeys"
+  ],
+  "properties": {
+    "format": {
+      "const": "haoxiguan-sync-keyring"
+    },
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "vault": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "A nonempty vault identity; not necessarily a UUID. Runtime measures the 128-unit bound using Dart UTF-16 String.length."
+    },
+    "idKey": {
+      "$ref": "#/$defs/key32"
+    },
+    "currentGeneration": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000
+    },
+    "contentKeys": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 100,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?:[1-9][0-9]{0,5}|1000000)(?![\\s\\S])"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/key32"
+      },
+      "description": "Canonical decimal generation names from 1 through 1000000, without leading zeros or signs. The currentGeneration membership check remains at runtime."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "key32": {
+      "type": "string",
+      "minLength": 44,
+      "maxLength": 44,
+      "pattern": "^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=$",
+      "contentEncoding": "base64",
+      "description": "Exactly 32 bytes encoded as canonical standard padded Base64, including zero unused bits in the final non-padding character."
+    }
+  }
+}
