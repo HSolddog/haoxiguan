@@ -9,6 +9,7 @@ import argparse
 import base64
 from concurrent.futures import ThreadPoolExecutor
 import http.client
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -66,6 +67,27 @@ class LocalDockerConnection(http.client.HTTPConnection):
         self.sock.connect(SOCKET)
 
 
+class ContainerHTTPSConnection(http.client.HTTPSConnection):
+    """Route to this run's Docker IP while verifying the localhost TLS identity."""
+
+    def __init__(self, address, context, timeout):
+        require(context.check_hostname and context.verify_mode == ssl.CERT_REQUIRED,
+                'capacity TLS must verify certificate and hostname')
+        super().__init__('localhost', 8787, context=context, timeout=timeout)
+        self.address = address
+
+    def connect(self):
+        # An internal Docker network has no published ports. The Docker host can
+        # reach its container IP directly; this does not add external routing.
+        # The IP comes only from our own named network's inspected endpoint.
+        raw = socket.create_connection((self.address, self.port), self.timeout)
+        try:
+            self.sock = self._context.wrap_socket(raw, server_hostname=self.host)
+        except BaseException:
+            raw.close()
+            raise
+
+
 class Harness:
     def __init__(self, image, output, temporary):
         self.image, self.output, self.temporary = image, output, temporary
@@ -79,7 +101,8 @@ class Harness:
             self.env.pop(key, None)
         self.started = time.monotonic()
         self.deadline = self.started + 25*60
-        self.port = None
+        self.address = None
+        self.subnets = []
         self.db = DB
         self.lock = threading.Lock()
         self.stop = threading.Event()
@@ -89,12 +112,13 @@ class Harness:
         self.metrics, self.samples = {}, []
         self.report = {
             'status': 'running', 'sourceCommit': os.environ.get('GITHUB_SHA', ''),
-            'mode': 'real Go executable, HTTPS over isolated Docker bridge and loopback published port',
+            'mode': 'real Go executable, host-to-container HTTPS over isolated Docker bridge; no published ports',
             'users': USERS, 'devicesPerUser': DEVICES, 'initialObjectsTotal': USERS*RECORDS,
             'ciphertextBytesPerObject': 1024, 'pushConcurrency': USERS,
             'bootstrapConcurrency': USERS*DEVICES, 'pushBatchSize': BATCH, 'pullPageSize': 200,
             'cpuLimit': 1, 'memoryLimitGiB': 1, 'readOnlyRoot': True,
             'user': '65532:65532', 'tlsCertificateAndHostnameVerified': True,
+            'tlsServerIdentity': 'localhost', 'publishedPorts': False,
             'clientOutsideServerResourceLimit': True,
             'rateLimitsUnchanged': True, 'forwardedIPHeadersSent': False,
             'limits': ['synthetic opaque payloads; excludes client encryption/decryption',
@@ -160,8 +184,8 @@ class Harness:
                                              {'refreshToken': device['refreshToken']})
                         device.update(fresh)
                 headers['Authorization'] = 'Bearer ' + device['accessToken']
-            connection = http.client.HTTPSConnection(
-                '127.0.0.1', self.port, context=self.tls, timeout=min(65, self.remaining()))
+            connection = ContainerHTTPSConnection(
+                self.address, context=self.tls, timeout=min(65, self.remaining()))
             started = time.monotonic()
             try:
                 connection.request('GET' if payload is None else 'POST', path, payload, headers)
@@ -207,17 +231,30 @@ class Harness:
 
     def start_server(self):
         self.docker('run', '-d', '--name', self.container, *self.common(),
-                    '--network', self.network, '-p', '127.0.0.1::8787',
+                    '--network', self.network,
                     '--mount', f'type=bind,src={self.temporary / "certificate.pem"},dst=/certificate.pem,readonly',
                     '--mount', f'type=bind,src={self.temporary / "key.pem"},dst=/key.pem,readonly',
                     self.image, 'serve', '--db', self.db, '--listen', '0.0.0.0:8787',
                     '--tls-cert', '/certificate.pem', '--tls-key', '/key.pem')
-        self.port = int(self.docker('port', self.container, '8787/tcp').stdout.strip().rsplit(':', 1)[1])
         config = json.loads(self.docker('inspect', self.container).stdout)[0]
         require(config['Config']['User'] == '65532:65532', 'unexpected server container UID')
         require(config['HostConfig']['Memory'] == 1024**3, 'memory limit not applied')
         require(config['HostConfig']['NanoCpus'] == 10**9, 'CPU limit not applied')
+        self.refresh_endpoint(config)
         self.healthy()
+
+    def refresh_endpoint(self, config=None):
+        if config is None:
+            config = json.loads(self.docker('inspect', self.container).stdout)[0]
+        networks = config['NetworkSettings']['Networks']
+        require(set(networks) == {self.network}, 'container attached outside its owned isolated network')
+        address = ipaddress.ip_address(networks[self.network]['IPAddress'])
+        require(address.version == 4 and address.is_private and not address.is_loopback
+                and any(address in subnet for subnet in self.subnets),
+                'Docker endpoint is not in the owned private subnet')
+        require(not any(config['NetworkSettings'].get('Ports', {}).values()),
+                'capacity service must not publish host ports')
+        self.address = str(address)
 
     def issue_invite(self, user=None, index=0):
         destination = f'/data/invite-{uuid.uuid4().hex}.json'
@@ -366,7 +403,7 @@ class Harness:
                 exit_state = json.loads(self.docker('inspect', '--format', '{{json .State}}', self.container).stdout)
                 require(exit_state['ExitCode'] == 137 and not exit_state['OOMKilled'], 'unexpected crash cause')
                 self.docker('start', self.container)
-                self.port = int(self.docker('port', self.container, '8787/tcp').stdout.strip().rsplit(':', 1)[1])
+                self.refresh_endpoint()
                 self.healthy()
                 self.report['verification']['abruptRestart'] = {
                     'signal': 'SIGKILL', 'count': 1, 'outstandingWorkers': active,
@@ -458,6 +495,9 @@ class Harness:
             self.docker('network', 'create', '--internal', self.network)
             network = json.loads(self.docker('network', 'inspect', self.network).stdout)[0]
             require(network['Internal'], 'test network must block external routing')
+            self.subnets = [ipaddress.ip_network(value['Subnet'])
+                            for value in network['IPAM']['Config'] if 'Subnet' in value]
+            require(self.subnets, 'owned internal network has no subnet')
             self.report['dockerNetworkInternal'] = True
             certificate, key = self.temporary / 'certificate.pem', self.temporary / 'key.pem'
             subprocess.run(['go', 'run', str(Path(__file__).with_name('sync_test_certificate.go')),

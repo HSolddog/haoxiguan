@@ -7,6 +7,7 @@ on:
       - 'tools/container_smoke.py'
       - 'tools/generate_server_notices.py'
       - 'tools/server_https_capacity.py'
+      - 'tools/test_server_https_capacity.py'
       - 'tools/sync_test_certificate.go'
   push:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - 'tools/container_smoke.py'
       - 'tools/generate_server_notices.py'
       - 'tools/server_https_capacity.py'
+      - 'tools/test_server_https_capacity.py'
       - 'tools/sync_test_certificate.go'
   workflow_dispatch:
 permissions:
@@ -82,6 +84,7 @@ jobs:
       - name: C07 isolated HTTPS capacity and interrupted recovery
         run: |
           python3 -m py_compile tools/server_https_capacity.py
+          python3 -m unittest discover -s tools -p test_server_https_capacity.py -v
           python3 tools/server_https_capacity.py --image haoxiguan-sync:capacity --output build/server-https-capacity/report.json
       - name: Preserve capacity observations and verification evidence
         if: always()

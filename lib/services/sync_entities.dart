@@ -191,9 +191,9 @@ class SyncEntities {
               r[SyncOrigins.field],
             ),
         };
-      } else if (same(l, b) || same(l, r)) {
+      } else if (sameFacts(key, l, b) || sameFacts(key, l, r)) {
         merged[key] = r;
-      } else if (same(r, b)) {
+      } else if (sameFacts(key, r, b)) {
         merged[key] = l;
       } else if (_sameBooleanCompletion(key, l, r, local, remote)) {
         // Two devices completing the same deterministic boolean record is one fact.
