@@ -229,6 +229,7 @@ class Habit {
   String? noteOn(DateTime date) => notes[dateKey(date)];
 
   Habit copyWith({
+    DateTime? createdAt,
     String? title,
     String? emoji,
     int? colorValue,
@@ -270,7 +271,7 @@ class Habit {
       emoji: emoji ?? this.emoji,
       colorValue: colorValue ?? this.colorValue,
       weekdays: weekdays ?? this.weekdays,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
       reminderTime: clearReminder ? null : reminderTime ?? this.reminderTime,
       completions: completions ?? const {},
       entries: completions != null ? null : entries ?? this.entries,

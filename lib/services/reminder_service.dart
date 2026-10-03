@@ -11,7 +11,10 @@ import 'package:timezone/data/latest_10y.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/habit.dart';
+import 'reminder_access.dart';
 import 'reminder_plan.dart';
+
+export 'reminder_access.dart';
 
 enum ReminderActionType { complete, snooze }
 
@@ -48,10 +51,10 @@ class NoopReminderScheduler implements ReminderScheduler {
   Future<void> syncHabit(Habit habit) async {}
 }
 
-class LocalReminderService implements ReminderScheduler {
+class LocalReminderService implements ReminderScheduler, ReminderDiagnostics {
   LocalReminderService({this.handleLaunchActions = true});
   final bool handleLaunchActions;
-  static const _channelId = 'habit_reminders';
+  static const _channelId = DeviceReminderDiagnostics.channelId;
   static const _channelName = '习惯提醒';
   static const _channelDescription = '在设定的时间提醒你完成习惯';
   static const _categoryId = 'habit_actions';
@@ -60,6 +63,7 @@ class LocalReminderService implements ReminderScheduler {
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  late final _diagnostics = DeviceReminderDiagnostics(_plugin);
   final StreamController<ReminderAction> _actions =
       StreamController<ReminderAction>.broadcast();
   Future<void>? _initializing;
@@ -166,6 +170,25 @@ class LocalReminderService implements ReminderScheduler {
   }
 
   @override
+  Future<ReminderAccess> readAccess() async {
+    try {
+      await _ensureInitialized();
+      return await _diagnostics.readAccess();
+    } on Object {
+      return ReminderAccess.unavailable;
+    }
+  }
+
+  @override
+  Future<bool> openSettings({bool channel = false}) =>
+      _diagnostics.openSettings(channel: channel);
+
+  Future<void> _requireAccess() async {
+    final access = await readAccess();
+    if (access != ReminderAccess.ready) throw ReminderUnavailable(access);
+  }
+
+  @override
   Future<void> syncAll(Iterable<Habit> habits) {
     var snapshot = List<Habit>.of(habits);
     Future<void> perform() async {
@@ -209,6 +232,7 @@ class LocalReminderService implements ReminderScheduler {
         }
       }
       await _plugin.cancelAll();
+      if (plan.isNotEmpty || snoozes.isNotEmpty) await _requireAccess();
       for (var index = 0; index < plan.length; index++) {
         final item = plan[index];
         await _plugin.zonedSchedule(
@@ -291,6 +315,7 @@ class LocalReminderService implements ReminderScheduler {
     await _refreshTimezone();
     final date = dateKey(forDate ?? DateTime.now());
     if (current.isCompletedOn(DateTime.parse(date))) return;
+    await _requireAccess();
     final pending = await _plugin.pendingNotificationRequests();
     final ids = pending.map((r) => r.id).toSet();
     for (final item in pending) {

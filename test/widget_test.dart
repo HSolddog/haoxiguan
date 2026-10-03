@@ -52,7 +52,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1/2'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('complete-seed-reading-true')));
+    await tester.tap(find.text('撤销'));
     await tester.pumpAndSettle();
     expect(find.text('0/2'), findsOneWidget);
   });
@@ -230,7 +230,7 @@ void main() {
       const Offset(0, -600),
     );
     await tester.pumpAndSettle();
-    final record = find.byKey(Key('complete-$id-false'));
+    final record = find.byKey(Key('record-custom-$id'));
     await tester.ensureVisible(record);
     await tester.tap(record);
     await tester.pumpAndSettle();

@@ -8,6 +8,7 @@ import '../data/snapshot_codec.dart';
 
 import '../data/habit_repository.dart';
 import '../models/habit.dart';
+import '../models/history_review.dart';
 import '../models/plan.dart';
 import '../models/record_entry.dart';
 import '../services/reminder_service.dart';
@@ -180,6 +181,7 @@ class HabitController extends ChangeNotifier {
   }
 
   Future<bool> addHabit({
+    DateTime? startDate,
     required String title,
     required String emoji,
     required int colorValue,
@@ -201,6 +203,10 @@ class HabitController extends ChangeNotifier {
     int scale = 1,
     int dailyTarget = 1,
   }) => _mutate(() {
+    final start = dateOnly(startDate ?? today);
+    if (start.isAfter(today)) {
+      throw const FormatException('开始日期不能晚于今天');
+    }
     _habits.add(
       Habit(
         id: const Uuid().v4(),
@@ -208,7 +214,7 @@ class HabitController extends ChangeNotifier {
         emoji: emoji,
         colorValue: colorValue,
         weekdays: Set<int>.from(weekdays),
-        createdAt: today,
+        createdAt: start,
         reminderTime: reminderTime,
         category: category.trim().isEmpty ? '未分类' : category.trim(),
         effortEnabled: effortEnabled,
@@ -228,7 +234,7 @@ class HabitController extends ChangeNotifier {
         plans: [
           PlanVersion(
             id: const Uuid().v4(),
-            from: today,
+            from: start,
             kind: scheduleType,
             weekdays: weekdays,
             periodTarget: scheduleCount,
@@ -309,6 +315,52 @@ class HabitController extends ChangeNotifier {
     );
   });
 
+  StartDateCorrection previewStartDateCorrection(
+    String habitId,
+    DateTime from,
+  ) {
+    final habit = habitById(habitId);
+    final start = dateOnly(from);
+    if (habit == null ||
+        habit.inTrash ||
+        !start.isBefore(habit.createdAt) ||
+        start.isAfter(today)) {
+      throw const FormatException('请选择当前开始日期之前的日期');
+    }
+    final first = habit.effectivePlans.first;
+    final corrected = habit.copyWith(
+      createdAt: start,
+      plans: [
+        PlanVersion(
+          id: first.id,
+          from: start,
+          kind: first.kind,
+          weekdays: first.weekdays,
+          periodTarget: first.periodTarget,
+          dailyTarget: first.dailyTarget,
+          legacyInferred: first.legacyInferred,
+        ),
+        ...habit.effectivePlans.skip(1),
+      ],
+    );
+    final days = today.difference(start).inDays + 1;
+    return StartDateCorrection(
+      original: habit,
+      corrected: corrected,
+      before: historyGroups(habit, days: days),
+      after: historyGroups(corrected, days: days),
+    );
+  }
+
+  Future<bool> confirmStartDateCorrection(StartDateCorrection preview) =>
+      _mutate(() {
+        final index = _habits.indexWhere((h) => h.id == preview.original.id);
+        if (index < 0 || !identical(_habits[index], preview.original)) {
+          throw const FormatException('习惯已变化，请重新预览历史校正');
+        }
+        _habits[index] = preview.corrected;
+      });
+
   Future<bool> reorderActive(int oldIndex, int newIndex) => _mutate(() {
     final active = activeHabits.toList();
     if (oldIndex < 0 || oldIndex >= active.length) return;
@@ -328,7 +380,15 @@ class HabitController extends ChangeNotifier {
   Future<bool> requestReminderPermission() async {
     try {
       final granted = await _reminders.requestPermission();
-      if (granted) await _syncAllReminders();
+      if (granted) {
+        await _syncAllReminders();
+      } else {
+        final access = await readReminderAccess();
+        _reminderError = access == ReminderAccess.ready
+            ? ReminderAccess.appPermissionDenied.message
+            : access.message;
+        notifyListeners();
+      }
       return granted;
     } on Object {
       _reminderError = '无法申请通知权限，记录仍可正常保存。';
@@ -433,6 +493,85 @@ class HabitController extends ChangeNotifier {
       _habits[index] = habit.copyWith(entries: entries);
     });
   }
+
+  Future<QuickRecordUndo?> quickRecord(String habitId, DateTime date) async {
+    QuickRecordUndo? undo;
+    final saved = await _mutate(() {
+      final index = _habits.indexWhere((h) => h.id == habitId);
+      if (index < 0) throw const FormatException('习惯不存在');
+      final habit = _habits[index];
+      if (habit.inTrash ||
+          dateOnly(date).isAfter(today) ||
+          dateOnly(date).isBefore(habit.createdAt)) {
+        throw const FormatException('记录日期无效');
+      }
+      final isBoolean = habit.recordType == 'boolean';
+      final id = isBoolean
+          ? const Uuid().v5(
+              Namespace.url.value,
+              'haoxiguan/record/$habitId/${dateKey(date)}',
+            )
+          : const Uuid().v4();
+      final previous = habit.entries.where((e) => e.id == id).firstOrNull;
+      final entry = isBoolean && previous != null
+          ? previous.copyWith(deleted: habit.isCompletedOn(date))
+          : _entry(
+              habitId,
+              date,
+              isBoolean
+                  ? 1
+                  : habit.recordType == 'duration'
+                  ? 300
+                  : habit.scale,
+              id: id,
+            );
+      _habits[index] = habit.copyWith(
+        entries: [...habit.entries.where((e) => e.id != id), entry],
+      );
+      undo = QuickRecordUndo(habitId: habitId, before: previous, after: entry);
+    });
+    return saved ? undo : null;
+  }
+
+  Future<ReminderAccess> readReminderAccess() async =>
+      _reminders is ReminderDiagnostics
+      ? (_reminders as ReminderDiagnostics).readAccess()
+      : ReminderAccess.ready;
+
+  Future<bool> openReminderSettings({bool channel = false}) async =>
+      _reminders is ReminderDiagnostics
+      ? (_reminders as ReminderDiagnostics).openSettings(channel: channel)
+      : false;
+
+  Future<bool> rebuildReminders() async {
+    await _syncAllReminders();
+    return _reminderError == null;
+  }
+
+  Future<bool> undoQuickRecord(QuickRecordUndo undo) => _mutate(() {
+    final index = _habits.indexWhere((h) => h.id == undo.habitId);
+    if (index < 0) throw const FormatException('习惯不存在');
+    final habit = _habits[index];
+    final entry = habit.entries.where((e) => e.id == undo.after.id).firstOrNull;
+    if (entry == null ||
+        entry.revision != undo.after.revision ||
+        entry.deleted != undo.after.deleted ||
+        entry.value != undo.after.value) {
+      throw const FormatException('这条记录已修改，请到记录明细中检查');
+    }
+    _habits[index] = habit.copyWith(
+      entries: [
+        for (final e in habit.entries)
+          if (e.id == entry.id)
+            e.copyWith(
+              value: undo.before?.value,
+              deleted: undo.before?.deleted ?? true,
+            )
+          else
+            e,
+      ],
+    );
+  });
 
   Future<bool> deleteEntry(String habitId, String entryId) => _mutate(() {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
@@ -607,22 +746,59 @@ class HabitController extends ChangeNotifier {
               !r.rested &&
               r.end.isBefore(today) &&
               !r.end.isBefore(start) &&
-              (kind == null || r.plan.kind == kind),
+              (kind == null ||
+                  r.plan.kind == kind ||
+                  reviewKind(r.plan) == kind),
         )
         .toList();
   }
 
-  double completionRate(Habit habit, {int days = 30}) {
-    final results = settledResults(habit, days: days);
+  List<HistoryGroup> historyGroups(Habit habit, {int days = 30}) {
+    final start = calendarDay(today, -days);
+    final results = habit
+        .resultsThrough(today)
+        .where((r) => !r.rested && !r.end.isBefore(start))
+        .toList();
+    return [
+      for (final kind in const ['day', 'week', 'month'])
+        if (results.any((r) => reviewKind(r.plan) == kind))
+          HistoryGroup(
+            kind: kind,
+            settled: results
+                .where(
+                  (r) => reviewKind(r.plan) == kind && r.end.isBefore(today),
+                )
+                .toList(),
+            inProgress: results
+                .where(
+                  (r) => reviewKind(r.plan) == kind && !r.end.isBefore(today),
+                )
+                .toList(),
+          ),
+    ];
+  }
+
+  double completionRate(Habit habit, {int days = 30, String? kind}) {
+    final results = settledResults(
+      habit,
+      days: days,
+      kind: kind ?? reviewKind(habit.planOn(today)),
+    );
     return results.isEmpty
         ? 0
         : results.where((r) => r.met).length / results.length;
   }
 
-  int completedCountInRange(Habit habit, {required int days}) =>
-      settledResults(habit, days: days).where((r) => r.met).length;
-  int expectedCountInRange(Habit habit, {required int days}) =>
-      settledResults(habit, days: days).length;
+  int completedCountInRange(Habit habit, {required int days}) => settledResults(
+    habit,
+    days: days,
+    kind: reviewKind(habit.planOn(today)),
+  ).where((r) => r.met).length;
+  int expectedCountInRange(Habit habit, {required int days}) => settledResults(
+    habit,
+    days: days,
+    kind: reviewKind(habit.planOn(today)),
+  ).length;
   int completedTotalInRange({required int days}) => _habits.fold(
     0,
     (sum, h) =>
@@ -645,7 +821,8 @@ class HabitController extends ChangeNotifier {
   int _legacyEffortPoints(Habit habit) {
     if (!habit.effortEnabled) return 0;
     final completed = habit.completions.keys.where((key) {
-      final day = DateTime.tryParse(key);
+      final parsed = DateTime.tryParse(key);
+      final day = parsed == null ? null : dateOnly(parsed);
       return day != null &&
           !day.isAfter(today) &&
           !day.isBefore(dateOnly(habit.createdAt));
@@ -655,7 +832,7 @@ class HabitController extends ChangeNotifier {
     var periodStart = _periodStart(habit.createdAt, habit.rewardPeriod);
     while (periodStart.isBefore(currentPeriodStart)) {
       final periodEnd = habit.rewardPeriod == 'month'
-          ? DateTime(
+          ? DateTime.utc(
               periodStart.year,
               periodStart.month + 1,
             ).subtract(const Duration(days: 1))
@@ -695,9 +872,9 @@ class HabitController extends ChangeNotifier {
 
   int currentStreak(Habit habit) {
     var streak = 0;
-    final kind = habit.planOn(today).kind;
+    final kind = reviewKind(habit.planOn(today));
     for (final r in habit.resultsThrough(today).toList().reversed) {
-      if (r.plan.kind != kind) break;
+      if (reviewKind(r.plan) != kind) break;
       if (r.rested) continue;
       if (!r.end.isBefore(today) && !r.met) continue;
       if (!r.met) break;
@@ -709,9 +886,9 @@ class HabitController extends ChangeNotifier {
   int bestStreak(Habit habit) {
     var best = 0;
     var current = 0;
-    final kind = habit.planOn(today).kind;
+    final kind = reviewKind(habit.planOn(today));
     for (final r in habit.resultsThrough(today)) {
-      if (r.plan.kind != kind) {
+      if (reviewKind(r.plan) != kind) {
         current = 0;
         continue;
       }
@@ -862,6 +1039,8 @@ class HabitController extends ChangeNotifier {
     try {
       await _reminders.syncAll(List<Habit>.of(_habits));
       _reminderError = null;
+    } on ReminderUnavailable catch (error) {
+      _reminderError = error.access.message;
     } on Object {
       _reminderError = '提醒未能更新，记录已保存。可在系统通知设置中检查权限。';
     }
