@@ -10,6 +10,7 @@ import traceback
 import xml.etree.ElementTree as ET
 
 package = 'com.haoxiguan.haoxiguan.acceptance'
+app_label = '好习惯隔离验收'
 activity = package + '/com.haoxiguan.haoxiguan.MainActivity'
 process = None
 
@@ -17,6 +18,25 @@ process = None
 def event(kind, **fields):
     with (args.output/'driver-events.jsonl').open('a', encoding='utf-8') as evidence:
         evidence.write(json.dumps({'event': kind, 'time': time.monotonic(), **fields}) + '\n')
+
+
+def verify_fixture_apk(apk, build, aapt):
+    # Read the actual APK before installing or driving Settings. A matching
+    # display name alone cannot authorize testing a different application.
+    badging = command(str(aapt), 'dump', 'badging', str(apk), timeout=30).stdout.decode('utf-8')
+    (args.output/f'apk-{build}-badging.txt').write_text(badging, encoding='utf-8')
+    identities = re.findall(r"^package: name='([^']+)' versionCode='([^']+)'(?: |$)", badging, re.MULTILINE)
+    labels = re.findall(r"^application-label:'([^']*)'$", badging, re.MULTILINE)
+    if identities != [(package, str(build))] or labels != [app_label]:
+        raise ValueError('APK does not have the exact isolated package, build and application label')
+    event('fixture-apk-identity', build=build, package=package, label=app_label)
+
+
+def find_aapt(sdk):
+    candidates = sorted((sdk/'build-tools').glob('*/aapt'))
+    if not candidates:
+        raise RuntimeError('Android SDK build-tools aapt is required to verify fixture identity')
+    return candidates[-1]
 
 
 def require_emulator(stage):
@@ -340,9 +360,9 @@ def drive_native_ui(value):
         return True
     allowed = stage in ('awaitingNotificationGrant', 'awaitingChannelEnable')
     label = ('Block all' if device_api < 26 else
-             'Show notifications' if channel else 'All 好习惯 notifications')
+             'Show notifications' if channel else f'All {app_label} notifications')
     if device_api < 26 or channel:
-        expected_title = '习惯提醒' if channel else '好习惯'
+        expected_title = '习惯提醒' if channel else app_label
         if not any(node.get('package') == 'com.android.settings' and
                    node.get('text') == expected_title for node in nodes):
             return True
@@ -631,9 +651,11 @@ def main(argv=None):
         for setting in ['window_animation_scale', 'transition_animation_scale', 'animator_duration_scale']:
             shell('settings', 'put', 'global', setting, '0')
         results = []
+        aapt = find_aapt(sdk)
         for build in (10001, 10002):
             apk = args.apks/f'acceptance-{build}.apk'
             assert apk.exists(), apk
+            verify_fixture_apk(apk, build, aapt)
             install_mode = ['--no-streaming'] if args.api == 24 else []
             command(adb, 'install', *install_mode, '-r', str(apk), timeout=180)
             if args.api >= 33:

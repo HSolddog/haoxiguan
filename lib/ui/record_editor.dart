@@ -95,75 +95,72 @@ class _RecordEditorState extends State<_RecordEditor> {
       isSaving: () => _saving,
       saving: _saving,
       child: AlertDialog(
+        scrollable: true,
         title: Text('${habit.title} · ${dateKey(widget.date)}'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('目前 ${habit.valueLabel(habit.valueOn(widget.date))}'),
-              const SizedBox(height: 12),
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('增加')),
-                  ButtonSegment(value: true, label: Text('更正总量')),
-                ],
-                selected: {_replace},
-                onSelectionChanged: _saving
-                    ? null
-                    : (v) => setState(() => _replace = v.first),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('目前 ${habit.valueLabel(habit.valueOn(widget.date))}'),
+            const SizedBox(height: 12),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('增加')),
+                ButtonSegment(value: true, label: Text('更正总量')),
+              ],
+              selected: {_replace},
+              onSelectionChanged: _saving
+                  ? null
+                  : (v) => setState(() => _replace = v.first),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('record-value-field'),
+              controller: _value,
+              enabled: !_saving,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
-              const SizedBox(height: 12),
+              decoration: InputDecoration(
+                labelText: duration ? '分钟（整数）' : habit.unit,
+                errorText: _error,
+              ),
+            ),
+            if (duration)
               TextField(
-                key: const Key('record-value-field'),
-                controller: _value,
+                controller: _seconds,
                 enabled: !_saving,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: duration ? '分钟（整数）' : habit.unit,
-                  errorText: _error,
-                ),
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: '秒（0–59）'),
               ),
-              if (duration)
-                TextField(
-                  controller: _seconds,
-                  enabled: !_saving,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: '秒（0–59）'),
-                ),
-              if (_replace)
-                const Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Text('将更正当天的总量，备注和其他日期不变。'),
-                ),
-              if (entries.isNotEmpty)
-                ExpansionTile(
-                  key: const Key('record-facts'),
-                  title: Text('当天记录（${entries.length}）'),
-                  children: [
-                    for (final entry in entries.reversed)
-                      ListTile(
-                        title: Text(habit.valueLabel(entry.value)),
-                        subtitle: Text(
-                          entry.recordedAtUtc == null
-                              ? '旧版记录 · 原始时间 ${entry.legacyTimestamp}'
-                              : '录入时间（UTC）\n${entry.recordedAtUtc}${entry.recordedLocalDate != entry.date ? '\n补记' : ''}',
-                        ),
-                        trailing: IconButton(
-                          key: Key('delete-entry-${entry.id}'),
-                          tooltip: '撤销这条记录',
-                          icon: const Icon(Icons.undo),
-                          onPressed: _saving
-                              ? null
-                              : () => _delete(habit, entry),
-                        ),
+            if (_replace)
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Text('将更正当天的总量，备注和其他日期不变。'),
+              ),
+            if (entries.isNotEmpty)
+              ExpansionTile(
+                key: const Key('record-facts'),
+                title: Text('当天记录（${entries.length}）'),
+                children: [
+                  for (final entry in entries.reversed)
+                    ListTile(
+                      title: Text(habit.valueLabel(entry.value)),
+                      subtitle: Text(
+                        entry.recordedAtUtc == null
+                            ? '旧版记录 · 原始时间 ${entry.legacyTimestamp}'
+                            : '录入时间（UTC）\n${entry.recordedAtUtc}${entry.recordedLocalDate != entry.date ? '\n补记' : ''}',
                       ),
-                  ],
-                ),
-            ],
-          ),
+                      trailing: IconButton(
+                        key: Key('delete-entry-${entry.id}'),
+                        tooltip: '撤销这条记录',
+                        icon: const Icon(Icons.undo),
+                        onPressed: _saving ? null : () => _delete(habit, entry),
+                      ),
+                    ),
+                ],
+              ),
+          ],
         ),
         actions: [
           TextButton(

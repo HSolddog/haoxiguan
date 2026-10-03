@@ -26,7 +26,7 @@ def process_list(*pids):
         f'u0_a62 {pid} 1 100 50 0 0000000000 S {driver.package}\n' for pid in pids)).encode()
 
 
-def ui_xml(label, checked=None, owner='com.android.settings', title='好习惯'):
+def ui_xml(label, checked=None, owner='com.android.settings', title='好习惯隔离验收'):
     root = ET.Element('hierarchy')
     screen = ET.SubElement(root, 'node', {'package': owner})
     ET.SubElement(screen, 'node', {'package': owner, 'text': title})
@@ -265,6 +265,34 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
             with self.subTest(value=value), patch.object(driver, 'shell', return_value=value), self.assertRaises(RuntimeError):
                 driver.verify_device_api()
 
+    def test_actual_apk_identity_is_closed_to_the_isolated_label_package_and_build(self):
+        apk = Path(self.directory.name)/'acceptance-10002.apk'
+        aapt = Path(self.directory.name)/'sdk/build-tools/36.0.0/aapt'
+        badging = ("package: name='com.haoxiguan.haoxiguan.acceptance' versionCode='10002' versionName='1.2.0'\n"
+                   "application-label:'好习惯隔离验收'\n")
+        with patch.object(driver, 'command', return_value=result(badging.encode('utf-8'))) as command:
+            driver.verify_fixture_apk(apk, 10002, aapt)
+        self.assertEqual(command.call_args.args, (str(aapt), 'dump', 'badging', str(apk)))
+        self.assertEqual((driver.args.output/'apk-10002-badging.txt').read_text(encoding='utf-8'), badging)
+        self.assertEqual(self.events()[-1]['package'], 'com.haoxiguan.haoxiguan.acceptance')
+        rejected = (badging.replace('.acceptance', ''), badging.replace('10002', '10001'),
+                    badging.replace('好习惯隔离验收', '好习惯'), badging.replace('好习惯隔离验收', 'Other app'),
+                    badging + "application-label:'好习惯隔离验收'\n", badging.splitlines()[0] + '\n')
+        for other in rejected:
+            with self.subTest(badging=other), patch.object(driver, 'command', return_value=result(other.encode('utf-8'))):
+                with self.assertRaisesRegex(ValueError, 'exact isolated package'):
+                    driver.verify_fixture_apk(apk, 10002, 'aapt')
+        self.assertEqual(len(self.events()), 1)
+
+    def test_fixture_identity_requires_sdk_aapt(self):
+        sdk = Path(self.directory.name)/'sdk'
+        with self.assertRaisesRegex(RuntimeError, 'aapt is required'):
+            driver.find_aapt(sdk)
+        aapt = sdk/'build-tools/36.0.0/aapt'
+        aapt.parent.mkdir(parents=True)
+        aapt.touch()
+        self.assertEqual(driver.find_aapt(sdk), aapt)
+
     def test_native_flags_are_strict_and_channel_applicability_matches_actual_sdk(self):
         fields = ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit', 'nativeReminderScheduling',
                   'workManagerRenewal', 'periodicTasksRegistered', 'nativeDeniedHabitSaved',
@@ -307,7 +335,7 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
 
     def test_modern_app_and_channel_use_allow_switch_direction(self):
         driver.args.api = driver.device_api = 35
-        for stage, label, title in [('awaitingNotificationGrant', 'All 好习惯 notifications', '好习惯'),
+        for stage, label, title in [('awaitingNotificationGrant', 'All 好习惯隔离验收 notifications', '好习惯隔离验收'),
                                     ('awaitingChannelEnable', 'Show notifications', '习惯提醒')]:
             xml = ui_xml(label, 'false', title=title)
             with self.subTest(stage=stage), patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell:
@@ -315,11 +343,100 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
             self.assertIn(('input', 'tap', '130', '45'), [c.args for c in shell.call_args_list])
 
     def test_unknown_app_or_nonsettings_switch_is_never_tapped(self):
-        for owner, title in [('com.other.app', '好习惯'), ('com.android.settings', 'Other app')]:
+        for owner, title in [('com.other.app', '好习惯隔离验收'), ('com.android.settings', 'Other app'),
+                             ('com.android.settings', '好习惯')]:
             xml = ui_xml('Block all', 'false', owner=owner, title=title)
             with self.subTest(owner=owner), patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell:
                 driver.drive_native_ui({'runId': '123', 'stage': 'awaitingNotificationDeny'})
             self.assertFalse(any(c.args[0] == 'input' for c in shell.call_args_list))
+
+    def test_captured_android7_isolated_app_info_enters_notifications_exactly_once(self):
+        xml = (Path(__file__).parent/'fixtures/native-settings-api24-app-info.xml').read_text(encoding='utf-8')
+        report = {'runId': '1791030108309507', 'stage': 'awaitingNotificationDeny'}
+        with patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell:
+            driver.drive_native_ui(report)
+            driver.drive_native_ui(report)
+        self.assertEqual([c.args for c in shell.call_args_list if c.args[0] == 'input'],
+                         [('input', 'tap', '123', '943')])
+        self.assertFalse(driver.ui_stages[(report['runId'], report['stage'])].get('verified'))
+
+    def test_captured_android15_isolated_switch_requires_observed_denial_before_ack(self):
+        driver.args.api = driver.device_api = 35
+        xml = (Path(__file__).parent/'fixtures/native-settings-api35-notifications.xml').read_text(encoding='utf-8')
+        tree = ET.fromstring(xml)
+        switches = [node for node in tree.iter('node') if node.get('resource-id') == 'android:id/switch_widget']
+        self.assertEqual(len(switches), 1)
+        self.assertEqual(switches[0].get('checked'), 'true')
+        switches[0].set('checked', 'false')
+        denied = ET.tostring(tree, encoding='unicode')
+        app = ui_xml('native fixture', owner=driver.package)
+        current = [xml]
+        report = {'runId': '1791030162080999', 'stage': 'awaitingNotificationDeny'}
+        with patch.object(driver, 'shell', side_effect=lambda *v, **kw: current[0] if v[0] == 'cat' else '') as shell, \
+                patch.object(driver, 'command', return_value=result()) as command:
+            driver.drive_native_ui(report)
+            driver.drive_native_ui(report)
+            command.assert_not_called()
+            current[0] = denied
+            driver.drive_native_ui(report)
+            command.assert_not_called()
+            driver.drive_native_ui(report)
+            current[0] = app
+            driver.drive_native_ui(report)
+            driver.drive_native_ui(report)
+        self.assertEqual([c.args for c in shell.call_args_list if c.args[0] == 'input'],
+                         [('input', 'tap', '596', '790'), ('input', 'keyevent', '4')])
+        command.assert_called_once()
+        self.assertEqual(json.loads(command.call_args.kwargs['input']),
+                         {'runId': '1791030162080999', 'stage': 'awaitingNotificationDeny', 'apiLevel': 35})
+        self.assertEqual([item['event'] for item in self.events()],
+                         ['notification-ui-tap', 'notification-ui-state', 'notification-ui-ack'])
+
+    def test_captured_settings_for_a_different_label_never_receives_a_tap_or_ack(self):
+        for api, name in [(24, 'native-settings-api24-app-info.xml'), (35, 'native-settings-api35-notifications.xml'),
+                          (36, 'native-settings-api36-notifications.xml')]:
+            driver.args.api = driver.device_api = api
+            source = (Path(__file__).parent/'fixtures'/name).read_text(encoding='utf-8')
+            for other in ('好习惯', 'Other app'):
+                xml = source.replace('好习惯隔离验收', other)
+                with self.subTest(api=api, label=other), \
+                        patch.object(driver, 'shell', side_effect=lambda *v, **kw: xml if v[0] == 'cat' else '') as shell, \
+                        patch.object(driver, 'command') as command:
+                    driver.drive_native_ui({'runId': '123', 'stage': 'awaitingNotificationDeny'})
+                self.assertFalse(any(c.args[0] == 'input' for c in shell.call_args_list))
+                command.assert_not_called()
+
+    def test_captured_android16_has_no_header_and_still_checks_deny_and_grant(self):
+        driver.args.api = driver.device_api = 36
+        source = (Path(__file__).parent/'fixtures/native-settings-api36-notifications.xml').read_text(encoding='utf-8')
+        tree = ET.fromstring(source)
+        self.assertFalse(any(node.get('text') == '好习惯隔离验收' for node in tree.iter('node')))
+        switch = next(node for node in tree.iter('node') if node.get('resource-id') == 'android:id/switch_widget')
+        app = ui_xml('native fixture', owner=driver.package)
+        for stage, before, desired in [('awaitingNotificationDeny', 'true', 'false'),
+                                       ('awaitingNotificationGrant', 'false', 'true')]:
+            switch.set('checked', before)
+            current = [ET.tostring(tree, encoding='unicode')]
+            report = {'runId': '1791030128478865', 'stage': stage}
+            with self.subTest(stage=stage), \
+                    patch.object(driver, 'shell', side_effect=lambda *v, **kw: current[0] if v[0] == 'cat' else '') as shell, \
+                    patch.object(driver, 'command', return_value=result()) as command:
+                driver.drive_native_ui(report)
+                driver.drive_native_ui(report)
+                command.assert_not_called()
+                switch.set('checked', desired)
+                current[0] = ET.tostring(tree, encoding='unicode')
+                driver.drive_native_ui(report)
+                command.assert_not_called()
+                driver.drive_native_ui(report)
+                current[0] = app
+                driver.drive_native_ui(report)
+                driver.drive_native_ui(report)
+            self.assertEqual([c.args for c in shell.call_args_list if c.args[0] == 'input'],
+                             [('input', 'tap', '596', '715'), ('input', 'keyevent', '4')])
+            command.assert_called_once()
+            self.assertEqual(json.loads(command.call_args.kwargs['input']),
+                             {'runId': '1791030128478865', 'stage': stage, 'apiLevel': 36})
 
     def test_label_without_own_switch_cannot_borrow_another_rows_switch(self):
         root = ET.fromstring(ui_xml('Block all', 'false'))

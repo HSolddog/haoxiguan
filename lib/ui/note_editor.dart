@@ -89,34 +89,33 @@ class _NoteEditorState extends State<_NoteEditor> {
     saving: _saving,
     isSaving: () => _saving,
     child: AlertDialog(
+      scrollable: true,
       title: Text('${widget.habit.emoji} ${dateKey(widget.date)} 备注'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              key: const Key('note-text-field'),
-              controller: _text,
-              autofocus: true,
-              enabled: !_saving,
-              minLines: 2,
-              maxLines: 5,
-              maxLength: 2000,
-              decoration: const InputDecoration(
-                labelText: '备注',
-                hintText: '简单记下感受或完成情况',
-              ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            key: const Key('note-text-field'),
+            controller: _text,
+            autofocus: true,
+            enabled: !_saving,
+            minLines: 2,
+            maxLines: 5,
+            maxLength: 2000,
+            decoration: const InputDecoration(
+              labelText: '备注',
+              hintText: '简单记下感受或完成情况',
             ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Semantics(
-                liveRegion: true,
-                child: Text(_error!, key: const Key('note-save-error')),
-              ),
-            ],
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Semantics(
+              liveRegion: true,
+              child: Text(_error!, key: const Key('note-save-error')),
+            ),
           ],
-        ),
+        ],
       ),
       actions: [
         TextButton(
