@@ -8,6 +8,34 @@ class SnapshotCodec {
   static const currentVersion = 7;
   static const maxBytes = 50 * 1024 * 1024;
 
+  /// External restores obey current input limits. [decode] remains compatible
+  /// with existing local facts, migrations and lossless backup/export checks.
+  static Map<String, Object?> decodeImport(String raw) {
+    final document = decode(raw);
+    for (final item in document['habits']! as List) {
+      final habit = item as Map;
+      validateImportedTitle(habit['title']);
+      for (final note in (habit['notes'] as Map? ?? const {}).values) {
+        validateImportedNote(note);
+      }
+    }
+    return document;
+  }
+
+  /// Shared by snapshot restores and decrypted remote sync entities. Never
+  /// trim or truncate imported facts to make an invalid input fit these limits.
+  static void validateImportedTitle(Object? value) {
+    if (value is! String || value.trim().isEmpty || value.length > 80) {
+      throw const FormatException('导入的习惯名称需要 1–80 个字符。原数据未修改。');
+    }
+  }
+
+  static void validateImportedNote(Object? value) {
+    if (value is! String || value.length > 2000) {
+      throw const FormatException('导入的备注最多 2000 字。原数据未修改。');
+    }
+  }
+
   static Map<String, Object?> decode(String raw) {
     if (utf8.encode(raw).length > maxBytes) {
       throw const FormatException('数据超过 50 MiB，未修改原数据');

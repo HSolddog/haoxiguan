@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/backup-decrypted-v1.schema.json",
+  "title": "Haoxiguan decrypted backup content v1",
+  "description": "Authenticated plaintext structure. Count/version equality and cryptography are runtime checks.",
+  "type": "object",
+  "required": [
+    "manifest",
+    "data"
+  ],
+  "properties": {
+    "manifest": {
+      "type": "object",
+      "required": [
+        "dataSchemaVersion",
+        "habitCount"
+      ],
+      "properties": {
+        "snapshotId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAtUtc": {
+          "anyOf": [
+            {
+              "$ref": "logical-snapshot-v7.schema.json#/$defs/utcDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sourceVaultId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dataSchemaVersion": {
+          "type": "integer",
+          "const": 7
+        },
+        "habitCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "$ref": "logical-snapshot-v7.schema.json"
+    }
+  },
+  "additionalProperties": true
+}

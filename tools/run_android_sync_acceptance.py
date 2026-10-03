@@ -73,6 +73,52 @@ EVIDENCE_METRICS = {
     'restart': ('BusinessRevision', 'StateRevision', 'ProtectionCount', 'SyncProtectionCount'),
 }
 EXPECTED_COUNTS = {'habits': 3, 'plans': 6, 'entries': 10, 'notes': 4}
+# Fixed source-level identifiers mirrored by tools/native_sync/diagnostics.dart.
+# Neither device text nor exception messages can extend these allowlists.
+FAILURE_CODES = frozenset((
+    'none', 'native_sync_failure', 'fixture_initialization_failed', 'invalid_config',
+    'invalid_loopback_endpoint', 'acknowledged_remote_facts_mismatch', 'android_required',
+    'conflict_dialog_missing', 'conflict_original_not_protected', 'connection_form_missing',
+    'converged_full_facts_mismatch', 'disconnect_changed_business_data', 'disconnect_dialog_missing',
+    'framework_ui_failure', 'fresh_package_not_empty', 'incomplete_native_evidence',
+    'independent_entries_not_retained', 'initial_full_facts_mismatch', 'initial_preview_missing',
+    'invalid_remote_watermark', 'invalid_restart_state', 'join_form_missing',
+    'joined_initial_review_missing', 'joined_review_candidates_mismatch', 'joined_review_dialog_missing',
+    'joined_review_full_facts_mismatch', 'manual_merge_full_facts_mismatch', 'manual_note_input_missing',
+    'native_binding_missing', 'native_entry_fields_mismatch', 'native_local_edit_failed',
+    'native_note_conflict_missing', 'native_protections_missing', 'native_sqlite_open_failed',
+    'note_conflict_candidates_mismatch', 'offline_backup_full_snapshot_mismatch',
+    'offline_backup_open_cancelled', 'offline_backup_save_failed', 'offline_edit_changed_remote_or_reconnected',
+    'offline_full_facts_mismatch', 'offline_native_record_failed', 'offline_record_reopen_mismatch',
+    'package_mismatch', 'preview_cancel_changed_local', 'preview_cancel_changed_remote',
+    'preview_local_facts_mismatch', 'preview_remote_facts_mismatch',
+    'process_reopen_data_or_keystore_mismatch', 'production_enrollment_failed', 'production_sync_incomplete',
+    'production_sync_screen_required', 'production_ui_action_timeout', 'protection_digest_mismatch',
+    'recovery_dialog_missing', 'recovery_export_not_committed', 'recovery_readback_cancelled',
+    'recovery_readback_mismatch', 'recovery_save_failed', 'restart_checkpoint_mismatch',
+    'restart_flags_invalid', 'sdk_mismatch', 'second_preview_missing', 'source_baseline_mismatch',
+    'source_remote_not_empty', 'sqlite_close_reopen_mismatch', 'stage_ack_timeout', 'ui_input_missing',
+    'ui_target_missing', 'unexpected_repeat_preview', 'exception_format', 'exception_state',
+    'exception_file_system', 'exception_platform', 'exception_tls', 'exception_socket',
+    'exception_timeout', 'exception_flutter', 'exception_type', 'exception_assertion', 'exception_sync_api',
+))
+ACTION_IDS = frozenset((
+    'boot', 'unknown_action', 'open_sqlite', 'seed_source', 'show_sync_screen', 'fill_endpoint',
+    'read_connection_fields', 'fill_device_name', 'fill_invite', 'join_switch', 'fill_join_password',
+    'enroll_device', 'load_binding', 'verify_binding', 'read_remote_watermark', 'export_recovery',
+    'fill_recovery_password', 'fill_recovery_confirm', 'save_recovery', 'readback_recovery',
+    'verify_recovery', 'initial_sync', 'inspect_initial_preview', 'cancel_initial_preview',
+    'verify_cancelled_preview', 'confirm_initial_preview', 'open_initial_review', 'choose_remote_item',
+    'apply_initial_review', 'verify_initial_review', 'add_local_entry', 'edit_local_note', 'immediate_sync',
+    'open_note_conflict', 'choose_manual_note', 'fill_manual_note', 'apply_manual_note',
+    'verify_conflict_protection', 'verify_convergence', 'close_sqlite', 'reopen_sqlite',
+    'prepare_process_restart', 'verify_process_restart', 'disconnect_device', 'confirm_disconnect',
+    'add_offline_entry', 'save_offline_backup', 'readback_offline_backup', 'verify_offline_backup',
+    'verify_offline_remote', 'await_source_upload', 'await_replica_import', 'await_a_changes_uploaded',
+    'await_conflict_resolution', 'await_convergence', 'await_reopen', 'complete', 'cleanup',
+))
+FRAMEWORK_FAILURES = frozenset(('none', 'layout_overflow', 'layout_constraint',
+                              'widget_lifecycle', 'gesture', 'flutter_framework'))
 
 # Reuse only the strict, side-effect-free process parser. The legacy driver's
 # Android lifecycle, report schema, UI handling and mutable globals stay separate.
@@ -192,8 +238,27 @@ def validate_report(value, role, run_id, sdk):
             raise ValueError('SAF report document name does not match this run')
         clean['documentName'] = wanted
     if status == 'failed':
-        # Report the failure without persisting the original exception string.
-        clean['errorCode'] = 'fixtureFailed'
+        code = value.get('errorCode', 'native_sync_failure')
+        if not isinstance(code, str) or code not in FAILURE_CODES or code == 'none':
+            raise ValueError('unknown native fixture failure code')
+        clean['errorCode'] = code
+    if 'diagnostic' in value:
+        diagnostic = value['diagnostic']
+        if not isinstance(diagnostic, dict):
+            raise ValueError('invalid native fixture diagnostic object')
+        allowed = {'failureCode': FAILURE_CODES,
+                   'lastStage': set(ROLE_STAGES[role]) | {'boot'},
+                   'lastAction': ACTION_IDS, 'frameworkFailure': FRAMEWORK_FAILURES}
+        selected = {}
+        for key, choices in allowed.items():
+            item = diagnostic.get(key)
+            if not isinstance(item, str) or item not in choices:
+                raise ValueError('unknown native fixture diagnostic identifier')
+            selected[key] = item
+        if ((status == 'failed' and selected['failureCode'] != clean['errorCode']) or
+                (status != 'failed' and selected['failureCode'] != 'none')):
+            raise ValueError('native fixture failure code/status mismatch')
+        clean['diagnostic'] = selected
     return clean
 
 
@@ -369,6 +434,7 @@ class NativeSyncDriver:
         self.reopen_launches = {}
         self.reopened = set()
         self.last_progress = {}
+        self.last_running_stages = {}
         self.deadline = None
         self.foreground_role = None
         self.stage_indices = {}
@@ -565,6 +631,12 @@ class NativeSyncDriver:
             self.event('fixture-stage', role=role, stage=clean['stage'],
                        launchId=launch, sequence=clean['reportSequence'], status=clean['status'])
         self.reports[role] = clean
+        if clean['status'] != 'failed':
+            self.last_running_stages[role] = stage
+        elif role in self.last_running_stages:
+            # Preserve independently observed progress even for older fixtures
+            # that have no diagnostic object. This contains only validated IDs.
+            clean['lastValidatedStage'] = self.last_running_stages[role]
         self.observed.add((role, clean['stage']))
         (self.output / f'report-{role.lower()}.json').write_text(
             json.dumps(clean, indent=2) + '\n', encoding='utf-8')
@@ -877,6 +949,10 @@ def main(argv=None):
             failure = {'errorType': type(error).__name__, 'runId': driver.run_id,
                        'sdkInt': driver.sdk_int,
                        'stages': {role: value['stage'] for role, value in driver.reports.items()},
+                       'lastValidatedStages': dict(driver.last_running_stages),
+                       'fixtureFailures': {role: {key: value[key] for key in
+                            ('errorCode', 'diagnostic', 'lastValidatedStage') if key in value}
+                            for role, value in driver.reports.items() if value['status'] == 'failed'},
                        'emulatorExit': None if driver.process is None else driver.process.poll()}
             try:
                 (args.output / 'failure.json').write_text(json.dumps(failure, indent=2) + '\n')

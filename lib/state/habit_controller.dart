@@ -1077,7 +1077,7 @@ class HabitController extends ChangeNotifier {
 
   Future<bool> importJson(String raw) async {
     try {
-      SnapshotCodec.decode(raw);
+      SnapshotCodec.decodeImport(raw);
     } on Object {
       _saveError = '无法识别或不支持这份数据。原数据未修改。';
       notifyListeners();

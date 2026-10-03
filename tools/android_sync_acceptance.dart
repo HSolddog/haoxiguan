@@ -23,6 +23,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'native_sync/facts.dart';
+import 'native_sync/diagnostics.dart';
 import 'native_sync/protocol.dart';
 
 const _build = String.fromEnvironment('SYNC_ACCEPTANCE_BUILD');
@@ -45,8 +46,8 @@ Future<void> main() async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
   final semantics = binding.ensureSemantics();
   // Framework exceptions must not dump credential fields or arbitrary UI text.
-  var uiFailure = false;
-  FlutterError.onError = (_) => uiFailure = true;
+  final diagnostics = SyncAcceptanceDiagnostics();
+  FlutterError.onError = diagnostics.framework;
   ErrorWidget.builder = (_) => const Text('isolated native fixture failed');
   final directory = await getApplicationSupportDirectory();
   final report = File('${directory.path}/sync_acceptance_result.json');
@@ -95,22 +96,25 @@ Future<void> main() async {
       checkpoint: checkpoint,
       config: config,
       ui: LiveWidgetController(binding),
-      hasUiFailure: () => uiFailure,
+      diagnostics: diagnostics,
     );
     await fixture.run(saved);
   } catch (error) {
     if (fixture != null) {
-      fixture.result['errorCode'] = error is SyncAcceptanceFailure
-          ? error.code
-          : 'native_sync_failure';
+      diagnostics.failure(error);
+      fixture.result['errorCode'] = diagnostics.toJson()['failureCode'];
       await fixture.publish('failed', status: 'failed');
     } else {
+      diagnostics.failure(
+        const SyncAcceptanceFailure('fixture_initialization_failed'),
+      );
       await report.writeAsString(
         jsonEncode({
           'schemaVersion': syncAcceptanceSchema,
           'status': 'failed',
           'stage': 'failed',
           'errorCode': 'fixture_initialization_failed',
+          'diagnostic': diagnostics.toJson(),
         }),
         flush: true,
       );
@@ -129,7 +133,7 @@ class NativeSyncAcceptance {
     required this.checkpoint,
     required this.config,
     required this.ui,
-    required this.hasUiFailure,
+    required this.diagnostics,
   }) : result = {
          'schemaVersion': syncAcceptanceSchema,
          'runId': config.runId,
@@ -147,12 +151,13 @@ class NativeSyncAcceptance {
   final File report, checkpoint;
   final SyncAcceptanceConfig config;
   final LiveWidgetController ui;
-  final bool Function() hasUiFailure;
+  final SyncAcceptanceDiagnostics diagnostics;
   final Map<String, Object?> result;
   final navigator = GlobalKey<NavigatorState>();
   SqliteHabitRepository? repository;
   HabitController? controller;
   int sequence = 0;
+  bool _stagePinned = false;
   Map<String, Object?> get evidence =>
       result['evidence']! as Map<String, Object?>;
   String digest(Object? value) =>
@@ -163,6 +168,8 @@ class NativeSyncAcceptance {
     String status = 'running',
     String? documentName,
   }) async {
+    diagnostics.enterStage(stage);
+    result['diagnostic'] = diagnostics.toJson();
     result.addAll({
       'status': status,
       'stage': stage,
@@ -175,7 +182,38 @@ class NativeSyncAcceptance {
     await temporary.rename(report.path);
   }
 
+  /// Sequential public action markers contain no finder, input or UI value.
+  /// A barrier/SAF announcement pins its sequence until the native action ends.
+  Future<void> breadcrumb(String action) async {
+    diagnostics.action(action);
+    if (_stagePinned) return;
+    await publish(
+      result['stage'] as String? ?? 'boot',
+      documentName: result['documentName'] as String?,
+    );
+  }
+
+  Future<void> nativeStage(
+    String stage,
+    String action, {
+    required String documentName,
+  }) async {
+    diagnostics.action(action);
+    _stagePinned = true;
+    await publish(stage, documentName: documentName);
+  }
+
   Future<void> barrier(String stage) async {
+    final action = switch (stage) {
+      'awaitingSourceUpload' => 'await_source_upload',
+      'awaitingReplicaImport' => 'await_replica_import',
+      'awaitingAChangesUploaded' => 'await_a_changes_uploaded',
+      'awaitingConflictResolution' => 'await_conflict_resolution',
+      'awaitingConvergence' => 'await_convergence',
+      _ => 'unknown_action',
+    };
+    diagnostics.action(action);
+    _stagePinned = true;
     await publish(stage);
     final control = File('${directory.path}/sync_acceptance_control.json');
     await waitUntil(
@@ -197,6 +235,7 @@ class NativeSyncAcceptance {
       'stage_ack_timeout',
       timeout: const Duration(seconds: 240),
     );
+    _stagePinned = false;
   }
 
   Future<void> waitUntil(
@@ -206,14 +245,18 @@ class NativeSyncAcceptance {
   }) async {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
-      syncAcceptanceCheck(!hasUiFailure(), 'framework_ui_failure');
+      syncAcceptanceCheck(
+        !diagnostics.hasFrameworkFailure,
+        'framework_ui_failure',
+      );
       if (await ready()) return;
       await Future<void>.delayed(const Duration(milliseconds: 150));
     }
     throw SyncAcceptanceFailure(failure);
   }
 
-  Future<void> open() async {
+  Future<void> open({bool reopening = false}) async {
+    await breadcrumb(reopening ? 'reopen_sqlite' : 'open_sqlite');
     repository = await SqliteHabitRepository.open();
     controller = HabitController(
       repository!,
@@ -225,6 +268,7 @@ class NativeSyncAcceptance {
   }
 
   Future<void> showSyncScreen() async {
+    await breadcrumb('show_sync_screen');
     runApp(
       MaterialApp(
         navigatorKey: navigator,
@@ -250,7 +294,8 @@ class NativeSyncAcceptance {
     await ui.pump(const Duration(milliseconds: 350));
   }
 
-  Future<void> tap(Finder target) async {
+  Future<void> tap(Finder target, {required String action}) async {
+    await breadcrumb(action);
     if (target.evaluate().isEmpty) {
       await ui.scrollUntilVisible(
         target,
@@ -267,7 +312,8 @@ class NativeSyncAcceptance {
     await ui.pump(const Duration(milliseconds: 180));
   }
 
-  Future<void> text(Key key, String value) async {
+  Future<void> text(Key key, String value, {required String action}) async {
+    await breadcrumb(action);
     final target = find.byKey(key);
     syncAcceptanceCheck(target.evaluate().length == 1, 'ui_input_missing');
     ui.widget<TextField>(target).controller!.text = value;
@@ -275,6 +321,7 @@ class NativeSyncAcceptance {
   }
 
   Future<SyncSettings> settings() async {
+    await breadcrumb('load_binding');
     final saved = await SyncSettingsStore(DeviceSecretStore()).load();
     syncAcceptanceCheck(saved != null, 'native_binding_missing');
     return saved!;
@@ -282,6 +329,7 @@ class NativeSyncAcceptance {
 
   Future<Map<String, Object?>> remoteWatermark({SyncSettings? retained}) async {
     final saved = retained ?? await settings();
+    await breadcrumb('read_remote_watermark');
     final transport = HttpSyncTransport(saved.endpoint);
     try {
       final value = retained != null
@@ -354,33 +402,50 @@ class NativeSyncAcceptance {
   }
 
   Future<void> enroll() async {
-    await text(const Key('sync-endpoint'), config.endpoint);
+    await text(
+      const Key('sync-endpoint'),
+      config.endpoint,
+      action: 'fill_endpoint',
+    );
+    await breadcrumb('read_connection_fields');
     final fields = find.byType(TextField);
     syncAcceptanceCheck(
       fields.evaluate().length == 3,
       'connection_form_missing',
     );
+    await breadcrumb('fill_device_name');
     ui.widget<TextField>(fields.at(1)).controller!.text =
         'synthetic Android ${config.role}';
+    await breadcrumb('fill_invite');
     ui.widget<TextField>(fields.at(2)).controller!.text = config.invite;
     if (config.role == 'B') {
-      await tap(find.byType(SwitchListTile));
+      await tap(find.byType(SwitchListTile), action: 'join_switch');
       final joined = find.byType(TextField);
       syncAcceptanceCheck(joined.evaluate().length == 4, 'join_form_missing');
+      await breadcrumb('fill_join_password');
       ui.widget<TextField>(joined.last).controller!.text = _syntheticPassword;
-      await publish(
+      await nativeStage(
         'awaitingRecoveryJoin',
+        'enroll_device',
         documentName: 'sync-${config.runId}.hgr',
       );
-      await tap(find.widgetWithText(FilledButton, '选择恢复文件并授权'));
+      await tap(
+        find.widgetWithText(FilledButton, '选择恢复文件并授权'),
+        action: 'enroll_device',
+      );
     } else {
-      await tap(find.widgetWithText(FilledButton, '授权此设备'));
+      await tap(
+        find.widgetWithText(FilledButton, '授权此设备'),
+        action: 'enroll_device',
+      );
     }
     await idle();
+    _stagePinned = false;
     final saved = await settings();
     try {
+      await breadcrumb('verify_binding');
       syncAcceptanceCheck(
-        saved.endpoint == config.endpoint &&
+        syncAcceptanceStoredEndpointMatches(saved.endpoint, config.endpoint) &&
             saved.recoveryExported == (config.role == 'B') &&
             saved.initialReview == (config.role == 'B'),
         'production_enrollment_failed',
@@ -393,15 +458,27 @@ class NativeSyncAcceptance {
   }
 
   Future<void> recovery() async {
-    await tap(find.widgetWithText(OutlinedButton, '导出加密恢复文件'));
+    await tap(
+      find.widgetWithText(OutlinedButton, '导出加密恢复文件'),
+      action: 'export_recovery',
+    );
     await waitUntil(
       () => find.byType(SyncRecoveryPasswordDialog).evaluate().isNotEmpty,
       'recovery_dialog_missing',
     );
-    await text(const Key('sync-recovery-password'), _syntheticPassword);
-    await text(const Key('sync-recovery-confirm'), _syntheticPassword);
-    await publish(
+    await text(
+      const Key('sync-recovery-password'),
+      _syntheticPassword,
+      action: 'fill_recovery_password',
+    );
+    await text(
+      const Key('sync-recovery-confirm'),
+      _syntheticPassword,
+      action: 'fill_recovery_confirm',
+    );
+    await nativeStage(
       'awaitingRecoverySave',
+      'save_recovery',
       documentName: 'sync-${config.runId}.hgr',
     );
     await tap(
@@ -409,8 +486,10 @@ class NativeSyncAcceptance {
         of: find.byType(SyncRecoveryPasswordDialog),
         matching: find.byType(FilledButton),
       ),
+      action: 'save_recovery',
     );
     await idle();
+    _stagePinned = false;
     syncAcceptanceCheck(
       find.byType(SyncRecoveryPasswordDialog).evaluate().isEmpty,
       'recovery_save_failed',
@@ -421,12 +500,15 @@ class NativeSyncAcceptance {
         saved.recoveryExported,
         'recovery_export_not_committed',
       );
-      await publish(
+      await nativeStage(
         'awaitingRecoveryReadback',
+        'readback_recovery',
         documentName: 'sync-${config.runId}.hgr',
       );
       final bytes = await PlatformBackupFiles().open();
       syncAcceptanceCheck(bytes != null, 'recovery_readback_cancelled');
+      _stagePinned = false;
+      await breadcrumb('verify_recovery');
       final restored = await SyncRecoveryCodec.decrypt(
         bytes!,
         _syntheticPassword,
@@ -449,11 +531,15 @@ class NativeSyncAcceptance {
   Future<void> initialReview() async {
     final before = await image();
     final remoteBefore = await remoteWatermark();
-    await tap(find.widgetWithText(FilledButton, '立即同步'));
+    await tap(
+      find.widgetWithText(FilledButton, '立即同步'),
+      action: 'initial_sync',
+    );
     await waitUntil(
       () => find.byType(InitialSyncPreviewDialog).evaluate().isNotEmpty,
       'initial_preview_missing',
     );
+    await breadcrumb('inspect_initial_preview');
     final preview = ui
         .widget<InitialSyncPreviewDialog>(find.byType(InitialSyncPreviewDialog))
         .preview;
@@ -484,8 +570,10 @@ class NativeSyncAcceptance {
         of: find.byType(InitialSyncPreviewDialog),
         matching: find.byType(TextButton),
       ),
+      action: 'cancel_initial_preview',
     );
     await idle();
+    await breadcrumb('verify_cancelled_preview');
     final after = await image();
     for (final key in [
       'snapshot',
@@ -522,7 +610,10 @@ class NativeSyncAcceptance {
       'afterRemoteHighWater': remoteAfter['highWater'],
     };
     result['initialPreviewCancelled'] = true;
-    await tap(find.widgetWithText(FilledButton, '立即同步'));
+    await tap(
+      find.widgetWithText(FilledButton, '立即同步'),
+      action: 'initial_sync',
+    );
     await waitUntil(
       () => find.byType(InitialSyncPreviewDialog).evaluate().isNotEmpty,
       'second_preview_missing',
@@ -532,6 +623,7 @@ class NativeSyncAcceptance {
         of: find.byType(InitialSyncPreviewDialog),
         matching: find.byType(FilledButton),
       ),
+      action: 'confirm_initial_preview',
     );
     await idle();
     if (config.role == 'B') await adoptInitialRemote();
@@ -556,7 +648,10 @@ class NativeSyncAcceptance {
       ((before['state'] as Map)['conflicts'] as List).length == 3,
       'joined_initial_review_missing',
     );
-    await tap(find.widgetWithText(OutlinedButton, '检查与处理冲突'));
+    await tap(
+      find.widgetWithText(OutlinedButton, '检查与处理冲突'),
+      action: 'open_initial_review',
+    );
     await waitUntil(
       () => find.byType(SyncConflictDialog).evaluate().isNotEmpty,
       'joined_review_dialog_missing',
@@ -573,16 +668,18 @@ class NativeSyncAcceptance {
       'joined_review_candidates_mismatch',
     );
     for (final item in decision.items) {
-      await tap(find.byKey(ValueKey(item.id)));
-      await tap(find.text('保留远端此项').last);
+      await tap(find.byKey(ValueKey(item.id)), action: 'choose_remote_item');
+      await tap(find.text('保留远端此项').last, action: 'choose_remote_item');
     }
     await tap(
       find.descendant(
         of: find.byType(SyncConflictDialog),
         matching: find.byType(FilledButton),
       ),
+      action: 'apply_initial_review',
     );
     await idle();
+    await breadcrumb('verify_initial_review');
     syncAcceptanceCheck(
       nativeSyncFactsMatch(controller!.exportJson()),
       'joined_review_full_facts_mismatch',
@@ -618,6 +715,7 @@ class NativeSyncAcceptance {
   }
 
   Future<void> diverge() async {
+    await breadcrumb('add_local_entry');
     final entry = nativeSyncNewEntry(config.role);
     syncAcceptanceCheck(
       await controller!.addValue(
@@ -645,7 +743,10 @@ class NativeSyncAcceptance {
   }
 
   Future<void> immediateSync() async {
-    await tap(find.widgetWithText(FilledButton, '立即同步'));
+    await tap(
+      find.widgetWithText(FilledButton, '立即同步'),
+      action: 'immediate_sync',
+    );
     await idle();
     syncAcceptanceCheck(
       find.byType(InitialSyncPreviewDialog).evaluate().isEmpty,
@@ -662,7 +763,10 @@ class NativeSyncAcceptance {
           (beforeState['conflicts'] as List).single == nativeSyncCountHabit,
       'native_note_conflict_missing',
     );
-    await tap(find.widgetWithText(OutlinedButton, '检查与处理冲突'));
+    await tap(
+      find.widgetWithText(OutlinedButton, '检查与处理冲突'),
+      action: 'open_note_conflict',
+    );
     await waitUntil(
       () => find.byType(SyncConflictDialog).evaluate().isNotEmpty,
       'conflict_dialog_missing',
@@ -679,8 +783,11 @@ class NativeSyncAcceptance {
               'synthetic device A note',
       'note_conflict_candidates_mismatch',
     );
-    await tap(find.byType(DropdownButtonFormField<SyncChoice>));
-    await tap(find.text('手工合并备注').last);
+    await tap(
+      find.byType(DropdownButtonFormField<SyncChoice>),
+      action: 'choose_manual_note',
+    );
+    await tap(find.text('手工合并备注').last, action: 'choose_manual_note');
     final field = find.byType(TextFormField);
     await waitUntil(
       () => field.evaluate().length == 1,
@@ -690,6 +797,7 @@ class NativeSyncAcceptance {
       of: field,
       matching: find.byType(EditableText),
     );
+    await breadcrumb('fill_manual_note');
     ui.widget<EditableText>(editable).controller.text = nativeSyncMergedNote;
     // The production TextFormField's onChanged records the real editing draft.
     ui.widget<TextFormField>(field).onChanged!(nativeSyncMergedNote);
@@ -699,8 +807,10 @@ class NativeSyncAcceptance {
         of: find.byType(SyncConflictDialog),
         matching: find.byType(FilledButton),
       ),
+      action: 'apply_manual_note',
     );
     await idle();
+    await breadcrumb('verify_conflict_protection');
     final after = await image();
     final protected = after['protections'] as List;
     final syncProtected = after['syncProtections'] as List;
@@ -729,6 +839,7 @@ class NativeSyncAcceptance {
   }
 
   Future<void> validateConvergence() async {
+    await breadcrumb('verify_convergence');
     syncAcceptanceCheck(
       nativeSyncFactsMatch(controller!.exportJson(), merged: true),
       'converged_full_facts_mismatch',
@@ -776,7 +887,8 @@ class NativeSyncAcceptance {
     }
   }
 
-  Future<void> close() async {
+  Future<void> close({bool recordAction = false}) async {
+    if (recordAction) await breadcrumb('close_sqlite');
     runApp(
       const MaterialApp(
         home: Scaffold(body: Text('isolated native sync fixture')),
@@ -790,10 +902,11 @@ class NativeSyncAcceptance {
   }
 
   Future<void> prepareRestart() async {
+    await breadcrumb('prepare_process_restart');
     final before = await image();
     final bindingBefore = await bindingDigest();
-    await close();
-    await open();
+    await close(recordAction: true);
+    await open(reopening: true);
     syncAcceptanceCheck(
       syncAcceptanceCanonical(before) ==
               syncAcceptanceCanonical(await image()) &&
@@ -815,6 +928,8 @@ class NativeSyncAcceptance {
       }),
       flush: true,
     );
+    diagnostics.action('await_reopen');
+    _stagePinned = true;
     await publish('awaitingReopen');
     // Only a real Android process restart may release this stage. No file
     // acknowledgement, timer or in-process reopen counts as Keystore survival.
@@ -833,7 +948,10 @@ class NativeSyncAcceptance {
   Future<void> disconnectedBackupWithDiagnostic(SyncSettings retained) async {
     final before = await image();
     final remoteBefore = await remoteWatermark(retained: retained);
-    await tap(find.widgetWithText(TextButton, '断开本机同步'));
+    await tap(
+      find.widgetWithText(TextButton, '断开本机同步'),
+      action: 'disconnect_device',
+    );
     await waitUntil(
       () => find.byType(AlertDialog).evaluate().isNotEmpty,
       'disconnect_dialog_missing',
@@ -843,6 +961,7 @@ class NativeSyncAcceptance {
         of: find.byType(AlertDialog),
         matching: find.byType(FilledButton),
       ),
+      action: 'confirm_disconnect',
     );
     await idle();
     syncAcceptanceCheck(
@@ -852,6 +971,7 @@ class NativeSyncAcceptance {
       'disconnect_changed_business_data',
     );
     final offline = nativeSyncNewEntry(config.role, offline: true);
+    await breadcrumb('add_offline_entry');
     syncAcceptanceCheck(
       await controller!.addValue(
         nativeSyncCountHabit,
@@ -882,14 +1002,25 @@ class NativeSyncAcceptance {
     final files = PlatformBackupFiles();
     final bytes = await BackupCodec.encrypt(snapshot, _syntheticPassword);
     final name = 'sync-${config.runId}-${config.role}.hgb';
-    await publish('awaitingBackupSave', documentName: name);
+    await nativeStage(
+      'awaitingBackupSave',
+      'save_offline_backup',
+      documentName: name,
+    );
     syncAcceptanceCheck(
       await files.save(bytes, name),
       'offline_backup_save_failed',
     );
-    await publish('awaitingBackupReadback', documentName: name);
+    _stagePinned = false;
+    await nativeStage(
+      'awaitingBackupReadback',
+      'readback_offline_backup',
+      documentName: name,
+    );
     final selected = await files.open();
     syncAcceptanceCheck(selected != null, 'offline_backup_open_cancelled');
+    _stagePinned = false;
+    await breadcrumb('verify_offline_backup');
     final restored = await BackupCodec.decrypt(selected!, _syntheticPassword);
     syncAcceptanceCheck(
       syncAcceptanceCanonical(jsonDecode(restored)) ==
@@ -908,6 +1039,7 @@ class NativeSyncAcceptance {
     } finally {
       await fresh.close();
     }
+    await breadcrumb('verify_offline_remote');
     syncAcceptanceCheck(
       syncAcceptanceCanonical(remoteBefore) ==
               syncAcceptanceCanonical(
@@ -938,6 +1070,7 @@ class NativeSyncAcceptance {
         result[flag] = v;
       }
       result['evidence'] = Map<String, Object?>.from(saved['evidence'] as Map);
+      await breadcrumb('verify_process_restart');
       final reopened = await image();
       syncAcceptanceCheck(
         syncAcceptanceCanonical(saved['image']) ==
@@ -967,6 +1100,7 @@ class NativeSyncAcceptance {
         syncAcceptanceFlags.every((f) => result[f] == true),
         'incomplete_native_evidence',
       );
+      diagnostics.action('complete');
       await publish('complete', status: 'passed');
       await checkpoint.delete();
       return;
@@ -974,6 +1108,7 @@ class NativeSyncAcceptance {
 
     syncAcceptanceCheck(controller!.habits.isEmpty, 'fresh_package_not_empty');
     if (config.role == 'A') {
+      await breadcrumb('seed_source');
       final initial = SnapshotCodec.decode(controller!.exportJson());
       final seed = SnapshotCodec.decode(nativeSyncBaseline());
       await repository!.save(

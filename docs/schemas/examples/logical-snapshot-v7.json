@@ -1,0 +1,453 @@
+{
+  "version": 7,
+  "externalAppNote": {
+    "label": "synthetic preserved root extension"
+  },
+  "categories": [
+    {
+      "id": "999687f8-2069-5681-abf1-a48baf0be0fb",
+      "name": "健康",
+      "sortKey": 0,
+      "revision": 1
+    },
+    {
+      "id": "2c424eda-b821-50a1-8f0d-7f54e9f23125",
+      "name": "学习",
+      "sortKey": 1024,
+      "revision": 1
+    },
+    {
+      "id": "7bfe33d0-f843-4b04-b48c-a2b8a6fb9936",
+      "name": "合成分类",
+      "sortKey": 2048,
+      "revision": 1
+    }
+  ],
+  "firstRecordBackupSuggestion": "dismissed",
+  "vaultId": "cdd2f76f-5088-4ff5-bdd1-bc883b4f26fa",
+  "appearanceMode": "system",
+  "darkMode": false,
+  "themeColorValue": 4284448872,
+  "reviewDays": 30,
+  "collapsedTodayCategories": [],
+  "collapsedHabitCategories": [],
+  "habits": [
+    {
+      "externalAppNote": "synthetic habit field",
+      "categoryId": "2c424eda-b821-50a1-8f0d-7f54e9f23125",
+      "sortKey": 0,
+      "categoryInfo": {
+        "id": "2c424eda-b821-50a1-8f0d-7f54e9f23125",
+        "name": "学习",
+        "sortKey": 1024,
+        "revision": 1
+      },
+      "id": "seed-reading",
+      "title": "阅读 20 分钟",
+      "emoji": "📖",
+      "colorValue": 4284448872,
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "createdAt": "2026-09-21T00:00:00.000Z",
+      "reminderTime": "21:30",
+      "completions": {
+        "2026-10-01": "2026-10-01T00:00:00.000",
+        "2026-10-02": "2026-10-02T00:00:00.000"
+      },
+      "notes": {},
+      "exemptions": [],
+      "pausedAt": null,
+      "archived": false,
+      "category": "学习",
+      "effortEnabled": true,
+      "rewardPoints": 10,
+      "penaltyPoints": 5,
+      "targetCount": 3,
+      "rewardPeriod": "week",
+      "wishEnabled": true,
+      "wishTitle": "买一本期待已久的新书",
+      "wishTarget": 120,
+      "scheduleType": "daily",
+      "scheduleCount": 1,
+      "recordType": "boolean",
+      "unit": "次",
+      "scale": 1,
+      "dailyTarget": 1,
+      "entries": [
+        {
+          "id": "0786ed10-d657-543a-9334-27179722a057",
+          "date": "2026-10-01",
+          "value": 1,
+          "recordedAtUtc": null,
+          "recordedLocalDate": "2026-10-01",
+          "timezoneId": "unknownLegacy",
+          "utcOffsetMinutes": null,
+          "legacyTimestamp": "2026-10-01T00:00:00.000",
+          "revision": 1,
+          "deleted": false,
+          "source": "legacy"
+        },
+        {
+          "id": "170411fa-cff7-5b74-a018-e14a29867632",
+          "date": "2026-10-02",
+          "value": 1,
+          "recordedAtUtc": null,
+          "recordedLocalDate": "2026-10-02",
+          "timezoneId": "unknownLegacy",
+          "utcOffsetMinutes": null,
+          "legacyTimestamp": "2026-10-02T00:00:00.000",
+          "revision": 1,
+          "deleted": false,
+          "source": "legacy"
+        }
+      ],
+      "plans": [
+        {
+          "id": "legacy-plan-seed-reading",
+          "from": "2026-09-21",
+          "kind": "daily",
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "periodTarget": 1,
+          "dailyTarget": 1,
+          "legacyInferred": true
+        }
+      ],
+      "archivedAt": null,
+      "deletedAt": null,
+      "legacyRewardBalance": 5
+    },
+    {
+      "categoryId": "999687f8-2069-5681-abf1-a48baf0be0fb",
+      "sortKey": 1024,
+      "categoryInfo": {
+        "id": "999687f8-2069-5681-abf1-a48baf0be0fb",
+        "name": "健康",
+        "sortKey": 0,
+        "revision": 1
+      },
+      "id": "seed-water",
+      "title": "喝够 8 杯水",
+      "emoji": "💧",
+      "colorValue": 4283268241,
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "createdAt": "2026-09-21T00:00:00.000Z",
+      "reminderTime": "09:00",
+      "completions": {
+        "2026-10-02": "2026-10-02T00:00:00.000"
+      },
+      "notes": {},
+      "exemptions": [],
+      "pausedAt": null,
+      "archived": false,
+      "category": "健康",
+      "effortEnabled": true,
+      "rewardPoints": 10,
+      "penaltyPoints": 5,
+      "targetCount": 3,
+      "rewardPeriod": "week",
+      "wishEnabled": false,
+      "wishTitle": "",
+      "wishTarget": 100,
+      "scheduleType": "daily",
+      "scheduleCount": 1,
+      "recordType": "boolean",
+      "unit": "次",
+      "scale": 1,
+      "dailyTarget": 1,
+      "entries": [
+        {
+          "id": "f69c753c-52a0-5e9c-b9c2-f43878f8078e",
+          "date": "2026-10-02",
+          "value": 1,
+          "recordedAtUtc": null,
+          "recordedLocalDate": "2026-10-02",
+          "timezoneId": "unknownLegacy",
+          "utcOffsetMinutes": null,
+          "legacyTimestamp": "2026-10-02T00:00:00.000",
+          "revision": 1,
+          "deleted": false,
+          "source": "legacy"
+        }
+      ],
+      "plans": [
+        {
+          "id": "legacy-plan-seed-water",
+          "from": "2026-09-21",
+          "kind": "daily",
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "periodTarget": 1,
+          "dailyTarget": 1,
+          "legacyInferred": true
+        }
+      ],
+      "archivedAt": null,
+      "deletedAt": null,
+      "legacyRewardBalance": -5
+    },
+    {
+      "categoryId": "999687f8-2069-5681-abf1-a48baf0be0fb",
+      "sortKey": 2048,
+      "categoryInfo": {
+        "id": "999687f8-2069-5681-abf1-a48baf0be0fb",
+        "name": "健康",
+        "sortKey": 0,
+        "revision": 1
+      },
+      "id": "seed-stretch",
+      "title": "伸展一下",
+      "emoji": "🌿",
+      "colorValue": 4291920220,
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "createdAt": "2026-09-21T00:00:00.000Z",
+      "reminderTime": "16:00",
+      "completions": {},
+      "notes": {},
+      "exemptions": [],
+      "pausedAt": null,
+      "archived": false,
+      "category": "健康",
+      "effortEnabled": true,
+      "rewardPoints": 10,
+      "penaltyPoints": 5,
+      "targetCount": 3,
+      "rewardPeriod": "week",
+      "wishEnabled": false,
+      "wishTitle": "",
+      "wishTarget": 100,
+      "scheduleType": "week",
+      "scheduleCount": 5,
+      "recordType": "boolean",
+      "unit": "次",
+      "scale": 1,
+      "dailyTarget": 1,
+      "entries": [],
+      "plans": [
+        {
+          "id": "legacy-plan-seed-stretch",
+          "from": "2026-09-21",
+          "kind": "week",
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "periodTarget": 5,
+          "dailyTarget": 1,
+          "legacyInferred": true
+        }
+      ],
+      "archivedAt": null,
+      "deletedAt": null,
+      "legacyRewardBalance": -15
+    },
+    {
+      "categoryId": "7bfe33d0-f843-4b04-b48c-a2b8a6fb9936",
+      "categoryInfo": {
+        "id": "7bfe33d0-f843-4b04-b48c-a2b8a6fb9936",
+        "name": "合成分类",
+        "sortKey": 2048,
+        "revision": 1
+      },
+      "sortKey": 3072,
+      "id": "21774d68-dbb2-4b94-bdbf-694a511f71fa",
+      "title": "合成契约样例 count",
+      "emoji": "🌱",
+      "colorValue": 4284448872,
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "reminderTime": null,
+      "completions": {},
+      "notes": {
+        "2026-10-03": "合成备注，真实导出"
+      },
+      "exemptions": [],
+      "pausedAt": null,
+      "archived": false,
+      "category": "合成分类",
+      "effortEnabled": false,
+      "rewardPoints": 10,
+      "penaltyPoints": 5,
+      "targetCount": 3,
+      "rewardPeriod": "week",
+      "wishEnabled": false,
+      "wishTitle": "",
+      "wishTarget": 100,
+      "scheduleType": "week",
+      "scheduleCount": 3,
+      "recordType": "count",
+      "unit": "杯",
+      "scale": 1000,
+      "dailyTarget": 8000,
+      "entries": [
+        {
+          "id": "54cd3336-c687-4c75-9d08-a8de1c025f2b",
+          "date": "2026-10-03",
+          "value": 1500,
+          "recordedAtUtc": "2026-10-02T16:00:00.000Z",
+          "recordedLocalDate": "2026-10-03",
+          "timezoneId": "Asia/Shanghai",
+          "utcOffsetMinutes": 480,
+          "legacyTimestamp": null,
+          "revision": 1,
+          "deleted": false,
+          "source": "manual"
+        }
+      ],
+      "plans": [
+        {
+          "id": "2d2e8a4a-27d6-414e-8723-de48f7ff7b6c",
+          "from": "2026-09-01",
+          "kind": "week",
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "periodTarget": 3,
+          "dailyTarget": 8000,
+          "legacyInferred": false
+        }
+      ],
+      "archivedAt": null,
+      "deletedAt": null,
+      "legacyRewardBalance": null
+    },
+    {
+      "categoryId": "7bfe33d0-f843-4b04-b48c-a2b8a6fb9936",
+      "categoryInfo": {
+        "id": "7bfe33d0-f843-4b04-b48c-a2b8a6fb9936",
+        "name": "合成分类",
+        "sortKey": 2048,
+        "revision": 1
+      },
+      "sortKey": 4096,
+      "id": "975103e6-552f-4cb6-b153-dd2cf8264f47",
+      "title": "合成契约样例 duration",
+      "emoji": "🌱",
+      "colorValue": 4284448872,
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "reminderTime": null,
+      "completions": {
+        "2026-10-03": "2026-10-02T16:00:00.000Z"
+      },
+      "notes": {
+        "2026-10-03": "合成备注，真实导出"
+      },
+      "exemptions": [],
+      "pausedAt": null,
+      "archived": false,
+      "category": "合成分类",
+      "effortEnabled": false,
+      "rewardPoints": 10,
+      "penaltyPoints": 5,
+      "targetCount": 3,
+      "rewardPeriod": "week",
+      "wishEnabled": false,
+      "wishTitle": "",
+      "wishTarget": 100,
+      "scheduleType": "month",
+      "scheduleCount": 20,
+      "recordType": "duration",
+      "unit": "秒",
+      "scale": 1,
+      "dailyTarget": 1200,
+      "entries": [
+        {
+          "id": "3d283298-91db-4ad6-b5bc-f066b29a5c7d",
+          "date": "2026-10-03",
+          "value": 1500,
+          "recordedAtUtc": "2026-10-02T16:00:00.000Z",
+          "recordedLocalDate": "2026-10-03",
+          "timezoneId": "Asia/Shanghai",
+          "utcOffsetMinutes": 480,
+          "legacyTimestamp": null,
+          "revision": 1,
+          "deleted": false,
+          "source": "manual"
+        }
+      ],
+      "plans": [
+        {
+          "id": "95e306ce-6f0e-4b26-851d-1f837915bfaf",
+          "from": "2026-09-01",
+          "kind": "month",
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "periodTarget": 20,
+          "dailyTarget": 1200,
+          "legacyInferred": false
+        }
+      ],
+      "archivedAt": null,
+      "deletedAt": null,
+      "legacyRewardBalance": null
+    }
+  ]
+}

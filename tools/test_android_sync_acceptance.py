@@ -3,6 +3,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 from types import SimpleNamespace
@@ -116,13 +117,56 @@ class SyncReportTest(unittest.TestCase):
 
     def test_sensitive_future_fields_and_original_error_text_are_never_archived(self):
         value = report(stage='failed', invite='SECRET-INVITE', token='SECRET-TOKEN',
-                       password='SECRET-PASSWORD', error='SECRET-NOTE', errorCode='SECRET-ERROR')
+                       password='SECRET-PASSWORD', error='SECRET-NOTE', errorCode='production_enrollment_failed')
         clean = driver.validate_report(value, 'A', RUN_ID, 35)
-        self.assertEqual(clean['errorCode'], 'fixtureFailed')
+        self.assertEqual(clean['errorCode'], 'production_enrollment_failed')
         self.assertNotIn('SECRET', json.dumps(clean))
         self.assertEqual(set(clean), {'schemaVersion', 'sdkInt', 'packageName', 'runId',
                                      'role', 'build', 'reportSequence', 'launchId', 'source',
                                      'stage', 'status', 'errorCode', 'evidence'})
+
+    def test_failure_and_action_allowlists_exactly_match_frozen_dart_protocol(self):
+        source = (driver.ROOT / 'tools/native_sync/diagnostics.dart').read_text(encoding='utf-8')
+        for name, values in [('syncAcceptanceFailureCodes', driver.FAILURE_CODES),
+                             ('syncAcceptanceActionIds', driver.ACTION_IDS),
+                             ('syncAcceptanceFrameworkFailures', driver.FRAMEWORK_FAILURES)]:
+            block = re.search(r'const ' + name + r'\s*=\s*<String>\{(.*?)\};', source, re.S)
+            self.assertIsNotNone(block)
+            self.assertEqual(set(re.findall(r"'([^']*)'", block.group(1))), set(values))
+        stages = re.search(r'const syncAcceptanceDiagnosticStages\s*=\s*<String>\{(.*?)\};', source, re.S)
+        self.assertEqual(set(re.findall(r"'([^']*)'", stages.group(1))),
+                         set(driver.ROLE_STAGES['A']) | set(driver.ROLE_STAGES['B']) | {'boot'})
+
+    def test_fixed_diagnostic_values_survive_without_any_ui_or_credential_fields(self):
+        value = report(stage='failed', errorCode='production_enrollment_failed', diagnostic={
+            'failureCode': 'production_enrollment_failed', 'lastStage': 'boot',
+            'lastAction': 'verify_binding', 'frameworkFailure': 'none',
+            'password': 'SECRET', 'message': 'SECRET', 'selector': 'SECRET'})
+        clean = driver.validate_report(value, 'A', RUN_ID, 35)
+        self.assertEqual(clean['diagnostic'], {'failureCode': 'production_enrollment_failed',
+                         'lastStage': 'boot', 'lastAction': 'verify_binding', 'frameworkFailure': 'none'})
+        self.assertNotIn('SECRET', json.dumps(clean))
+
+    def test_unknown_diagnostic_values_or_wrong_role_stage_are_rejected(self):
+        good = {'failureCode': 'production_enrollment_failed', 'lastStage': 'boot',
+                'lastAction': 'verify_binding', 'frameworkFailure': 'none'}
+        for key, bad in [('failureCode', 'SECRET'), ('lastStage', 'awaitingRecoveryJoin'),
+                         ('lastAction', 'SECRET'), ('frameworkFailure', 'SECRET')]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                driver.validate_report(report(stage='failed', errorCode='production_enrollment_failed',
+                        diagnostic={**good, key: bad}), 'A', RUN_ID, 35)
+        for bad in ('SECRET', 'none', [], None):
+            with self.subTest(errorCode=bad), self.assertRaises(ValueError):
+                driver.validate_report(report(stage='failed', errorCode=bad), 'A', RUN_ID, 35)
+
+    def test_failed_diagnostic_must_match_failure_status_and_top_level_code(self):
+        with self.assertRaises(ValueError):
+            driver.validate_report(report(stage='failed', errorCode='production_enrollment_failed',
+                    diagnostic={'failureCode': 'native_sync_failure', 'lastStage': 'boot',
+                                'lastAction': 'verify_binding', 'frameworkFailure': 'none'}), 'A', RUN_ID, 35)
+        with self.assertRaises(ValueError):
+            driver.validate_report(report(diagnostic={'failureCode': 'production_enrollment_failed',
+                    'lastStage': 'boot', 'lastAction': 'verify_binding', 'frameworkFailure': 'none'}), 'A', RUN_ID, 35)
 
     def test_complete_reports_require_exhaustive_evidence_with_identical_before_after(self):
         for key in complete_evidence():
@@ -254,6 +298,18 @@ class NativeSyncDriverTest(unittest.TestCase):
         with patch.object(self.driver, 'adb_command', return_value=result(json.dumps(value).encode())):
             self.driver.read_report('A')
         self.assertNotIn('SECRET', (self.args.output / 'report-a.json').read_text())
+
+    def test_failure_keeps_last_independently_observed_stage_and_safe_code(self):
+        values = [report(), report(stage='failed', reportSequence=2,
+                                  errorCode='production_enrollment_failed')]
+        with patch.object(self.driver, 'adb_command', side_effect=[result(json.dumps(value).encode()) for value in values]):
+            self.driver.read_report('A')
+            with self.assertRaises(RuntimeError):
+                self.driver.read_report('A')
+        saved = json.loads((self.args.output / 'report-a.json').read_text())
+        self.assertEqual(saved['errorCode'], 'production_enrollment_failed')
+        self.assertEqual(saved['lastValidatedStage'], 'boot')
+        self.assertEqual(self.driver.last_running_stages, {'A': 'boot'})
 
     def test_sequence_cannot_reverse_or_rewrite_same_sequence(self):
         value = report(reportSequence=2)

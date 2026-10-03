@@ -386,6 +386,14 @@ class SyncEngine {
     }
     if (value.payload != null) {
       SyncEntities.habitId(value.logicalId, value.payload);
+      // Reject remote input before persisting its shadow or advancing a cursor.
+      // Local encode/assemble must still preserve facts from compatible old DBs.
+      final payload = value.payload as Map;
+      if (value.logicalId.startsWith('h/')) {
+        SnapshotCodec.validateImportedTitle(payload['title']);
+      } else if (value.logicalId.startsWith('n/')) {
+        SnapshotCodec.validateImportedNote(payload['text']);
+      }
     }
     final remote = state['remote'] as Map;
     final previous = remote[value.logicalId] as Map?;

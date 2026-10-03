@@ -63,6 +63,11 @@ jobs:
         run: flutter test --coverage
       - name: Test native sync runner isolation and protocol
         run: python3 -m unittest discover -s tools -p test_android_sync_acceptance.py -v
+      - name: Validate published JSON schemas
+        run: |
+          python3 -m venv "$RUNNER_TEMP/haoxiguan-schema-venv"
+          "$RUNNER_TEMP/haoxiguan-schema-venv/bin/python" -m pip install --disable-pip-version-check -r tools/json-schema-test-requirements.txt
+          "$RUNNER_TEMP/haoxiguan-schema-venv/bin/python" tools/test_json_schemas.py -v
       - name: Use Go for real encrypted sync interoperability
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:

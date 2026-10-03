@@ -14,7 +14,7 @@ class BackupPreview {
   });
 
   factory BackupPreview.fromSnapshot(String raw, {DateTime? createdAtUtc}) {
-    final document = SnapshotCodec.decode(raw);
+    final document = SnapshotCodec.decodeImport(raw);
     final habits = (document['habits']! as List)
         .map((h) => Habit.fromJson((h as Map).cast<String, Object?>()))
         .toList();
