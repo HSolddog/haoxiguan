@@ -35,15 +35,26 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _returningFromSettings) {
-      _returningFromSettings = false;
-      unawaited(_rebuild());
+    if (state == AppLifecycleState.resumed) {
+      if (_returningFromSettings) {
+        _returningFromSettings = false;
+        unawaited(_rebuild());
+      } else {
+        // Settings may have been changed from the system app switcher. Main's
+        // resume handler rebuilds reminders; refresh the visible diagnosis too.
+        unawaited(_check(clearResult: true));
+      }
     }
   }
 
-  Future<void> _check() async {
+  Future<void> _check({bool clearResult = false}) async {
     final access = await widget.controller.readReminderAccess();
-    if (mounted) setState(() => _access = access);
+    if (mounted) {
+      setState(() {
+        _access = access;
+        if (clearResult) _result = null;
+      });
+    }
   }
 
   Future<void> _request() async {
@@ -102,8 +113,16 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: widget.controller,
+    builder: (context, _) => _buildStatus(context),
+  );
+
+  Widget _buildStatus(BuildContext context) {
     final access = _access;
+    // Scheduling can fail during startup/resume or after any saved record, even
+    // with permission granted. Do not hide that failure behind the access check.
+    final result = widget.controller.reminderError ?? _result;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -112,9 +131,9 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard>
           Text('提醒状态', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(access?.message ?? '正在检查通知权限与提醒渠道…'),
-          if (_result != null) ...[
+          if (result != null && result != access?.message) ...[
             const SizedBox(height: 8),
-            Semantics(liveRegion: true, child: Text(_result!)),
+            Semantics(liveRegion: true, child: Text(result)),
           ],
           const SizedBox(height: 8),
           Wrap(

@@ -44,7 +44,7 @@ class BackupCodec {
     final header = <String, Object?>{
       'format': format,
       'formatVersion': 1,
-      'appVersion': '1.1.0',
+      'appVersion': '1.2.0',
       'encrypted': true,
       'crypto': {
         'suite': suite,

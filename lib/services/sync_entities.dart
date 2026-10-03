@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/snapshot_codec.dart';
+import '../models/category.dart';
 import '../models/habit.dart';
 
 typedef EntityMap = Map<String, dynamic>;
@@ -10,8 +12,12 @@ typedef EntityMap = Map<String, dynamic>;
 /// Portable entities exclude installation settings, credentials and frozen rewards.
 /// Notes and individual records have independent CAS addresses.
 class SyncEntities {
+  static EntityMap encodeFacts(String snapshot) => {
+    for (final entry in encode(snapshot).entries)
+      entry.key: SyncOrigins.facts(entry.key, entry.value),
+  };
   static EntityMap encode(String snapshot) {
-    final doc = SnapshotCodec.decode(snapshot);
+    final doc = CategoryMetadata.normalize(SnapshotCodec.decode(snapshot));
     final result = <String, dynamic>{};
     for (final raw in doc['habits']! as List) {
       final h = Habit.fromJson((raw as Map).cast<String, Object?>());
@@ -108,19 +114,24 @@ class SyncEntities {
             (a['id'] as String).compareTo(b['id'] as String),
       );
     }
-    final raw = jsonEncode({
-      ...local,
-      'version': SnapshotCodec.currentVersion,
-      'habits': [
-        for (final id in order)
-          if (habits[id] != null) habits[id],
-      ],
-    });
+    final raw = jsonEncode(
+      CategoryMetadata.normalize({
+        ...local,
+        'version': SnapshotCodec.currentVersion,
+        'categories': <dynamic>[],
+        'habits': [
+          for (final id in order)
+            if (habits[id] != null) habits[id],
+        ],
+      }),
+    );
     SnapshotCodec.decode(raw);
     return raw;
   }
 
   static bool same(Object? a, Object? b) => canonical(a) == canonical(b);
+  static bool sameFacts(String key, dynamic a, dynamic b) =>
+      same(SyncOrigins.facts(key, a), SyncOrigins.facts(key, b));
   static String canonical(Object? value) => jsonEncode(_sort(value));
   static Object? _sort(Object? value) {
     if (value is Map) {
@@ -167,7 +178,20 @@ class SyncEntities {
     }
     for (final key in {...base.keys, ...local.keys, ...remote.keys}) {
       final b = base[key], l = local[key], r = remote[key];
-      if (same(l, b) || same(l, r)) {
+      if (key.startsWith('h/') &&
+          l is Map &&
+          r is Map &&
+          sameFacts(key, l, r)) {
+        merged[key] = {
+          ...l,
+          if (l.containsKey(SyncOrigins.field) ||
+              r.containsKey(SyncOrigins.field))
+            SyncOrigins.field: SyncOrigins.combine(
+              l[SyncOrigins.field],
+              r[SyncOrigins.field],
+            ),
+        };
+      } else if (same(l, b) || same(l, r)) {
         merged[key] = r;
       } else if (same(r, b)) {
         merged[key] = l;
@@ -192,7 +216,9 @@ class SyncEntities {
             ...l.keys,
             ...r.keys,
           }.cast<String>()) {
-            if (same(l[field], b[field]) || same(l[field], r[field])) {
+            if (field == SyncOrigins.field) {
+              value[field] = SyncOrigins.combine(l[field], r[field]);
+            } else if (same(l[field], b[field]) || same(l[field], r[field])) {
               value[field] = r[field];
             } else if (same(r[field], b[field])) {
               value[field] = l[field];
@@ -228,7 +254,7 @@ class SyncEntities {
       // Cross-entity invariants (delete versus child edit, two plans for one date)
       // need a whole-habit choice, never silent child removal.
       for (final key in {...base.keys, ...local.keys, ...remote.keys}) {
-        if (!same(local[key], remote[key])) {
+        if (!sameFacts(key, local[key], remote[key])) {
           final id = habitId(key, local[key] ?? remote[key] ?? base[key]);
           if (id != null) {
             conflicts.add(id);
@@ -383,6 +409,7 @@ class MergeDecision {
   final EntityMap entities, local, remote, base;
   final Set<String> conflicts;
   final List<SyncConflict> items;
+  String? localDeviceId;
   final _reviewedHabits = <String>{};
   late final _itemLogicalIds = items.map((item) => item.logicalId).toSet();
   late final _differentKeysByHabit = _groupDifferences();
@@ -390,7 +417,7 @@ class MergeDecision {
   Map<String, List<String>> _groupDifferences() {
     final result = <String, List<String>>{};
     for (final key in {...local.keys, ...remote.keys, ...base.keys}) {
-      if (SyncEntities.same(local[key], remote[key])) continue;
+      if (SyncEntities.sameFacts(key, local[key], remote[key])) continue;
       final id = SyncEntities.habitId(
         key,
         local[key] ?? remote[key] ?? base[key],
@@ -428,6 +455,27 @@ class MergeDecision {
   /// Identity covers all candidates, including independently added records, so
   /// a dialog cannot overwrite edits made after it was opened.
   String get fingerprint => SyncEntities.canonical([local, remote, base]);
+
+  List<String> sources(SyncConflict item, {required bool remoteSide}) {
+    final map = remoteSide ? remote : local;
+    final declared = SyncOrigins.sources(
+      map,
+      item.logicalId,
+      map[item.logicalId],
+      fallback: base['h/${item.habitId}'],
+    );
+    if (declared.isNotEmpty) return declared;
+    if (!remoteSide &&
+        localDeviceId != null &&
+        !SyncEntities.sameFacts(
+          item.logicalId,
+          local[item.logicalId],
+          base[item.logicalId],
+        )) {
+      return [localDeviceId!];
+    }
+    return [];
+  }
 
   EntityMap select(Map<String, SyncSelection> selections) {
     if (!SyncEntities.same(
@@ -490,5 +538,131 @@ class MergeDecision {
       }
     }
     return result;
+  }
+}
+
+/// Compatibility envelope inside Habit.extensions. Old clients preserve this
+/// unknown habit field; record/plan/note payloads and the v1 AEAD wrapper stay
+/// byte-structure compatible. A declaration is displayed only when its digest
+/// matches the exact candidate facts, so an old client cannot carry stale
+/// attribution onto an edit. Shared-key declarations are not device signatures.
+class SyncOrigins {
+  static const field = 'syncOriginsV1';
+  static const maxDeclarations = 128;
+  static final _device = RegExp(r'^[A-Za-z0-9_-]{32}$');
+  static final _digest = RegExp(r'^[a-f0-9]{64}$');
+
+  static dynamic facts(String logicalId, dynamic payload) {
+    if (!logicalId.startsWith('h/') || payload is! Map) return payload;
+    return Map<String, dynamic>.from(payload)..remove(field);
+  }
+
+  static String digest(String logicalId, dynamic payload) => sha256
+      .convert(
+        utf8.encode(
+          SyncEntities.canonical([logicalId, facts(logicalId, payload)]),
+        ),
+      )
+      .toString();
+
+  static List<Map<String, dynamic>> _read(dynamic raw) {
+    if (raw is! List) return [];
+    return [
+      for (final row in raw.take(maxDeclarations))
+        if (row is Map &&
+            row.length == 3 &&
+            row['entityId'] is String &&
+            (row['entityId'] as String).length <= 512 &&
+            RegExp(r'^[hrpn]/').hasMatch(row['entityId'] as String) &&
+            row['digest'] is String &&
+            _digest.hasMatch(row['digest'] as String) &&
+            row['deviceId'] is String &&
+            _device.hasMatch(row['deviceId'] as String))
+          Map<String, dynamic>.from(row),
+    ];
+  }
+
+  static List<Map<String, dynamic>> combine(dynamic first, dynamic second) {
+    final byValue = <String, Map<String, dynamic>>{};
+    for (final row in [..._read(first), ..._read(second)]) {
+      byValue[SyncEntities.canonical(row)] = row;
+    }
+    final keys = byValue.keys.toList()..sort();
+    return [for (final key in keys.take(maxDeclarations)) byValue[key]!];
+  }
+
+  static List<String> sources(
+    EntityMap entities,
+    String logicalId,
+    dynamic payload, {
+    dynamic fallback,
+  }) {
+    if (payload == null) return [];
+    final id = SyncEntities.habitId(logicalId, payload);
+    final habit = entities['h/$id'] ?? fallback;
+    if (habit is! Map) return [];
+    final expected = digest(logicalId, payload);
+    return _read(habit[field])
+        .where(
+          (row) => row['entityId'] == logicalId && row['digest'] == expected,
+        )
+        .map((row) => row['deviceId'] as String)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  /// Only stamp real business changes. The annotated snapshot and the frozen
+  /// operations commit together before any request, preventing a metadata echo.
+  /// Bounded history respects v1's 128 KiB per-object limit; missing/evicted
+  /// declarations remain explicitly unknown, never inferred from another row.
+  static Set<String> stamp(
+    EntityMap entities,
+    EntityMap previous,
+    Iterable<String> changes,
+    String deviceId,
+  ) {
+    if (!_device.hasMatch(deviceId)) throw const FormatException('来源设备标识无效');
+    final rowsByHabit = <String, List<Map<String, dynamic>>>{};
+    for (final key in changes) {
+      final payload = entities[key];
+      final id = SyncEntities.habitId(key, payload ?? previous[key]);
+      final parent = entities['h/$id'];
+      if (id == null || parent is! Map || payload == null) continue;
+      final rows = rowsByHabit.putIfAbsent(id, () => _read(parent[field]));
+      final row = {
+        'entityId': key,
+        'digest': digest(key, payload),
+        'deviceId': deviceId,
+      };
+      rows.removeWhere((old) => old['entityId'] == key);
+      rows.add(row);
+      if (rows.length > maxDeclarations) rows.removeAt(0);
+    }
+    final changedParents = <String>{};
+    for (final entry in rowsByHabit.entries) {
+      final logicalId = 'h/${entry.key}';
+      final parent = Map<String, dynamic>.from(entities[logicalId] as Map);
+      final rows = entry.value;
+      if (rows.length > maxDeclarations) {
+        rows.removeRange(0, rows.length - maxDeclarations);
+      }
+      parent[field] = rows;
+      while (rows.isNotEmpty &&
+          utf8
+                  .encode(
+                    jsonEncode({'logicalId': logicalId, 'payload': parent}),
+                  )
+                  .length >
+              128 * 1024) {
+        rows.removeAt(0);
+      }
+      if (rows.isEmpty) parent.remove(field);
+      if (!SyncEntities.same(entities[logicalId], parent)) {
+        entities[logicalId] = parent;
+        changedParents.add(logicalId);
+      }
+    }
+    return changedParents;
   }
 }

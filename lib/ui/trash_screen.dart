@@ -4,8 +4,9 @@ import '../models/habit.dart';
 import '../state/habit_controller.dart';
 
 class TrashScreen extends StatelessWidget {
-  const TrashScreen({super.key, required this.controller});
+  const TrashScreen({super.key, required this.controller, this.onExport});
   final HabitController controller;
+  final VoidCallback? onExport;
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: controller,
@@ -51,6 +52,15 @@ class TrashScreen extends StatelessWidget {
                                   '将永久删除 ${habit.entries.where((e) => !e.deleted).length} 条记录、${habit.notes.length} 条备注及计划历史，无法撤销。需要保留时，请先到“数据”页导出完整备份。',
                                 ),
                                 actions: [
+                                  if (onExport != null)
+                                    TextButton(
+                                      key: const Key('export-before-delete'),
+                                      onPressed: () {
+                                        Navigator.pop(context, false);
+                                        onExport!();
+                                      },
+                                      child: const Text('先导出完整备份'),
+                                    ),
                                   TextButton(
                                     onPressed: () =>
                                         Navigator.pop(context, false),

@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:haoxiguan/data/snapshot_codec.dart';
+import 'package:haoxiguan/data/habit_repository.dart';
+import 'package:haoxiguan/state/habit_controller.dart';
+import 'package:haoxiguan/services/sync_client.dart';
+import 'support/sync_relay.dart';
 import 'package:haoxiguan/models/habit.dart';
 import 'package:haoxiguan/models/record_entry.dart';
 import 'package:haoxiguan/services/sync_engine.dart';
@@ -194,4 +198,154 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets(
+    'conflict renders matching source devices and marks legacy source unknown',
+    (tester) async {
+      final habit = Habit(
+        id: 'source-habit',
+        title: '阅读',
+        emoji: '📖',
+        colorValue: 0xff223344,
+        weekdays: {1, 2, 3, 4, 5, 6, 7},
+        createdAt: DateTime(2026, 10, 2),
+      );
+      String snapshot(String text) => jsonEncode({
+        ...SnapshotCodec.decode(SnapshotCodec.empty()),
+        'habits': [
+          habit
+              .copyWith(notes: {'2026-10-02': text}, plans: [habit.initialPlan])
+              .toJson(),
+        ],
+      });
+      final remote = SyncEntities.encode(snapshot('远端内容'));
+      SyncOrigins.stamp(remote, {}, remote.keys.toList(), 'a' * 32);
+      final decision = SyncEntities.merge(
+        snapshot('本机内容'),
+        SyncEntities.encode(snapshot('原文')),
+        remote,
+      )..localDeviceId = 'b' * 32;
+      await tester.pumpWidget(
+        app(
+          (_) => SyncConflictDialog(decision: decision, onApply: (_) async {}),
+          onClosed: (_) {},
+        ),
+      );
+      await tester.tap(find.text('打开同步核对'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('设备 ${'a' * 32}'), findsOneWidget);
+      expect(find.textContaining('设备 ${'b' * 32}'), findsOneWidget);
+      expect(find.textContaining('并非独立设备签名'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'recovery file password survives cancellation and failure until save succeeds',
+    (tester) async {
+      var attempts = 0;
+      bool? closed;
+      await tester.pumpWidget(
+        app(
+          (_) => SyncRecoveryPasswordDialog(
+            onContinue: (password) async {
+              expect(password, 'synthetic test password');
+              attempts++;
+              if (attempts == 1) return false;
+              if (attempts == 2) throw StateError('synthetic disk failure');
+              return true;
+            },
+          ),
+          onClosed: (value) => closed = value,
+        ),
+      );
+      await tester.tap(find.text('打开同步核对'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('sync-recovery-password')),
+        'synthetic test password',
+      );
+      await tester.enterText(
+        find.byKey(const Key('sync-recovery-confirm')),
+        'synthetic test password',
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('保留未保存的修改？'), findsOneWidget);
+      await tester.tap(find.text('继续编辑'));
+      await tester.pumpAndSettle();
+      for (var attempt = 0; attempt < 2; attempt++) {
+        await tester.tap(find.text('加密并保存'));
+        await tester.pumpAndSettle();
+        expect(closed, isNull);
+        expect(
+          tester
+              .widget<TextField>(
+                find.byKey(const Key('sync-recovery-password')),
+              )
+              .controller!
+              .text,
+          'synthetic test password',
+        );
+        expect(find.textContaining('密码输入仍保留'), findsOneWidget);
+      }
+      await tester.tap(find.text('加密并保存'));
+      await tester.pumpAndSettle();
+      expect(attempts, 3);
+      expect(closed, true);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('sync connection draft intercepts system and app-bar exit', (
+    tester,
+  ) async {
+    final controller = HabitController(MemoryHabitRepository());
+    await controller.load();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => SyncScreen(
+                    controller: controller,
+                    settingsStore: SyncSettingsStore(MemorySecrets()),
+                  ),
+                ),
+              ),
+              child: const Text('同步设置'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('同步设置'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('sync-endpoint')),
+      'https://example.test',
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('保留未保存的修改？'), findsOneWidget);
+    await tester.tap(find.text('继续编辑'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('sync-endpoint')))
+          .controller!
+          .text,
+      'https://example.test',
+    );
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('保留未保存的修改？'), findsOneWidget);
+    await tester.tap(find.text('放弃修改'));
+    await tester.pumpAndSettle();
+    expect(find.text('同步设置'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 
 import '../data/snapshot_codec.dart';
 import '../models/habit.dart';
+import '../models/category.dart';
 import '../models/record_entry.dart';
 
 /// Readable analysis export, not a restorable backup. IDs join the tables;
@@ -49,6 +50,9 @@ class CsvExport {
     'legacy_inferred',
     'record_revision',
     'legacy_timestamp',
+    'category_id',
+    'sort_key',
+    'category_revision',
   ];
 
   /// Kept for callers needing one rectangular CSV. Plan rows are explicit.
@@ -61,6 +65,8 @@ class CsvExport {
         'habit_id',
         'habit_title',
         'category',
+        'category_id',
+        'sort_key',
         'record_type',
         'unit',
         'scale',
@@ -106,12 +112,19 @@ class CsvExport {
         'legacy_timestamp',
       ],
       'notes.csv': ['habit_id', 'date', 'note'],
+      'categories.csv': [
+        'category_id',
+        'category',
+        'sort_key',
+        'category_revision',
+      ],
     };
     const types = {
       'habits.csv': 'habit',
       'plans.csv': 'plan',
       'records.csv': 'record',
       'notes.csv': 'note',
+      'categories.csv': 'category',
     };
     return {
       for (final schema in schemas.entries)
@@ -135,6 +148,7 @@ class CsvExport {
       'effective_until_exclusive 是下一版本开始日期，不含当天；空值表示尚无后续版本。\n'
       'records.csv：独立记录 ID、所属日期、实际录入时间/时区及撤销标记。\n'
       'notes.csv：按 habit_id + date 关联的备注。\n'
+      'categories.csv：独立分类身份、显示名称及顺序；同名分类不合并。\n'
       'raw_value / daily_target_raw 为原始整数；计数值除以 scale，时长单位为秒。\n'
       'period_target_days 为配置目标；实际周期目标还需按开始、暂停、休息、归档日期计算。\n'
       'legacy_inferred=true 表示从旧版推导的计划，不是原始计划历史。\n'
@@ -146,14 +160,25 @@ class CsvExport {
   }
 
   static List<Map<String, Object?>> _rows(String snapshot) {
-    final data = SnapshotCodec.decode(snapshot);
+    final data = CategoryMetadata.normalize(SnapshotCodec.decode(snapshot));
     final rows = <Map<String, Object?>>[];
+    for (final category in CategoryMetadata.categories(data)) {
+      rows.add({
+        'row_type': 'category',
+        'category_id': category.id,
+        'category': category.name,
+        'sort_key': category.sortKey,
+        'category_revision': category.revision,
+      });
+    }
     for (final raw in data['habits']! as List) {
       final h = Habit.fromJson((raw as Map).cast<String, Object?>());
       final common = <String, Object?>{
         'habit_id': h.id,
         'habit_title': h.title,
         'category': h.category,
+        'category_id': h.categoryId,
+        'sort_key': h.sortKey,
         'record_type': h.recordType,
         'unit': h.unit,
         'scale': h.scale,

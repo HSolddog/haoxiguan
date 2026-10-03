@@ -128,10 +128,12 @@ class DataStatusReader {
     }
     final base = (state['base'] as Map?) ?? const {};
     final current = SyncEntities.encode(snapshot);
-    final changed = {
-      ...base.keys,
-      ...current.keys,
-    }.where((key) => !SyncEntities.same(base[key], current[key])).length;
+    final changed = {...base.keys, ...current.keys}
+        .where(
+          (key) =>
+              !SyncEntities.sameFacts(key as String, base[key], current[key]),
+        )
+        .length;
     final pending = (state['pending'] as List?)?.length ?? 0;
     final conflicts = (state['conflicts'] as List?)?.length ?? 0;
     final failure = switch (state['lastFailureCode']) {

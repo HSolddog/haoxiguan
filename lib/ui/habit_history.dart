@@ -35,6 +35,7 @@ class HabitHistorySummary extends StatelessWidget {
           ),
           if (group.kind != 'day' && group.settled.isNotEmpty)
             ExpansionTile(
+              key: PageStorageKey('settled-${habit.id}-${group.kind}-$days'),
               tilePadding: EdgeInsets.zero,
               title: Text('查看 ${group.settled.length} 个已结算周期'),
               children: [
@@ -82,7 +83,8 @@ class _PeriodRow extends StatelessWidget {
             ? '进行中（未结算）'
             : result.met
             ? '已达标'
-            : '未达标'}',
+            : '未达标'}'
+        '${result.expected < result.plan.periodTarget ? '\n配置目标 ${result.plan.periodTarget} 天；本周期仅 ${result.availableDays} 个有效日期。开始前、暂停、休息和归档区间均已排除。' : ''}',
       ),
     ),
   );
@@ -106,74 +108,80 @@ Future<bool> showStartDateCorrection(
   String? error;
   return await showDialog<bool>(
         context: context,
+        barrierDismissible: false,
         builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
-            title: const Text('历史校正影响预览'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('开始日期：${dateKey(habit.createdAt)} → ${dateKey(date)}'),
-                  Text(
-                    '新增可补录范围：${dateKey(preview.from)} 至 ${dateKey(preview.through)}',
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '这段历史沿用最早的计划。历史应完成数量和首个周期目标可能增加；现有记录、备注和实际录入时间保持不变。',
-                  ),
-                  for (final kind in const ['day', 'week', 'month']) ...[
+          builder: (context, setState) => PopScope(
+            canPop: !saving,
+            child: AlertDialog(
+              title: const Text('历史校正影响预览'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('开始日期：${dateKey(habit.createdAt)} → ${dateKey(date)}'),
                     Text(
-                      '${_kindLabel(kind)}已结算：'
-                      '${_denominator(preview.before, kind)} → ${_denominator(preview.after, kind)}',
+                      '新增可补录范围：${dateKey(preview.from)} 至 ${dateKey(preview.through)}',
                     ),
-                    for (final r
-                        in preview.after
-                            .where((g) => g.kind == kind)
-                            .expand((g) => [...g.settled, ...g.inProgress])
-                            .where((r) => !r.start.isAfter(habit.createdAt)))
-                      if (r.plan.flexible)
-                        _PeriodRow(
-                          result: r,
-                          inProgress: !r.end.isBefore(controller.today),
-                        ),
-                  ],
-                  if (error != null)
-                    Text(
-                      error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                    const SizedBox(height: 12),
+                    const Text(
+                      '这段历史沿用最早的计划。历史应完成数量和首个周期目标可能增加；现有记录、备注和实际录入时间保持不变。',
+                    ),
+                    for (final kind in const ['day', 'week', 'month']) ...[
+                      Text(
+                        '${_kindLabel(kind)}已结算：'
+                        '${_denominator(preview.before, kind)} → ${_denominator(preview.after, kind)}',
                       ),
-                    ),
-                ],
+                      for (final r
+                          in preview.after
+                              .where((g) => g.kind == kind)
+                              .expand((g) => [...g.settled, ...g.inProgress])
+                              .where((r) => !r.start.isAfter(habit.createdAt)))
+                        if (r.plan.flexible)
+                          _PeriodRow(
+                            result: r,
+                            inProgress: !r.end.isBefore(controller.today),
+                          ),
+                    ],
+                    if (error != null)
+                      Text(
+                        error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                  ],
+                ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: saving
+                      ? null
+                      : () => Navigator.pop(context, false),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  key: const Key('confirm-start-correction'),
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          setState(() => saving = true);
+                          final saved = await controller
+                              .confirmStartDateCorrection(preview);
+                          if (!context.mounted) return;
+                          if (saved) {
+                            Navigator.pop(context, true);
+                          } else {
+                            setState(() {
+                              saving = false;
+                              error = controller.saveError;
+                            });
+                          }
+                        },
+                  child: Text(saving ? '正在保存' : '确认校正，再补录'),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: saving ? null : () => Navigator.pop(context, false),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                key: const Key('confirm-start-correction'),
-                onPressed: saving
-                    ? null
-                    : () async {
-                        setState(() => saving = true);
-                        final saved = await controller
-                            .confirmStartDateCorrection(preview);
-                        if (!context.mounted) return;
-                        if (saved) {
-                          Navigator.pop(context, true);
-                        } else {
-                          setState(() {
-                            saving = false;
-                            error = controller.saveError;
-                          });
-                        }
-                      },
-                child: Text(saving ? '正在保存' : '确认校正，再补录'),
-              ),
-            ],
           ),
         ),
       ) ??

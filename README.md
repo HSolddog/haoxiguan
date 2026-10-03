@@ -4,15 +4,15 @@
 
 An MIT-licensed, offline-first habit tracker. Your records commit locally; encrypted backups and a self-hosted sync service are optional.
 
-当前分支为 Android 开发验收版本，Flutter 共用领域与数据层；iOS 尚未制作和验收。完整设计与实施证据从 [docs](docs/README.md) 开始，最新范围见[实施进度](docs/实施进度.md)。
+当前分支为 Android 开发验收版本 1.2.0+6，Flutter 共用领域与数据层；iOS 尚未制作和验收。完整设计与实施证据从 [docs](docs/README.md) 开始，最新范围见[实施进度](docs/实施进度.md)和[逐项设计验收矩阵](docs/设计验收矩阵-2026-10-03.md)。
 
 ## 当前能力
 
-- 完成、定点计数、手动时长；补记、更正、每日备注。
+- 完成、定点计数、手动时长；明确的快捷增量、安全撤销、补记、更正、每日备注和未保存退出保护。
 - 每天、固定星期、每周/每月若干天；计划历史、暂停、休息、归档和回收站。
-- 今日记录、历史回顾、结算统计、本地通知；旧奖励数据保留为只读。
+- 可选历史开始日和影响预览；日/周/月分别回顾已结算周期、实际目标和进行中周期；通知权限和渠道故障分开说明；旧奖励数据保留为只读。
 - SQLite/Drift WAL + FULL 事务，提交后确认；旧数据幂等迁移、原文保护、损坏时停止写入而不清空。
-- Argon2id + XChaCha20-Poly1305 加密文件备份、读回验证、预览恢复；可读 JSON/CSV 导出和跟随系统主题。
+- Argon2id + XChaCha20-Poly1305 加密文件备份、读回验证、含时间/备注/日期范围的恢复预览；JSON 与含分类/习惯/计划/记录/备注五表的 CSV ZIP 导出；跟随系统主题。
 - 自选 HTTPS WebDAV，不可变加密快照、后台尝试、保留清理和换机恢复。
 - 实验性自有同步服务：Go + SQLite、不透明密文、设备邀请、加密恢复文件、手动同步和冲突处理。支持维护式新空间密钥轮换；规模和完整原生联网门禁仍待完成，见[同步实现与验收](docs/同步实现与验收.md)。
 

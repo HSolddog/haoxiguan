@@ -21,6 +21,9 @@ void main() {
     await tester.tap(find.byKey(const Key('add-habit-button')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '拒权仍保存的阅读');
+    await tester.ensureVisible(find.byKey(const Key('habit-advanced-options')));
+    await tester.tap(find.byKey(const Key('habit-advanced-options')));
+    await tester.pumpAndSettle();
     final reminder = find.text('提醒时间');
     await tester.ensureVisible(reminder);
     await tester.tap(reminder);
@@ -175,7 +178,7 @@ void main() {
     expect(find.textContaining('无法打开系统设置'), findsOneWidget);
     await tester.tap(find.byKey(const Key('reminder-rebuild')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('提醒未获权限'), findsNWidgets(2));
+    expect(find.textContaining('提醒未获权限'), findsOneWidget);
     expect(find.text('已按当前习惯和记录重建提醒。'), findsNothing);
   });
 }

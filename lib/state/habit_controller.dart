@@ -8,12 +8,14 @@ import '../data/snapshot_codec.dart';
 
 import '../data/habit_repository.dart';
 import '../models/habit.dart';
+import '../models/category.dart';
 import '../models/history_review.dart';
 import '../models/plan.dart';
 import '../models/record_entry.dart';
 import '../services/reminder_service.dart';
 
 class HabitController extends ChangeNotifier {
+  static const _backupSuggestionKey = 'firstRecordBackupSuggestion';
   HabitController(
     this._repository, {
     DateTime Function()? clock,
@@ -51,6 +53,7 @@ class HabitController extends ChangeNotifier {
 
   String? _recoveryBackup;
   Map<String, Object?> _extensions = {};
+  bool _categoryMetadataChanged = false;
   Future<void>? _writeQueue;
   final _snapshotSizes = Expando<int>();
 
@@ -59,6 +62,12 @@ class HabitController extends ChangeNotifier {
   String? get saveError => _saveError;
   String? get reminderError => _reminderError;
   bool get canRecoverBackup => _recoveryBackup != null;
+  bool get showBackupSuggestion =>
+      _extensions[_backupSuggestionKey] == 'pending';
+
+  Future<bool> dismissBackupSuggestion() => _mutate(() {
+    _extensions[_backupSuggestionKey] = 'dismissed';
+  });
   void dismissSaveError() {
     _saveError = null;
     notifyListeners();
@@ -91,17 +100,32 @@ class HabitController extends ChangeNotifier {
       .where((h) => h.planOn(today).flexible && h.isActiveOn(today))
       .toList();
   List<Habit> get trashedHabits => _habits.where((h) => h.inTrash).toList();
-  List<String> get categories {
-    final values = activeHabits.map((habit) => habit.category).toSet().toList()
-      ..sort();
-    return values;
+  List<HabitCategory> get categoryGroups {
+    final ids = activeHabits.map((h) => h.categoryId).toSet();
+    return CategoryMetadata.categories(
+      _extensions,
+    ).where((c) => ids.contains(c.id)).toList();
+  }
+
+  List<String> get categories =>
+      categoryGroups.map((c) => c.name).toSet().toList();
+  List<Habit> habitsInCategory(String categoryId) =>
+      activeHabits.where((h) => h.categoryId == categoryId).toList();
+
+  Iterable<String> _categoryKeys(String key) sync* {
+    final all = CategoryMetadata.categories(_extensions);
+    if (all.any((c) => c.id == key)) {
+      yield key;
+    } else {
+      yield* all.where((c) => c.name == key).map((c) => c.id);
+    }
   }
 
   bool isTodayCategoryCollapsed(String category) =>
-      _collapsedTodayCategories.contains(category);
+      _categoryKeys(category).any(_collapsedTodayCategories.contains);
 
   bool isHabitCategoryCollapsed(String category) =>
-      _collapsedHabitCategories.contains(category);
+      _categoryKeys(category).any(_collapsedHabitCategories.contains);
 
   Future<void> load() async {
     if (_loading) return;
@@ -117,13 +141,17 @@ class HabitController extends ChangeNotifier {
         if (backup != null) {
           throw const DataRecoveryRequired('主数据缺失，检测到保护副本。请检查后确认恢复。');
         }
-        final empty = SnapshotCodec.empty();
+        final empty = jsonEncode({
+          ...SnapshotCodec.decode(SnapshotCodec.empty()),
+          _backupSuggestionKey: 'eligible',
+        });
         await _repository.save(empty);
         _restore(empty);
       } else {
         final source = _restore(raw);
         if ((source['version'] as int? ?? 1) < SnapshotCodec.currentVersion ||
-            source['vaultId'] == null) {
+            source['vaultId'] == null ||
+            _categoryMetadataChanged) {
           await _repository.save(exportJson());
         }
       }
@@ -182,12 +210,14 @@ class HabitController extends ChangeNotifier {
 
   Future<bool> addHabit({
     DateTime? startDate,
+    String? relatedHabitId,
     required String title,
     required String emoji,
     required int colorValue,
     required Set<int> weekdays,
     String? reminderTime,
     String category = '未分类',
+    String? categoryId,
     bool effortEnabled = false,
     int rewardPoints = 10,
     int penaltyPoints = 5,
@@ -207,6 +237,11 @@ class HabitController extends ChangeNotifier {
     if (start.isAfter(today)) {
       throw const FormatException('开始日期不能晚于今天');
     }
+    if (relatedHabitId != null && habitById(relatedHabitId) == null) {
+      throw const FormatException('关联的原习惯不存在');
+    }
+    final group = _categoryFor(category, categoryId: categoryId);
+    final sortKey = _nextHabitSortKey();
     _habits.add(
       Habit(
         id: const Uuid().v4(),
@@ -216,7 +251,13 @@ class HabitController extends ChangeNotifier {
         weekdays: Set<int>.from(weekdays),
         createdAt: start,
         reminderTime: reminderTime,
-        category: category.trim().isEmpty ? '未分类' : category.trim(),
+        category: group.name,
+        extensions: {
+          'categoryId': group.id,
+          'categoryInfo': group.toJson(),
+          'sortKey': sortKey,
+          'relatedHabitId': ?relatedHabitId,
+        },
         effortEnabled: effortEnabled,
         rewardPoints: rewardPoints,
         penaltyPoints: penaltyPoints,
@@ -253,6 +294,7 @@ class HabitController extends ChangeNotifier {
     required Set<int> weekdays,
     String? reminderTime,
     String? category,
+    String? categoryId,
     bool? effortEnabled,
     int? rewardPoints,
     int? penaltyPoints,
@@ -268,6 +310,11 @@ class HabitController extends ChangeNotifier {
     final index = _habits.indexWhere((habit) => habit.id == habitId);
     if (index < 0) return;
     final habit = _habits[index];
+    final group = _categoryFor(
+      category ?? habit.category,
+      categoryId: categoryId,
+      previous: habit,
+    );
     final kind = scheduleType ?? habit.scheduleType;
     final count = scheduleCount ?? habit.scheduleCount;
     final target = dailyTarget ?? habit.dailyTarget;
@@ -299,7 +346,12 @@ class HabitController extends ChangeNotifier {
       weekdays: Set<int>.from(weekdays),
       reminderTime: reminderTime,
       clearReminder: reminderTime == null,
-      category: category?.trim().isEmpty == true ? '未分类' : category,
+      category: group.name,
+      extensions: {
+        ...habit.extensions,
+        'categoryId': group.id,
+        'categoryInfo': group.toJson(),
+      },
       effortEnabled: effortEnabled,
       rewardPoints: rewardPoints,
       penaltyPoints: penaltyPoints,
@@ -375,7 +427,117 @@ class HabitController extends ChangeNotifier {
       ..addAll(active)
       ..addAll(archived)
       ..addAll(trash);
+    _assignHabitOrder(_habits.toList());
   });
+
+  Future<bool> reorderInCategory(String habitId, int direction) => _mutate(() {
+    if (direction != -1 && direction != 1) return;
+    final habit = habitById(habitId);
+    if (habit == null || habit.categoryId == null) return;
+    final group = habitsInCategory(habit.categoryId!);
+    final index = group.indexWhere((h) => h.id == habitId);
+    final target = index + direction;
+    if (index < 0 || target < 0 || target >= group.length) return;
+    final ordered = _habits.toList();
+    final a = ordered.indexWhere((h) => h.id == habit.id);
+    final b = ordered.indexWhere((h) => h.id == group[target].id);
+    final other = ordered[b];
+    ordered[b] = ordered[a];
+    ordered[a] = other;
+    _assignHabitOrder(ordered);
+  });
+
+  Future<bool> reorderCategory(String categoryId, int direction) => _mutate(() {
+    if (direction != -1 && direction != 1) return;
+    final visible = categoryGroups;
+    final index = visible.indexWhere((c) => c.id == categoryId);
+    final target = index + direction;
+    if (index < 0 || target < 0 || target >= visible.length) return;
+    final all = CategoryMetadata.categories(_extensions);
+    final a = all.indexWhere((c) => c.id == categoryId);
+    final b = all.indexWhere((c) => c.id == visible[target].id);
+    final other = all[b];
+    all[b] = all[a];
+    all[a] = other;
+    _assignCategoryOrder(all);
+  });
+
+  HabitCategory _categoryFor(
+    String label, {
+    String? categoryId,
+    Habit? previous,
+  }) {
+    final name = label.trim().isEmpty ? '未分类' : label.trim();
+    final all = CategoryMetadata.categories(_extensions);
+    if (categoryId != null) {
+      final selected = all.where((c) => c.id == categoryId).firstOrNull;
+      if (selected == null) throw const FormatException('所选分类已变化，请重新选择');
+      if (selected.name == name) return selected;
+    }
+    if (previous?.category == name && previous?.categoryInfo != null) {
+      return previous!.categoryInfo!;
+    }
+    final existing = all.where((c) => c.name == name).firstOrNull;
+    if (existing != null) return existing;
+    if (all.isNotEmpty &&
+        all.last.sortKey >
+            CategoryMetadata.maxSortKey - CategoryMetadata.step) {
+      _assignCategoryOrder(all);
+    }
+    final latest = CategoryMetadata.categories(_extensions);
+    final group = HabitCategory(
+      id: name == '未分类' ? CategoryMetadata.legacyId(name) : const Uuid().v4(),
+      name: name,
+      sortKey: latest.isEmpty ? 0 : latest.last.sortKey + CategoryMetadata.step,
+    );
+    _extensions['categories'] = [
+      ...latest.map((c) => c.toJson()),
+      group.toJson(),
+    ];
+    return group;
+  }
+
+  int _nextHabitSortKey() {
+    if (_habits.isEmpty) return 0;
+    if ((_habits.last.sortKey ?? 0) >
+        CategoryMetadata.maxSortKey - CategoryMetadata.step) {
+      _assignHabitOrder(_habits.toList());
+    }
+    return (_habits.last.sortKey ?? 0) + CategoryMetadata.step;
+  }
+
+  void _assignHabitOrder(List<Habit> ordered) {
+    _habits.clear();
+    for (var i = 0; i < ordered.length; i++) {
+      final habit = ordered[i], key = i * CategoryMetadata.step;
+      _habits.add(
+        habit.sortKey == key
+            ? habit
+            : habit.copyWith(extensions: {...habit.extensions, 'sortKey': key}),
+      );
+    }
+  }
+
+  void _assignCategoryOrder(List<HabitCategory> ordered) {
+    final changed = <String, HabitCategory>{};
+    for (var i = 0; i < ordered.length; i++) {
+      final category = ordered[i], key = i * CategoryMetadata.step;
+      changed[category.id] = category.sortKey == key
+          ? category
+          : category.copyWith(sortKey: key, revision: category.revision + 1);
+    }
+    _extensions['categories'] = changed.values.map((c) => c.toJson()).toList();
+    for (var i = 0; i < _habits.length; i++) {
+      final habit = _habits[i], category = changed[habit.categoryId];
+      if (category != null &&
+          jsonEncode(habit.categoryInfo?.toJson()) !=
+              jsonEncode(category.toJson())) {
+        _habits[i] = habit.copyWith(
+          extensions: {...habit.extensions, 'categoryInfo': category.toJson()},
+        );
+      }
+    }
+  }
 
   Future<bool> requestReminderPermission() async {
     try {
@@ -703,14 +865,26 @@ class HabitController extends ChangeNotifier {
   });
 
   Future<bool> toggleTodayCategory(String category) => _mutate(() {
-    if (!_collapsedTodayCategories.add(category)) {
-      _collapsedTodayCategories.remove(category);
+    final keys = _categoryKeys(category).toList();
+    final collapsed = keys.any(_collapsedTodayCategories.contains);
+    for (final key in keys) {
+      if (collapsed) {
+        _collapsedTodayCategories.remove(key);
+      } else {
+        _collapsedTodayCategories.add(key);
+      }
     }
   });
 
   Future<bool> toggleHabitCategory(String category) => _mutate(() {
-    if (!_collapsedHabitCategories.add(category)) {
-      _collapsedHabitCategories.remove(category);
+    final keys = _categoryKeys(category).toList();
+    final collapsed = keys.any(_collapsedHabitCategories.contains);
+    for (final key in keys) {
+      if (collapsed) {
+        _collapsedHabitCategories.remove(key);
+      } else {
+        _collapsedHabitCategories.add(key);
+      }
     }
   });
 
@@ -913,6 +1087,7 @@ class HabitController extends ChangeNotifier {
       _restore(raw);
       _extensions['restoredFromVaultId'] = _extensions['vaultId'];
       _extensions['vaultId'] = const Uuid().v4();
+      _extensions[_backupSuggestionKey] = 'dismissed';
     }, replace: true);
   }
 
@@ -958,6 +1133,14 @@ class HabitController extends ChangeNotifier {
           if (!identical(previous[_habits[index].id], _habits[index])) {
             _habits[index] = _normalizeHabit(_habits[index]);
           }
+        }
+        // The suggestion belongs to the same durable write as the first fact.
+        // A failed save rolls back both, and notes/imports never trigger it.
+        if (!replace &&
+            before.settings[_backupSuggestionKey] == 'eligible' &&
+            before.habits.every((h) => h.entries.isEmpty) &&
+            _habits.any((h) => h.entries.any((e) => !e.deleted))) {
+          _extensions[_backupSuggestionKey] = 'pending';
         }
         candidate = _capture();
         final changed = incremental
@@ -1128,7 +1311,9 @@ class HabitController extends ChangeNotifier {
 
   Map<String, Object?> _restore(String raw) {
     final decoded = SnapshotCodec.decode(raw);
-    final habits = (decoded['habits']! as List)
+    final normalized = CategoryMetadata.normalize(decoded);
+    _categoryMetadataChanged = CategoryMetadata.changed(decoded, normalized);
+    final habits = (normalized['habits']! as List)
         .map(
           (h) => _normalizeHabit(
             Habit.fromJson((h as Map).cast<String, Object?>()),
@@ -1138,7 +1323,13 @@ class HabitController extends ChangeNotifier {
     for (final h in habits) {
       _snapshotSizes[h] = utf8.encode(jsonEncode(h.toJson())).length;
     }
-    _install(_ControllerSnapshot(habits, decoded));
+    _install(_ControllerSnapshot(habits, normalized));
+    // Existing facts arriving through an external update are not a user's
+    // first local recording operation, even when this installation was empty.
+    if (_extensions[_backupSuggestionKey] == 'eligible' &&
+        habits.any((h) => h.entries.isNotEmpty)) {
+      _extensions[_backupSuggestionKey] = 'dismissed';
+    }
     return decoded;
   }
 
@@ -1156,6 +1347,8 @@ class HabitController extends ChangeNotifier {
             .cast<String>()
             .toSet();
     _extensions = Map<String, Object?>.from(decoded)..remove('habits');
+    // Older installations have no marker and must not receive onboarding.
+    _extensions[_backupSuggestionKey] ??= 'dismissed';
     _extensions['vaultId'] ??= const Uuid().v4();
     _extensions['appearanceMode'] ??= decoded.containsKey('darkMode')
         ? (restoredDarkMode ? 'dark' : 'light')
@@ -1170,10 +1363,10 @@ class HabitController extends ChangeNotifier {
         : 30;
     _collapsedTodayCategories
       ..clear()
-      ..addAll(restoredTodayCategories);
+      ..addAll(restoredTodayCategories.expand(_categoryKeys));
     _collapsedHabitCategories
       ..clear()
-      ..addAll(restoredHabitCategories);
+      ..addAll(restoredHabitCategories.expand(_categoryKeys));
   }
 }
 

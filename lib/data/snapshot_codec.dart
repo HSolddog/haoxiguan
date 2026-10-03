@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../models/habit.dart';
+import '../models/category.dart';
 
 /// Logical format is independent from the SQLite schema and the app version.
 class SnapshotCodec {
@@ -156,7 +157,9 @@ class SnapshotCodec {
         throw FormatException('$key 设置无效');
       }
     }
-    return Map<String, Object?>.from(value);
+    final document = Map<String, Object?>.from(value);
+    CategoryMetadata.validate(document);
+    return document;
   }
 
   static DateTime requireDate(String value) {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:haoxiguan/services/backup_codec.dart';
+import 'package:haoxiguan/services/backup_preview.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -128,8 +129,8 @@ void main() {
         await sync(1);
         await sync(0);
         expect(
-          SyncEntities.encode(a.exportJson()),
-          SyncEntities.encode(b.exportJson()),
+          SyncEntities.encodeFacts(a.exportJson()),
+          SyncEntities.encodeFacts(b.exportJson()),
         );
         expect(a.habits.single.entries.length, 2);
         await a.setNote(id, today, '设备甲');
@@ -188,7 +189,10 @@ void main() {
             dataBackup,
             'public synthetic data backup password',
           );
-          expect(SyncEntities.encode(recovered), SyncEntities.encode(prepared));
+          expect(
+            SyncEntities.encodeFacts(recovered),
+            SyncEntities.encodeFacts(prepared),
+          );
           expect(
             Process.killPid(int.parse(serverPid), ProcessSignal.sigterm),
             true,
@@ -276,8 +280,8 @@ void main() {
           );
           expect((await sync(0)).complete, true);
           expect(
-            SyncEntities.encode(a.exportJson()),
-            SyncEntities.encode(prepared),
+            SyncEntities.encodeFacts(a.exportJson()),
+            SyncEntities.encodeFacts(prepared),
           );
           final page = await engines[0].session.request(
             'GET',
@@ -348,8 +352,8 @@ void main() {
           await b.load();
           await sync(1);
           expect(
-            SyncEntities.encode(b.exportJson()),
-            SyncEntities.encode(prepared),
+            SyncEntities.encodeFacts(b.exportJson()),
+            SyncEntities.encodeFacts(prepared),
           );
         }
         final before = a.exportJson();
@@ -360,8 +364,8 @@ void main() {
         );
         await a.load();
         expect(
-          SyncEntities.encode(a.exportJson()),
-          SyncEntities.encode(before),
+          SyncEntities.encodeFacts(a.exportJson()),
+          SyncEntities.encodeFacts(before),
         );
       } finally {
         replacementServer?.kill(ProcessSignal.sigterm);
@@ -549,7 +553,7 @@ void main() {
           source.today,
           2,
         ); // Local unsent facts also travel.
-        final expected = SyncEntities.encode(source.exportJson());
+        final expected = SyncEntities.encodeFacts(source.exportJson());
         final backup = await BackupCodec.encrypt(
           source.exportJson(),
           'synthetic migration data password',
@@ -558,7 +562,7 @@ void main() {
           backup,
           'synthetic migration data password',
         );
-        expect(SyncEntities.encode(restored), expected);
+        expect(SyncEntities.encodeFacts(restored), expected);
         final destination = await makeController(1);
         expect(await destination.importJson(restored), true);
         expect(
@@ -577,7 +581,7 @@ void main() {
         );
         await destinationEngine.confirmInitialSync(preview);
         await confirmedSync(destinationEngine, destination);
-        expect(SyncEntities.encode(destination.exportJson()), expected);
+        expect(SyncEntities.encodeFacts(destination.exportJson()), expected);
         expect(keys[1].vault, isNot(keys[0].vault));
         expect(keys[1].idKey, isNot(keys[0].idKey));
         expect(tokens[1]['accessToken'], isNot(tokens[0]['accessToken']));
@@ -614,7 +618,7 @@ void main() {
         final peer = await makeController(2);
         final peerEngine = await makeEngine(2, 1, peerKey, peerToken);
         await confirmedSync(peerEngine, peer);
-        expect(SyncEntities.encode(peer.exportJson()), expected);
+        expect(SyncEntities.encodeFacts(peer.exportJson()), expected);
         expect(
           peer.habits.single.entries.map((e) => e.id).toSet(),
           source.habits.single.entries.map((e) => e.id).toSet(),
@@ -631,7 +635,54 @@ void main() {
         await stores.first
             .disconnect(); // Stop old service only after destination verification.
         expect(await stores.first.load(), isNull);
-        expect(SyncEntities.encode(source.exportJson()), expected);
+        expect(SyncEntities.encodeFacts(source.exportJson()), expected);
+        final existingIds = source.habits.single.entries
+            .map((e) => e.id)
+            .toSet();
+        expect(await source.addValue(id, source.today, 4), true);
+        expect(
+          await source.setNote(id, source.today, '记录与备注均迁出\n断开旧服务后继续离线记录'),
+          true,
+        );
+        final newId = source.habits.single.entries
+            .map((e) => e.id)
+            .toSet()
+            .difference(existingIds)
+            .single;
+        final offlineSnapshot = source.exportJson();
+        final offlineFile = File('${root.path}/disconnected-local.hgbak');
+        await offlineFile.writeAsBytes(
+          await BackupCodec.encrypt(
+            offlineSnapshot,
+            'synthetic offline data password',
+          ),
+          flush: true,
+        );
+        final offlineContents = await BackupCodec.decryptWithMetadata(
+          await offlineFile.readAsBytes(),
+          'synthetic offline data password',
+        );
+        final offlinePreview = BackupPreview.fromSnapshot(
+          offlineContents.snapshot,
+          createdAtUtc: offlineContents.createdAtUtc,
+        );
+        expect(offlinePreview.createdAtUtc, isNotNull);
+        expect(offlinePreview.habits, 1);
+        expect(offlinePreview.records, existingIds.length + 1);
+        expect(offlinePreview.notes, 1);
+        final offlineFacts = SyncEntities.encodeFacts(offlineContents.snapshot);
+        expect(offlineFacts, SyncEntities.encodeFacts(offlineSnapshot));
+        expect(offlineFacts['r/$newId']['data']['value'], 4);
+        expect(
+          offlineFacts.entries
+              .singleWhere((e) => e.key.startsWith('n/'))
+              .value['text'],
+          '记录与备注均迁出\n断开旧服务后继续离线记录',
+        );
+        expect(
+          (await sourceEngine.session.request('GET', '/v1/vault'))['highWater'],
+          oldStatus['highWater'],
+        );
       } finally {
         for (final controller in controllers) {
           controller.dispose();

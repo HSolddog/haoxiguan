@@ -68,8 +68,17 @@ void main() {
         'plans.csv',
         'records.csv',
         'notes.csv',
+        'categories.csv',
       ]);
       final plans = utf8.decode(tables['plans.csv']!);
+      expect(
+        utf8.decode(tables['categories.csv']!),
+        contains('"${h.categoryId}"'),
+      );
+      expect(
+        utf8.decode(tables['habits.csv']!),
+        contains('"category_id","sort_key"'),
+      );
       for (final plan in c.habits.single.plans) {
         expect(plans, contains('"${plan.id}"'));
       }

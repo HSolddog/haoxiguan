@@ -52,6 +52,9 @@ void main() {
     });
     await editor(tester);
     await tester.enterText(find.byKey(const Key('habit-title-field')), '阅读');
+    await tester.ensureVisible(find.byKey(const Key('habit-advanced-options')));
+    await tester.tap(find.byKey(const Key('habit-advanced-options')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('habit-start-date')));
     await tester.tap(find.byKey(const Key('habit-start-date')));
     await tester.pumpAndSettle();
@@ -137,6 +140,8 @@ void main() {
     await tester.pumpWidget(HabitApp(controller: controller));
     await tester.pumpAndSettle();
     expect(find.text('＋1 杯'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(Key('quick-$id')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(Key('quick-$id')));
     await tester.pumpAndSettle();
     expect(find.text('喝水：已增加 1 杯'), findsOneWidget);
@@ -147,6 +152,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.habits.single.valueOn(controller.today), 2000);
     expect(controller.habits.single.noteOn(controller.today), '另外的备注');
+    await tester.ensureVisible(find.byKey(Key('quick-$id')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(Key('quick-$id')));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 6));

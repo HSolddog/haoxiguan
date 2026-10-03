@@ -181,7 +181,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
         title: const Text('导出可读 CSV？'),
         content: const SingleChildScrollView(
           child: Text(
-            'ZIP 内含习惯、计划版本、记录、备注四份 CSV 和字段说明，均为明文，适合关联复核与表格分析。CSV 不能代替完整恢复备份。以公式符号开头的文字会加单引号。',
+            'ZIP 内含习惯、计划版本、记录、备注、分类五份 CSV 和字段说明，均为明文，适合关联复核与表格分析。CSV 不能代替完整恢复备份。以公式符号开头的文字会加单引号。',
           ),
         ),
         actions: [
@@ -356,7 +356,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
                 ListTile(
                   leading: const Icon(Icons.table_chart_outlined),
                   title: const Text('导出可读 CSV'),
-                  subtitle: const Text('ZIP 包含习惯、计划、记录、备注四表；不能替代完整备份'),
+                  subtitle: const Text('ZIP 包含习惯、计划、记录、备注、分类五表；不能替代完整备份'),
                   onTap: _busy ? null : _exportCsv,
                 ),
                 ListTile(

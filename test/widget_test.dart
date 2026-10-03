@@ -34,7 +34,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.person_outline_rounded));
+    await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
@@ -43,13 +43,24 @@ void main() {
     await tester.pumpWidget(HabitApp(controller: controller));
     await tester.pumpAndSettle();
 
-    expect(find.text('阅读 20 分钟'), findsOneWidget);
     expect(find.text('0/2'), findsOneWidget);
-    expect(find.byKey(const Key('today-category-学习')), findsOneWidget);
-    expect(find.byKey(const Key('today-category-健康')), findsOneWidget);
+    for (final category in controller.categoryGroups) {
+      await tester.scrollUntilVisible(
+        find.byKey(Key('today-category-${category.id}')),
+        120,
+      );
+      expect(find.byKey(Key('today-category-${category.id}')), findsOneWidget);
+    }
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('complete-seed-reading-false')),
+      120,
+    );
+    expect(find.text('阅读 20 分钟'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('complete-seed-reading-false')));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('1/2'), -150);
     expect(find.text('1/2'), findsOneWidget);
 
     await tester.tap(find.text('撤销'));
@@ -169,7 +180,12 @@ void main() {
     await tester.pumpWidget(HabitApp(controller: controller));
     await tester.pumpAndSettle();
 
-    final todayToggle = find.byKey(const Key('today-category-toggle-学习'));
+    final learningId = controller.habitById('seed-reading')!.categoryId!;
+    final todayToggle = find.byKey(Key('today-category-toggle-$learningId'));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('complete-seed-reading-false')),
+      120,
+    );
     expect(
       find.byKey(const Key('complete-seed-reading-false')),
       findsOneWidget,
@@ -182,7 +198,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.checklist_rounded));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('manage-habit-seed-reading')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('habits-category-toggle-学习')));
+    await tester.tap(find.byKey(Key('habits-category-toggle-$learningId')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('manage-habit-seed-reading')), findsNothing);
     expect(controller.isHabitCategoryCollapsed('学习'), isTrue);
@@ -198,7 +214,7 @@ void main() {
     expect(find.byKey(const Key('wish-enabled-switch')), findsNothing);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.person_outline_rounded));
+    await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
     await tester.drag(
       find.byKey(const PageStorageKey<String>('data-scroll')),

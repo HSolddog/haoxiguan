@@ -68,6 +68,21 @@ jobs:
           cache-dependency-path: server/go.sum
       - name: Real HTTPS sync, recovery and key rotation
         run: python3 tools/run_sync_integration.py
+      - name: Install pinned isolated WebDAV test service
+        run: |
+          python3 -m venv "$RUNNER_TEMP/haoxiguan-webdav-venv"
+          "$RUNNER_TEMP/haoxiguan-webdav-venv/bin/python" -m pip install --disable-pip-version-check -r tools/webdav-test-requirements.txt
+      - name: Real TLS WebDAV recovery preview
+        timeout-minutes: 7
+        run: '"$RUNNER_TEMP/haoxiguan-webdav-venv/bin/python" tools/run_webdav_integration.py'
+      - name: Preserve real WebDAV acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: webdav-integration-${{ github.sha }}
+          path: build/webdav-integration/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Build Android debug APK
         run: flutter build apk --debug
       - name: Upload debug APK
@@ -116,7 +131,9 @@ jobs:
           test -c /dev/kvm
           sudo setfacl -m u:"$USER":rw /dev/kvm
       - name: Native storage, crypto and upgrade
-        run: python3 tools/run_android_acceptance.py --api ${{ matrix.api }} --apks acceptance-apks --output acceptance-results
+        run: |
+          python3 -m unittest discover -s tools -p test_android_acceptance.py -v
+          python3 tools/run_android_acceptance.py --api ${{ matrix.api }} --apks acceptance-apks --output acceptance-results
       - name: Preserve native acceptance evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

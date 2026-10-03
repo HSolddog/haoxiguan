@@ -17,19 +17,29 @@ import '../state/habit_controller.dart';
 import 'unsaved_changes_guard.dart';
 
 class SyncScreen extends StatefulWidget {
-  const SyncScreen({super.key, required this.controller});
+  const SyncScreen({super.key, required this.controller, this.settingsStore});
   final HabitController controller;
+  final SyncSettingsStore? settingsStore;
   @override
   State<SyncScreen> createState() => _SyncScreenState();
 }
 
 class _SyncScreenState extends State<SyncScreen> {
-  final _store = SyncSettingsStore(DeviceSecretStore());
+  late final _store =
+      widget.settingsStore ?? SyncSettingsStore(DeviceSecretStore());
   final _files = PlatformBackupFiles();
   final _endpoint = TextEditingController();
   final _invite = TextEditingController();
   final _name = TextEditingController(text: '我的安卓设备');
   final _recoveryPassword = TextEditingController();
+  final _connectionGuard = GlobalKey<UnsavedChangesGuardState>();
+  bool get _connectionDirty => _settings == null
+      ? _endpoint.text.isNotEmpty ||
+            _invite.text.isNotEmpty ||
+            _name.text != '我的安卓设备' ||
+            _recoveryPassword.text.isNotEmpty ||
+            _join
+      : _invite.text.isNotEmpty;
   SyncSettings? _settings;
   bool _busy = false, _join = false;
   String? _message, _lastSuccess;
@@ -181,23 +191,38 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _exportRecovery() => _run(() async {
-    final password = await showDialog<String>(
+    final saved = await showDialog<bool>(
       context: context,
-      builder: (_) => const _RecoveryPasswordDialog(),
+      barrierDismissible: false,
+      builder: (_) => SyncRecoveryPasswordDialog(
+        onContinue: (password) async {
+          final bytes = await SyncRecoveryCodec.encrypt(
+            _settings!.keys,
+            password,
+          );
+          final verified = await SyncRecoveryCodec.decrypt(bytes, password);
+          verified.dispose();
+          if (!await _files.save(
+            bytes,
+            'haoxiguan-sync-recovery-${DateTime.now().millisecondsSinceEpoch}.hgr',
+          )) {
+            return false;
+          }
+          final previous = _settings!.recoveryExported;
+          _settings!.recoveryExported = true;
+          try {
+            await _store.save(_settings!);
+          } on Object {
+            _settings!.recoveryExported = previous;
+            rethrow;
+          }
+          return true;
+        },
+      ),
     );
-    if (password == null) return;
-    final bytes = await SyncRecoveryCodec.encrypt(_settings!.keys, password);
-    final verified = await SyncRecoveryCodec.decrypt(bytes, password);
-    verified.dispose();
-    if (!await _files.save(
-      bytes,
-      'haoxiguan-sync-recovery-${DateTime.now().millisecondsSinceEpoch}.hgr',
-    )) {
-      return;
+    if (saved == true) {
+      _message = '恢复文件已保存并读回校验。请将文件和密码分别保管；其中不含登录令牌，也不包含习惯数据。';
     }
-    _settings!.recoveryExported = true;
-    await _store.save(_settings!);
-    _message = '恢复文件已保存并读回校验。请将文件和密码分别保管；其中不含登录令牌，也不包含习惯数据。';
   });
 
   Future<void> _sync() => _run(() async {
@@ -459,8 +484,12 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !_busy,
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+    key: _connectionGuard,
+    dirty: _connectionDirty,
+    isDirty: () => _connectionDirty,
+    saving: _busy,
+    isSaving: () => _busy,
     child: Scaffold(
       appBar: AppBar(title: const Text('自有同步服务')),
       body: ListView(
@@ -479,6 +508,7 @@ class _SyncScreenState extends State<SyncScreen> {
             ),
           if (_settings == null) ...[
             TextField(
+              key: const Key('sync-endpoint'),
               controller: _endpoint,
               enabled: !_busy,
               keyboardType: TextInputType.url,
@@ -695,6 +725,11 @@ class _SyncConflictDialogState extends State<SyncConflictDialog> {
   final _texts = <String, String>{};
   bool _saving = false;
   String? _error;
+  String _source(SyncConflict item, bool remote) {
+    final sources = widget.decision.sources(item, remoteSide: remote);
+    return sources.isEmpty ? '来源设备未知' : '设备 ${sources.join('、')}';
+  }
+
   String _value(SyncConflict item, dynamic value) {
     if (value == null) return '此项不存在 / 已删除';
     if (item.isNote) return '${value['date']}：${value['text']}';
@@ -755,7 +790,7 @@ class _SyncConflictDialogState extends State<SyncConflictDialog> {
               const Text(
                 '双方独立新增记录会保留。只处理下面列出的冲突；应用前会保存本机原数据与远端候选副本。计划和删除状态需保持一致，不能留下无所属习惯的记录。',
               ),
-              const Text('远端版本未标注来源设备；“远端”表示此空间已同步的内容。'),
+              const Text('来源由共享密钥内的客户端标注，并非独立设备签名。旧版或未保留标注的内容会显示来源未知。'),
               for (final item in widget.decision.items)
                 Padding(
                   padding: const EdgeInsets.only(top: 20),
@@ -766,8 +801,12 @@ class _SyncConflictDialogState extends State<SyncConflictDialog> {
                         '${_syncHabitTitle(item.habitId, widget.decision.local, widget.decision.remote)} · ${item.label}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      SelectableText('本机：${_value(item, item.local)}'),
-                      SelectableText('远端：${_value(item, item.remote)}'),
+                      SelectableText(
+                        '本机（${_source(item, false)}）：${_value(item, item.local)}',
+                      ),
+                      SelectableText(
+                        '远端（${_source(item, true)}）：${_value(item, item.remote)}',
+                      ),
                       DropdownButtonFormField<SyncChoice>(
                         key: ValueKey(item.id),
                         initialValue: _choices[item.id],
@@ -845,16 +884,21 @@ class _SyncConflictDialogState extends State<SyncConflictDialog> {
   );
 }
 
-class _RecoveryPasswordDialog extends StatefulWidget {
-  const _RecoveryPasswordDialog();
+class SyncRecoveryPasswordDialog extends StatefulWidget {
+  const SyncRecoveryPasswordDialog({super.key, required this.onContinue});
+  final Future<bool> Function(String password) onContinue;
   @override
-  State<_RecoveryPasswordDialog> createState() =>
-      _RecoveryPasswordDialogState();
+  State<SyncRecoveryPasswordDialog> createState() =>
+      _SyncRecoveryPasswordDialogState();
 }
 
-class _RecoveryPasswordDialogState extends State<_RecoveryPasswordDialog> {
+class _SyncRecoveryPasswordDialogState
+    extends State<SyncRecoveryPasswordDialog> {
   final first = TextEditingController(), second = TextEditingController();
+  final _guard = GlobalKey<UnsavedChangesGuardState>();
   String? error;
+  bool saving = false;
+  bool get dirty => first.text.isNotEmpty || second.text.isNotEmpty;
   @override
   void dispose() {
     first.dispose();
@@ -862,47 +906,77 @@ class _RecoveryPasswordDialogState extends State<_RecoveryPasswordDialog> {
     super.dispose();
   }
 
+  Future<void> _save() async {
+    if (first.text.runes.length < 12 || first.text != second.text) {
+      setState(() => error = '密码至少 12 个字符，两次输入需一致');
+      return;
+    }
+    setState(() {
+      saving = true;
+      error = null;
+    });
+    try {
+      final success = await widget.onContinue(first.text);
+      if (!mounted) return;
+      if (success) {
+        Navigator.pop(context, true);
+      } else {
+        setState(() => error = '恢复文件尚未保存。密码输入仍保留，可以重试或取消。');
+      }
+    } on Object {
+      if (mounted) setState(() => error = '恢复文件保存失败。密码输入仍保留，请检查存储后重试。');
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('保护同步恢复文件'),
-    content: SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('至少 12 个字符。遗失密码和所有已授权设备后，服务器无法帮你解密记录。'),
-          TextField(
-            controller: first,
-            obscureText: true,
-            autocorrect: false,
-            enableSuggestions: false,
-            decoration: const InputDecoration(labelText: '恢复密码'),
-          ),
-          TextField(
-            controller: second,
-            obscureText: true,
-            autocorrect: false,
-            enableSuggestions: false,
-            decoration: const InputDecoration(labelText: '再次输入'),
-          ),
-          if (error != null) Text(error!),
-        ],
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+    key: _guard,
+    dirty: dirty,
+    isDirty: () => dirty,
+    saving: saving,
+    isSaving: () => saving,
+    child: AlertDialog(
+      title: const Text('保护同步恢复文件'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('至少 12 个字符。遗失密码和所有已授权设备后，服务器无法帮你解密记录。'),
+            TextField(
+              key: const Key('sync-recovery-password'),
+              controller: first,
+              enabled: !saving,
+              obscureText: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: const InputDecoration(labelText: '恢复密码'),
+            ),
+            TextField(
+              key: const Key('sync-recovery-confirm'),
+              controller: second,
+              enabled: !saving,
+              obscureText: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: const InputDecoration(labelText: '再次输入'),
+            ),
+            if (error != null) Text(error!),
+            if (saving) const LinearProgressIndicator(),
+          ],
+        ),
       ),
+      actions: [
+        TextButton(
+          onPressed: saving ? null : () => _guard.currentState?.leave(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: saving ? null : _save,
+          child: const Text('加密并保存'),
+        ),
+      ],
     ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('取消'),
-      ),
-      FilledButton(
-        onPressed: () {
-          if (first.text.runes.length < 12 || first.text != second.text) {
-            setState(() => error = '密码至少 12 个字符，两次输入需一致');
-            return;
-          }
-          Navigator.pop(context, first.text);
-        },
-        child: const Text('加密并保存'),
-      ),
-    ],
   );
 }

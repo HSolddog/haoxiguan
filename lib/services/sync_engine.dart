@@ -187,7 +187,10 @@ class SyncEngine {
       final baseline = _payloads(state);
       final changes =
           {...local.keys, ...baseline.keys}
-              .where((key) => !SyncEntities.same(local[key], baseline[key]))
+              .where(
+                (key) =>
+                    !SyncEntities.sameFacts(key, local[key], baseline[key]),
+              )
               .toList()
             ..sort();
       if (changes.isEmpty) {
@@ -197,6 +200,16 @@ class SyncEngine {
         await repository.commitSyncFrame(frame, state);
         return SyncOutcome(complete: true, uploaded: uploaded);
       }
+      final annotatedParents = SyncOrigins.stamp(
+        local,
+        baseline,
+        changes,
+        settings.tokens['deviceId'] as String,
+      );
+      for (final key in annotatedParents) {
+        if (!changes.contains(key)) changes.add(key);
+      }
+      changes.sort();
       final pending = <Map<String, dynamic>>[];
       for (final logical in changes) {
         final old = (state['remote'] as Map)[logical] as Map?;
@@ -230,7 +243,13 @@ class SyncEngine {
       }
       state['pending'] = pending;
       // No request is sent until the exact nonce, ciphertext and opId are durable.
-      await repository.commitSyncFrame(frame, state);
+      await repository.commitSyncFrame(
+        frame,
+        state,
+        snapshot: annotatedParents.isEmpty
+            ? null
+            : SyncEntities.assemble(frame.snapshot, local),
+      );
     }
     return SyncOutcome(uploaded: uploaded);
   }
@@ -392,9 +411,10 @@ class SyncEngine {
       Map<String, dynamic>.from(state['base'] as Map),
       remote,
     );
+    decision.localDeviceId = settings.tokens['deviceId'] as String;
     if (state['reviewAll'] == true) {
       for (final key in {...decision.local.keys, ...remote.keys}) {
-        if (!SyncEntities.same(decision.local[key], remote[key])) {
+        if (!SyncEntities.sameFacts(key, decision.local[key], remote[key])) {
           final id = SyncEntities.habitId(
             key,
             decision.local[key] ?? remote[key],
