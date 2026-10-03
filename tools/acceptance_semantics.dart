@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -11,11 +13,17 @@ class AcceptanceSemanticsRebinder {
     required this.decodeIdentity,
     required this.readIdentity,
     required this.onFailure,
-  });
+    this.timeout = const Duration(seconds: 20),
+    this.pollInterval = const Duration(milliseconds: 50),
+    DateTime Function()? clock,
+  }) : clock = clock ?? DateTime.now;
   final MethodChannel channel;
   final Map<String, Object?> Function(Object?) decodeIdentity;
   final Future<Object?> Function() readIdentity;
   final void Function(Object) onFailure;
+  final Duration timeout;
+  final Duration pollInterval;
+  final DateTime Function() clock;
   final observations = <Map<String, Object?>>[];
   Future<void> _pending = Future<void>.value();
   Object? _failure;
@@ -36,6 +44,18 @@ class AcceptanceSemanticsRebinder {
       observeHost(await readIdentity());
 
   Future<Map<String, Object?>> observeHost(Object? raw) async {
+    final deadline = clock().add(timeout);
+    Duration remaining() {
+      final value = deadline.difference(clock());
+      if (value <= Duration.zero) {
+        throw TimeoutException(
+          'acceptance host did not become visibly attached',
+          timeout,
+        );
+      }
+      return value;
+    }
+
     late Map<String, Object?> notified;
     try {
       notified = decodeIdentity(raw);
@@ -51,28 +71,44 @@ class AcceptanceSemanticsRebinder {
       if (_failure != null) {
         throw StateError('previous semantics rebind failed');
       }
-      await WidgetsBinding.instance.endOfFrame;
+      await WidgetsBinding.instance.endOfFrame.timeout(remaining());
       if (_closed) {
         throw StateError('acceptance semantics binding is closed');
       }
-      final current = decodeIdentity(await readIdentity());
-      if (current['attached'] != true ||
-          current['uiDisplayed'] != true ||
-          current['engineId'] != notified['engineId'] ||
-          (current['attachCount']! as int) <
-              (notified['attachCount']! as int) ||
-          (current['attachCount'] == notified['attachCount'] &&
-              current['hostId'] != notified['hostId'])) {
-        throw StateError('semantics notification has no visible current host');
-      }
       final last = _last;
+      if (last != null && notified['engineId'] != last['engineId']) {
+        throw StateError('semantics notification changed the retained engine');
+      }
+      var floor =
+          last != null &&
+              (last['attachCount']! as int) > (notified['attachCount']! as int)
+          ? last
+          : notified;
       if (last != null &&
-          (current['engineId'] != last['engineId'] ||
-              (current['attachCount']! as int) <
-                  (last['attachCount']! as int) ||
-              (current['attachCount'] == last['attachCount'] &&
-                  current['hostId'] != last['hostId']))) {
-        throw StateError('semantics host changed the retained engine identity');
+          last['attachCount'] == notified['attachCount'] &&
+          last['hostId'] != notified['hostId']) {
+        throw StateError('same semantics attachment has conflicting hosts');
+      }
+      late Map<String, Object?> current;
+      while (true) {
+        current = decodeIdentity(await readIdentity().timeout(remaining()));
+        if (current['engineId'] != notified['engineId'] ||
+            (current['attachCount']! as int) < (floor['attachCount']! as int) ||
+            (current['attachCount'] == floor['attachCount'] &&
+                current['hostId'] != floor['hostId'])) {
+          throw StateError(
+            'semantics host changed the retained engine identity',
+          );
+        }
+        // Every strictly decoded observation advances the floor, even before
+        // its first frame. A later older-but-visible host cannot be accepted.
+        floor = current;
+        remaining();
+        if (current['attached'] == true && current['uiDisplayed'] == true) {
+          break;
+        }
+        final left = remaining();
+        await Future<void>.delayed(left < pollInterval ? left : pollInterval);
       }
       if (last?['hostId'] == current['hostId']) {
         observed = last;

@@ -1,0 +1,110 @@
+{
+  "scope": "Synthetic fixture host tests; no real Android execution of this new fix is asserted.",
+  "sourceBase": {
+    "local": "fb1fee9a562aa61c15fba37133d6f194fec1c97f",
+    "remote": "9541d8d22683f11e07e67fa62fd78a066eb4dfbe",
+    "tree": "4a665205b4aedb753827acec910ef752d7e30436"
+  },
+  "change": {
+    "files": [
+      "tools/acceptance_semantics.dart",
+      "test/android_acceptance_semantics_test.dart"
+    ],
+    "behavior": "Wait for a strictly identified retained host to become attached and actually display its UI; reject identity changes and attachment regressions immediately.",
+    "deadlineSeconds": 20,
+    "pollMilliseconds": 50,
+    "singleDeadlineCovers": [
+      "serialized queue",
+      "frame",
+      "identity read",
+      "visibility polling"
+    ],
+    "identityFloor": "Every strictly decoded sample advances the attachment-count floor, including samples before first display.",
+    "sideEffects": "Only read identity while waiting. One semantics-tree resend after visibility; no business replay or UI mutation."
+  },
+  "validation": {
+    "flutter": {
+      "testsPassed": 32,
+      "newTests": 3,
+      "existingTests": 29,
+      "exitCode": 0,
+      "newCases": [
+        "queued old notification -> newly attached host -> delayed actual display; same State and serialized tree IDs",
+        "invisible attachment floor -> backward, conflicting host, foreign engine/PID/build rejection",
+        "one timeout for permanently invisible or stalled identity; late replies cannot resend"
+      ]
+    },
+    "python": {
+      "testsPassed": 76,
+      "exitCode": 0
+    },
+    "analysis": {
+      "items": 2,
+      "issues": 0,
+      "seconds": 1.8,
+      "exitCode": 0
+    },
+    "format": {
+      "files": 2,
+      "filesChangedByFormatting": 2,
+      "exitCode": 0
+    },
+    "preparationFailure": "A pre-test toolchain trust setup failure is retained separately; it is not counted as a test result."
+  },
+  "evidence": [
+    {
+      "file": "analyze.log",
+      "bytes": 98,
+      "sha256": "474ea0b77cc616e8adae816155504fed351bf517e9b58f34cb0788dfb62af050"
+    },
+    {
+      "file": "format.log",
+      "bytes": 146,
+      "sha256": "f3df5940b0b7e8f28cddcbbf1ef14b17f9c494937bd63a72777ffe88a3c0645d"
+    },
+    {
+      "file": "frozen/acceptance_semantics.dart",
+      "bytes": 7219,
+      "sha256": "9ef8b11dd71364c32976f620ded7e2efb75619f011cb2626953a9edce75e94be"
+    },
+    {
+      "file": "frozen/android_acceptance_semantics_test.dart",
+      "bytes": 23500,
+      "sha256": "8f5a1b5b31e475c939321bdaf2a7ace0d2e24141f1247981e42d330ac886db06"
+    },
+    {
+      "file": "python.log",
+      "bytes": 180,
+      "sha256": "87634ac1d55748eed912dde71bb233e8a64947dcd6e228a27e5e7e255f45bf25"
+    },
+    {
+      "file": "target-first.log",
+      "bytes": 1532,
+      "sha256": "0fb2bbcbda82cae4f0c55bf24983488bec8f2a47c096f2bc338fb5e89873c968"
+    },
+    {
+      "file": "target-second.log",
+      "bytes": 12724,
+      "sha256": "3c4ea1eafc276e84c2da49477805478ed9f217b045b8e292bfb29e6b825cfc6c"
+    }
+  ],
+  "boundaries": [
+    "This host regression does not establish native Android success for the new waiting fix.",
+    "954 API35 and API36 first-display failures remain retained under their original source.",
+    "No product source, warehouse schema2 fixture, native Kotlin host or Python driver changed for this fix."
+  ],
+  "sourceLocalCommit": "b0d3e91ccb49a6452b1cd83909c6d982d278fbce",
+  "sourceTree": "8a08845ae0959777c88c45f2b20c45e5d1b9fb04",
+  "sourceBlobs": [
+    {
+      "file": "tools/acceptance_semantics.dart",
+      "gitBlobBytes": 7219,
+      "gitBlobSha256": "9ef8b11dd71364c32976f620ded7e2efb75619f011cb2626953a9edce75e94be"
+    },
+    {
+      "file": "test/android_acceptance_semantics_test.dart",
+      "gitBlobBytes": 22856,
+      "gitBlobSha256": "7173f2da0d3c36f51030d6f38371f5a2e9627665ea7c3f6085ce70275aa38a3c"
+    }
+  ]
+}

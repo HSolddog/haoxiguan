@@ -1,0 +1,239 @@
+{
+  "scope": "Synthetic data in isolated GitHub CI emulators. This evidence contains no personal device data.",
+  "source": {
+    "head": "9541d8d22683f11e07e67fa62fd78a066eb4dfbe",
+    "localEquivalent": "fb1fee9a562aa61c15fba37133d6f194fec1c97f",
+    "merge": "07484c608768abd9c6988e3d007b0bdcdd8bd368",
+    "tree": "4a665205b4aedb753827acec910ef752d7e30436",
+    "headLocalMergeTreeEqual": true
+  },
+  "workflow": {
+    "runId": 37160895085,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37160895085",
+    "status": "completed",
+    "conclusion": "failure"
+  },
+  "nativeMatrix": [
+    {
+      "api": 24,
+      "jobId": 111315774277,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37160895085/job/111315774277",
+      "conclusion": "success",
+      "artifact": {
+        "id": 11287886801,
+        "bytes": 441106,
+        "sha256": "518e7e1cda0e3fceb65abc274aeffccb273c5e94323f6af09068ed05db244c0d"
+      },
+      "completedPhases": 4,
+      "phases": [
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "create",
+          "status": "passed",
+          "reportSha256": "5a303381fe6e43ec3e83ed34061977d65bea0d1dd2180f8f29d2e3b8c0c666da"
+        },
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "reopen",
+          "status": "passed",
+          "reportSha256": "f0b9c7ee056087e6c1974beb75fb6207bbb46dc3184a67d1c6285fb9a4197863"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportSha256": "cd536e1462b10adaff976d775b50be3cb0e3ea4c16147fcfd1e508962c4d6ec3"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportSha256": "f1b6b164337e0f4962cc847ce9c09d72578d8962c975a1d97ac0b103810823d4"
+        }
+      ],
+      "fourDistinctLogicalRuns": true,
+      "actualNotificationSdkMatches": true,
+      "schema3Flags": {
+        "safExportReadback": true,
+        "safOpenDecrypt": true,
+        "safSizeLimit": true,
+        "nativeReminderScheduling": true,
+        "workManagerRenewal": true,
+        "periodicTasksRegistered": true,
+        "nativeDeniedHabitSaved": true,
+        "nativeAppPermissionDiagnosis": true,
+        "nativeAppPermissionRecovery": true,
+        "nativeRestorePreviewCancel": true,
+        "nativeRestoreProtection": true,
+        "nativeRestoreConfirm": true,
+        "nativeRestoreReopen": true
+      },
+      "channels": {
+        "diagnosis": "notApplicable",
+        "recovery": "notApplicable"
+      },
+      "evidenceSummary": [
+        "Four actual completed reports, with schema2 create/reopen and schema3 two reopens.",
+        "Real restore cancel/confirm controls were discovered in XML and tapped once per stage.",
+        "Cancel preserves the exact stored eleven-table observation and complete controller model; protection and reopen assertions passed.",
+        "Retained-engine deterministic recreation and full existing semantics-tree resend passed each phase."
+      ]
+    },
+    {
+      "api": 33,
+      "jobId": 111315774269,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37160895085/job/111315774269",
+      "conclusion": "success",
+      "artifact": {
+        "id": 11288076302,
+        "bytes": 674537,
+        "sha256": "61d8103bd2ea058c652b1c9d09234d1af0b3f7ae6775239f6d75af0af05d8042"
+      },
+      "completedPhases": 4,
+      "phases": [
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "create",
+          "status": "passed",
+          "reportSha256": "b42678c3f08486975b488b15075ff5104e4486d23bcac696741f3525c8846f90"
+        },
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "reopen",
+          "status": "passed",
+          "reportSha256": "3905ffbdc3c27a400b3b34c680c83fbc43f1e7522ddc3db21bf1259000f41bb0"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportSha256": "16efb444568faead1c3141b385760ae19f5a0927911c5fa9898901f30af3a7d2"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportSha256": "80184bf0885a0b459228a4be0e09bc3cca0eaab6c974e07f2855e3a82803670f"
+        }
+      ],
+      "fourDistinctLogicalRuns": true,
+      "actualNotificationSdkMatches": true,
+      "schema3Flags": {
+        "safExportReadback": true,
+        "safOpenDecrypt": true,
+        "safSizeLimit": true,
+        "nativeReminderScheduling": true,
+        "workManagerRenewal": true,
+        "periodicTasksRegistered": true,
+        "nativeDeniedHabitSaved": true,
+        "nativeAppPermissionDiagnosis": true,
+        "nativeAppPermissionRecovery": true,
+        "nativeRestorePreviewCancel": true,
+        "nativeRestoreProtection": true,
+        "nativeRestoreConfirm": true,
+        "nativeRestoreReopen": true
+      },
+      "channels": {
+        "diagnosis": true,
+        "recovery": true,
+        "initialEnabled": true
+      },
+      "evidenceSummary": [
+        "Four actual completed reports, with schema2 create/reopen and schema3 two reopens.",
+        "Real restore cancel/confirm controls were discovered in XML and tapped once per stage.",
+        "Cancel preserves the exact stored eleven-table observation and complete controller model; protection and reopen assertions passed.",
+        "Retained-engine deterministic recreation and full existing semantics-tree resend passed each phase.",
+        "Both schema3 runs survived the observed system permission-revocation kill under the same logical run and checkpoint identity; exact SQL/model continuation passed."
+      ]
+    },
+    {
+      "api": 35,
+      "jobId": 111315774283,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37160895085/job/111315774283",
+      "conclusion": "failure",
+      "artifact": {
+        "id": 11288155679,
+        "bytes": 46292,
+        "sha256": "b43820de0d33e07fa5221931729dc5f991b2eba3057fcf1d280ed320d3c22a36"
+      },
+      "completedPhases": 0,
+      "phases": [],
+      "firstError": "native acceptance semantics could not bind to the visible host; no UI mutation is permitted",
+      "failurePhase": {
+        "build": "10001",
+        "schema": 2,
+        "phase": "create"
+      },
+      "mechanism": "The retained engine attached a new Activity host; the fixture rejected the host before its first displayed frame. The same host then reported actual UI display shortly afterward.",
+      "displayAfterFailureMilliseconds": 31,
+      "driverRestoreClicksInFailedPhase": 0
+    },
+    {
+      "api": 36,
+      "jobId": 111315774301,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37160895085/job/111315774301",
+      "conclusion": "failure",
+      "artifact": {
+        "id": 11287708211,
+        "bytes": 224507,
+        "sha256": "cbba01db05a07ba561cba9d6847e7b1085af3889e82dd7a6460f780921a2034b"
+      },
+      "completedPhases": 2,
+      "phases": [
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "create",
+          "status": "passed",
+          "reportSha256": "6e6d558ba227d6c1bc5024626e1b50c0c6d6a148def804b0209d9bd89b0143c7"
+        },
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "reopen",
+          "status": "passed",
+          "reportSha256": "6b9e823dcca13d1acd3e6d483ad72c5020bfa860511339a5c3cb145bcc269e5a"
+        }
+      ],
+      "firstError": "native acceptance semantics could not bind to the visible host; no UI mutation is permitted",
+      "failurePhase": {
+        "build": "10002",
+        "schema": 3,
+        "phase": "reopen"
+      },
+      "mechanism": "The retained engine attached a new Activity host; the fixture rejected the host before its first displayed frame. The same host then reported actual UI display shortly afterward.",
+      "displayAfterFailureMilliseconds": 36,
+      "driverRestoreClicksInFailedPhase": 0,
+      "lastReportBoundary": "Retained last-report is the previous successful schema2 reopen, not a failed schema3 business report."
+    }
+  ],
+  "boundaries": [
+    "API24 and API33 native success applies to this exact source and the four completed phases.",
+    "API35 and API36 failures are retained; a later fixture waiting fix is separate host evidence and needs a new native CI run.",
+    "The failed early binding marker does not establish unchanged SQLite data; the original failed phase had no completed business report."
+  ],
+  "independentNativeAudit": {
+    "frozenDriverEnginePredicate": {
+      "phasesChecked": 8,
+      "passed": 8
+    },
+    "frozenDriverNativeFlagsPredicate": {
+      "schema3ReportsChecked": 4,
+      "passed": 4
+    },
+    "additionalChecks": [
+      "Actual restore XML and one-shot event trace",
+      "Exact SQLite eleven-table and complete model/protection/reopen checks",
+      "Observed system permission kill and same-logical-run continuation on API33"
+    ],
+    "sdkUsed": false
+  }
+}

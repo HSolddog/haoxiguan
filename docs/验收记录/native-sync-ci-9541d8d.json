@@ -1,0 +1,139 @@
+{
+  "kind": "public_native_sync_acceptance_summary",
+  "fixtureStatement": "Synthetic acceptance data in an isolated GitHub Actions Linux CI run with disposable API 35 emulator clients and a loopback TLS relay.",
+  "source": {
+    "sha": "9541d8d22683f11e07e67fa62fd78a066eb4dfbe",
+    "githubUrl": "https://github.com/HSolddog/haoxiguan/commit/9541d8d22683f11e07e67fa62fd78a066eb4dfbe"
+  },
+  "merge": {
+    "sha": "07484c608768abd9c6988e3d007b0bdcdd8bd368",
+    "githubUrl": "https://github.com/HSolddog/haoxiguan/commit/07484c608768abd9c6988e3d007b0bdcdd8bd368"
+  },
+  "treeSha": "4a665205b4aedb753827acec910ef752d7e30436",
+  "workflowRun": {
+    "id": 37160895085,
+    "githubUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37160895085",
+    "conclusion": "failure",
+    "scope": "Independent native-sync job passed; overall workflow failed in other jobs."
+  },
+  "job": {
+    "id": 111315774270,
+    "githubUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37160895085/job/111315774270",
+    "conclusion": "success"
+  },
+  "sdkInt": 35,
+  "artifacts": [
+    {
+      "purpose": "nativeSyncEvidence",
+      "id": 11287288809,
+      "githubUrl": "https://api.github.com/repos/HSolddog/haoxiguan/actions/artifacts/11287288809/zip",
+      "sha256": "e28dd587cb6f01d411a9f1219b61810dda5ba221e388e1b7b88cae8694a9315a"
+    },
+    {
+      "purpose": "dualSyncFixtures",
+      "id": 11286799043,
+      "githubUrl": "https://api.github.com/repos/HSolddog/haoxiguan/actions/artifacts/11286799043/zip",
+      "sha256": "f134790e115ab026299ee03447f7d063e39da6fa08ddaf252fb6a1820c38b5f2"
+    }
+  ],
+  "nativePassed": true,
+  "clients": {
+    "A": {
+      "passed": true,
+      "passedFlagCount": 13,
+      "flags": {
+        "realSyncScreen": true,
+        "realTlsTransport": true,
+        "productionStorage": true,
+        "recoverySafVerified": true,
+        "initialPreviewCancelled": true,
+        "initialPreviewConfirmed": true,
+        "fullFactsTransferred": true,
+        "independentSameDayEntries": true,
+        "manualConflictMerged": true,
+        "protectionIntegrity": true,
+        "sqliteReopened": true,
+        "keystoreProcessReopened": true,
+        "disconnectedOfflineBackup": true
+      },
+      "counts": {
+        "habits": 3,
+        "plans": 6,
+        "entries": 10,
+        "notes": 4
+      },
+      "forceStopAndFreshLaunchVerified": true,
+      "oldProcessIdentityDisappearedWithHealthyFrameworkVerified": true
+    },
+    "B": {
+      "passed": true,
+      "passedFlagCount": 13,
+      "flags": {
+        "realSyncScreen": true,
+        "realTlsTransport": true,
+        "productionStorage": true,
+        "recoverySafVerified": true,
+        "initialPreviewCancelled": true,
+        "initialPreviewConfirmed": true,
+        "fullFactsTransferred": true,
+        "independentSameDayEntries": true,
+        "manualConflictMerged": true,
+        "protectionIntegrity": true,
+        "sqliteReopened": true,
+        "keystoreProcessReopened": true,
+        "disconnectedOfflineBackup": true
+      },
+      "counts": {
+        "habits": 3,
+        "plans": 6,
+        "entries": 10,
+        "notes": 4
+      },
+      "forceStopAndFreshLaunchVerified": true,
+      "oldProcessIdentityDisappearedWithHealthyFrameworkVerified": true
+    }
+  },
+  "validation": {
+    "passedGateCount": 73,
+    "strictProtocolValidated": true,
+    "newRunIdentityAndSequenceValidated": true,
+    "sourceAndCheckoutBound": true,
+    "completeFactsConverged": true,
+    "previewCancellationPreservedFactsAndProtection": true,
+    "reopenPreservedFactsRevisionsAndProtection": true,
+    "safActionCount": 7,
+    "manualConflictMerged": true,
+    "offlineBackupsReadBack": true
+  },
+  "factSummarySha256": {
+    "initial": "0f572e7553bfacbf6b6a446c047c5dd29918ffdf1012cfbf9a5a2b0f9f641985",
+    "converged": "afd19821a98579ffd4190d6d97383585d7f33748ba2ea09905731ebf7629218b"
+  },
+  "readOnlySnapshotRetry": {
+    "observed": true,
+    "events": [
+      {
+        "reason": "ui_snapshot_no_root",
+        "attempt": 1
+      },
+      {
+        "reason": "ui_snapshot_idle",
+        "attempt": 1
+      },
+      {
+        "reason": "ui_snapshot_idle",
+        "attempt": 2
+      }
+    ],
+    "recovered": true,
+    "recoverySelectionCount": 1,
+    "selectionReplayed": false
+  },
+  "relativeEvidenceSha256": {
+    "driver-events.jsonl": "87d36b3427c6bba31d69098bbaaef09aaa3b81a607857c02f354b20189540059",
+    "report-a.json": "d503e827aed621f6f3566428ec1e59ab29c203d31b79fe45091d4f83dd4a11cd",
+    "report-b.json": "02055d86ff1f1abe24e253d388f35ffa3a61f27f89e8f467a86980c73feefab1",
+    "results.json": "6193580698dc502aaa187a6e5e38e937c268e2154df84f386035ba904936f43f",
+    "audit-checks.log": "1d477ac8259acbfa3dad9749112a8d77ed8c7a4901559cc26fecaf6879e213f0"
+  }
+}

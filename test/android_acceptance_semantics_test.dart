@@ -290,6 +290,173 @@ void main() {
   );
 
   testWidgets(
+    'queued old notification waits for the strictly identified new host first frame',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        _OwnerState.creations = 0;
+        final key = GlobalKey<_OwnerState>();
+        await tester.pumpWidget(MaterialApp(home: _Owner(key: key)));
+        final state = key.currentState!;
+        final ids = _Receiver.nodes.keys.toSet();
+        final original = _hostIdentity();
+        final nextHost = {...original, 'hostId': 'e' * 32, 'attachCount': 2};
+        var reads = 0;
+        final errors = <Object>[];
+        final rebinder = AcceptanceSemanticsRebinder(
+          channel: const MethodChannel('acceptance-semantics-delayed-visible'),
+          decodeIdentity: (raw) =>
+              engineHostIdentity(raw, build: '10002', expectedPid: 313),
+          readIdentity: () async => {
+            ...nextHost,
+            'attached': ++reads > 1,
+            'uiDisplayed': reads > 2,
+          },
+          onFailure: errors.add,
+          timeout: const Duration(milliseconds: 20),
+          pollInterval: const Duration(milliseconds: 2),
+          clock: tester.binding.clock.now,
+        );
+        _Receiver.newBridge();
+        final observed = await _settleFuture(
+          tester,
+          rebinder.observeHost(original),
+        );
+        expectSync(reads, 3);
+        expectSync(observed['hostId'], nextHost['hostId']);
+        expectSync(observed['attachCount'], 2);
+        expectSync(observed['attached'], isTrue);
+        expectSync(observed['uiDisplayed'], isTrue);
+        expectSync(rebinder.observations.length, 1);
+        expectSync(_Receiver.nodes.keys.toSet(), ids);
+        expectSync(_Receiver.batches.length, 1);
+        expectSync(errors, isEmpty);
+        expectSync(identical(key.currentState, state), isTrue);
+        expectSync(_OwnerState.creations, 1);
+        expectSync(state.count, 0);
+        expectSync(await rebinder.close(), isNull);
+      } finally {
+        handle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'invisible observations advance the attachment floor and foreign samples fail immediately',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        final key = GlobalKey<_OwnerState>();
+        await tester.pumpWidget(MaterialApp(home: _Owner(key: key)));
+        final state = key.currentState!;
+        final original = _hostIdentity();
+        final invisible = {
+          ...original,
+          'hostId': 'e' * 32,
+          'attachCount': 2,
+          'uiDisplayed': false,
+        };
+        final invalidSamples = <Map<String, Object?>>[
+          original,
+          {...invisible, 'hostId': 'f' * 32, 'uiDisplayed': true},
+          {...invisible, 'engineId': 'f' * 32, 'uiDisplayed': true},
+          {...invisible, 'pid': 314, 'uiDisplayed': true},
+          {...invisible, 'build': '10001', 'uiDisplayed': true},
+        ];
+        for (final invalid in invalidSamples) {
+          var reads = 0;
+          final errors = <Object>[];
+          final rebinder = AcceptanceSemanticsRebinder(
+            channel: const MethodChannel('acceptance-semantics-invalid-floor'),
+            decodeIdentity: (raw) =>
+                engineHostIdentity(raw, build: '10002', expectedPid: 313),
+            readIdentity: () async => ++reads == 1 ? invisible : invalid,
+            onFailure: errors.add,
+            timeout: const Duration(milliseconds: 20),
+            pollInterval: const Duration(milliseconds: 1),
+            clock: tester.binding.clock.now,
+          );
+          _Receiver.newBridge();
+          await _settleFuture(
+            tester,
+            expectLater(
+              rebinder.observeHost(original),
+              throwsA(anyOf(isA<StateError>(), isA<FormatException>())),
+            ),
+          );
+          expectSync(reads, 2);
+          expectSync(errors.length, 1);
+          expectSync(errors.single, isNot(isA<TimeoutException>()));
+          expectSync(rebinder.observations, isEmpty);
+          expectSync(_Receiver.batches, isEmpty);
+          expectSync(_Receiver.nodes, isEmpty);
+          expectSync(identical(key.currentState, state), isTrue);
+          expectSync(state.count, 0);
+          expectSync(await rebinder.close(), same(errors.single));
+        }
+      } finally {
+        handle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'one deadline bounds visibility and identity reads and a late reply cannot publish a tree',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        final key = GlobalKey<_OwnerState>();
+        await tester.pumpWidget(MaterialApp(home: _Owner(key: key)));
+        final state = key.currentState!;
+        final original = _hostIdentity();
+        for (final stalledRead in [false, true]) {
+          final reply = Completer<Object?>();
+          var reads = 0;
+          final errors = <Object>[];
+          final rebinder = AcceptanceSemanticsRebinder(
+            channel: const MethodChannel(
+              'acceptance-semantics-visible-timeout',
+            ),
+            decodeIdentity: (raw) =>
+                engineHostIdentity(raw, build: '10002', expectedPid: 313),
+            readIdentity: () {
+              reads++;
+              return stalledRead
+                  ? reply.future
+                  : Future.value({...original, 'uiDisplayed': false});
+            },
+            onFailure: errors.add,
+            timeout: const Duration(milliseconds: 4),
+            pollInterval: const Duration(milliseconds: 1),
+            clock: tester.binding.clock.now,
+          );
+          _Receiver.newBridge();
+          await _settleFuture(
+            tester,
+            expectLater(
+              rebinder.observeHost(original),
+              throwsA(isA<TimeoutException>()),
+            ),
+          );
+          expectSync(reads, greaterThan(0));
+          expectSync(errors.length, 1);
+          expectSync(rebinder.observations, isEmpty);
+          if (stalledRead) reply.complete(original);
+          await tester.pump(const Duration(milliseconds: 1));
+          expectSync(_Receiver.batches, isEmpty);
+          expectSync(_Receiver.nodes, isEmpty);
+          expectSync(rebinder.observations, isEmpty);
+          expectSync(identical(key.currentState, state), isTrue);
+          expectSync(state.count, 0);
+          expectSync(await rebinder.close(), same(errors.single));
+        }
+      } finally {
+        handle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
     'foreign engine or in-frame refresh fails closed without replay or State mutation',
     (tester) async {
       final handle = tester.ensureSemantics();
@@ -463,3 +630,15 @@ void main() {
     );
   }
 }
+
+Map<String, Object?> _hostIdentity() => {
+  'package': 'com.haoxiguan.haoxiguan.acceptance',
+  'build': '10002',
+  'pid': 313,
+  'engineId': 'c' * 32,
+  'hostId': 'd' * 32,
+  'attachCount': 1,
+  'attached': true,
+  'uiDisplayed': true,
+  'executingDart': true,
+};
