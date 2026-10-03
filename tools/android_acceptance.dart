@@ -385,6 +385,69 @@ Future<void> expectReminderAccess(
   );
 }
 
+/// Synthetic CI evidence keeps the full stored representation and every table.
+/// Comparing these observations also detects same-content rewrites of revision,
+/// journal or protection rows. It never compares SQL storage with a model export.
+Future<Map<String, Object?>> nativeDatabaseEvidence(
+  SqliteHabitRepository repository,
+) => repository.database.transaction(() async {
+  final raw = await repository.load();
+  check(raw != null, 'native SQLite snapshot exists');
+  final names = await repository.database
+      .customSelect(
+        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+      )
+      .get();
+  final tables = <String, Object?>{};
+  for (final row in names) {
+    final name = row.read<String>('name');
+    check(
+      RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(name),
+      'known SQLite table identifier',
+    );
+    tables[name] =
+        (await repository.database
+                .customSelect('SELECT * FROM $name ORDER BY rowid')
+                .get())
+            .map((row) => row.data)
+            .toList();
+  }
+  return {'snapshotRaw': raw, 'tables': tables};
+});
+
+/// Report exact field paths without ignoring, deleting or normalizing values.
+List<String> nativeSnapshotDifferencePaths(
+  Object? before,
+  Object? after, [
+  String path = '',
+]) {
+  if (before is Map && after is Map) {
+    final keys = {
+      ...before.keys.cast<String>(),
+      ...after.keys.cast<String>(),
+    }.toList()..sort();
+    return [
+      for (final key in keys)
+        if (!before.containsKey(key) || !after.containsKey(key))
+          '$path/$key'
+        else
+          ...nativeSnapshotDifferencePaths(
+            before[key],
+            after[key],
+            '$path/$key',
+          ),
+    ];
+  }
+  if (before is List && after is List) {
+    return [
+      if (before.length != after.length) '$path/length',
+      for (var i = 0; i < before.length && i < after.length; i++)
+        ...nativeSnapshotDifferencePaths(before[i], after[i], '$path/$i'),
+    ];
+  }
+  return canonical(before) == canonical(after) ? [] : [path];
+}
+
 Future<void> verifyNativeReminderAccess(
   Directory directory,
   File report,
@@ -413,6 +476,17 @@ Future<void> verifyNativeReminderAccess(
   try {
     await controller.load();
     check(controller.loaded, 'notification fixture opens real SQLite');
+    check(
+      canonical(jsonDecode(controller.exportJson())) ==
+          canonical(originalDocument),
+      'notification fixture reads the complete original model snapshot',
+    );
+    final originalStored = await nativeDatabaseEvidence(repository);
+    final storageEvidence = <String, Object?>{
+      'originalControllerRaw': original,
+      'originalStored': originalStored,
+    };
+    result['nativeReminderStorageEvidence'] = storageEvidence;
     check(await controller.rebuildReminders(), 'initial notifications ready');
     final api = await settingsStage(
       directory,
@@ -441,6 +515,15 @@ Future<void> verifyNativeReminderAccess(
       (habit) => !originalIds.contains(habit.id),
     );
     final createdSnapshot = controller.exportJson();
+    final createdStored = await nativeDatabaseEvidence(repository);
+    storageEvidence.addAll({
+      'createdControllerRaw': createdSnapshot,
+      'createdStored': createdStored,
+      'representationDifferencePaths': nativeSnapshotDifferencePaths(
+        jsonDecode(createdStored['snapshotRaw']! as String),
+        jsonDecode(createdSnapshot),
+      ),
+    });
     check(
       !await controller.rebuildReminders(),
       'denied rebuild is unsuccessful',
@@ -455,9 +538,22 @@ Future<void> verifyNativeReminderAccess(
     );
     // Read with a fresh native SQLite executor, not the controller's cache.
     final reopened = await SqliteHabitRepository.open();
+    final reopenedController = HabitController(
+      reopened,
+      clock: () => date,
+      timezoneId: () => 'Asia/Shanghai',
+    );
     try {
-      final saved = jsonDecode((await reopened.load())!) as Map;
+      await reopenedController.load();
+      check(reopenedController.loaded, 'fresh SQLite controller opened');
+      final savedRaw = reopenedController.exportJson();
+      storageEvidence['freshControllerRaw'] = savedRaw;
+      final saved = jsonDecode(savedRaw) as Map;
       final savedHabits = saved['habits'] as List;
+      check(
+        canonical(saved) == canonical(jsonDecode(createdSnapshot)),
+        'fresh SQLite controller preserves the complete committed model snapshot',
+      );
       check(
         canonical(
               savedHabits.singleWhere((habit) => habit['id'] == added.id),
@@ -475,6 +571,7 @@ Future<void> verifyNativeReminderAccess(
         'denied creation preserves all prior habits, records and notes',
       );
     } finally {
+      reopenedController.dispose();
       await reopened.close();
     }
     result['nativeDeniedHabitSaved'] = true;
@@ -585,17 +682,36 @@ Future<void> verifyNativeReminderAccess(
       result['nativeChannelDiagnosis'] = 'notApplicable';
       result['nativeChannelRecovery'] = 'notApplicable';
     }
+    final afterSettings = await nativeDatabaseEvidence(repository);
+    storageEvidence.addAll({
+      'afterSettings': afterSettings,
+      'settingsSnapshotDifferencePaths': nativeSnapshotDifferencePaths(
+        jsonDecode(createdStored['snapshotRaw']! as String),
+        jsonDecode(afterSettings['snapshotRaw']! as String),
+      ),
+      'settingsTableDifferencePaths': nativeSnapshotDifferencePaths(
+        createdStored['tables'],
+        afterSettings['tables'],
+      ),
+    });
+    await report.writeAsString(jsonEncode(result), flush: true);
     check(
-      canonical(jsonDecode((await repository.load())!)) ==
-          canonical(jsonDecode(createdSnapshot)),
+      canonical(jsonDecode(afterSettings['snapshotRaw']! as String)) ==
+          canonical(jsonDecode(createdStored['snapshotRaw']! as String)),
       'all facts and metadata remain unchanged during settings repairs',
+    );
+    check(
+      canonical(afterSettings) == canonical(createdStored),
+      'settings repairs do not rewrite SQLite revision, journal or protection rows',
     );
     // This only removes the synthetic extra habit after every assertion passed.
     // The original baseline file is never rewritten or recomputed.
-    await repository.replace(original);
+    await repository.replace(originalStored['snapshotRaw']! as String);
+    final afterCleanup = await nativeDatabaseEvidence(repository);
+    storageEvidence['afterCleanup'] = afterCleanup;
     check(
-      canonical(jsonDecode((await repository.load())!)) ==
-          canonical(originalDocument),
+      canonical(jsonDecode(afterCleanup['snapshotRaw']! as String)) ==
+          canonical(jsonDecode(originalStored['snapshotRaw']! as String)),
       'permission fixture returns to the exact original snapshot',
     );
   } finally {
@@ -641,7 +757,18 @@ Future<void> verifyNativeRestore(
       ),
       'create protected note',
     );
-    final before = controller.exportJson();
+    final beforeController = controller.exportJson();
+    final beforeStored = await nativeDatabaseEvidence(repository);
+    final before = beforeStored['snapshotRaw']! as String;
+    final storageEvidence = <String, Object?>{
+      'controllerBeforeRaw': beforeController,
+      'before': beforeStored,
+      'representationDifferencePaths': nativeSnapshotDifferencePaths(
+        jsonDecode(before),
+        jsonDecode(beforeController),
+      ),
+    };
+    result['nativeRestoreStorageEvidence'] = storageEvidence;
     final preview = BackupPreview.fromSnapshot(
       document.snapshot,
       createdAtUtc: document.createdAtUtc,
@@ -674,10 +801,36 @@ Future<void> verifyNativeRestore(
       await showRestore('awaitingRestoreCancel') == false,
       'real preview was explicitly cancelled',
     );
+    final afterCancel = await nativeDatabaseEvidence(repository);
+    final afterCancelController = controller.exportJson();
+    storageEvidence.addAll({
+      'afterCancel': afterCancel,
+      'controllerAfterCancelRaw': afterCancelController,
+      'cancelSnapshotDifferencePaths': nativeSnapshotDifferencePaths(
+        jsonDecode(before),
+        jsonDecode(afterCancel['snapshotRaw']! as String),
+      ),
+      'cancelTableDifferencePaths': nativeSnapshotDifferencePaths(
+        beforeStored['tables'],
+        afterCancel['tables'],
+      ),
+    });
+    // Save observations before an assertion can fail; later success cannot
+    // replace this run's original before/after native database evidence.
+    await report.writeAsString(jsonEncode(result), flush: true);
     check(
-      canonical(jsonDecode((await repository.load())!)) ==
+      canonical(jsonDecode(afterCancel['snapshotRaw']! as String)) ==
           canonical(jsonDecode(before)),
       'cancel leaves real SQLite snapshot unchanged',
+    );
+    check(
+      canonical(afterCancel) == canonical(beforeStored),
+      'cancel does not rewrite SQLite revision, journal or protection rows',
+    );
+    check(
+      canonical(jsonDecode(afterCancelController)) ==
+          canonical(jsonDecode(beforeController)),
+      'cancel preserves the complete controller snapshot',
     );
     result['nativeRestorePreviewCancel'] = true;
     check(
@@ -685,6 +838,8 @@ Future<void> verifyNativeRestore(
       'real preview confirmed and controller import completed',
     );
     final importedRaw = controller.exportJson();
+    storageEvidence['importedControllerRaw'] = importedRaw;
+    storageEvidence['afterConfirm'] = await nativeDatabaseEvidence(repository);
     final imported = jsonDecode(importedRaw) as Map;
     final source = jsonDecode(document.snapshot) as Map;
     check(
@@ -701,9 +856,10 @@ Future<void> verifyNativeRestore(
       canonical(imported) == canonical(expected),
       'restore preserves every fact and setting except documented restored-space fields',
     );
+    final protectedRaw = (await repository.loadBackup())!;
+    storageEvidence['protectedSnapshotRaw'] = protectedRaw;
     check(
-      canonical(jsonDecode((await repository.loadBackup())!)) ==
-          canonical(jsonDecode(before)),
+      canonical(jsonDecode(protectedRaw)) == canonical(jsonDecode(before)),
       'native replacement protected the complete previous snapshot',
     );
     result['nativeRestoreProtection'] = true;
@@ -714,6 +870,8 @@ Future<void> verifyNativeRestore(
     repository = openRepository();
     controller = HabitController(repository, clock: () => date);
     await controller.load();
+    storageEvidence['reopenedControllerRaw'] = controller.exportJson();
+    storageEvidence['afterReopen'] = await nativeDatabaseEvidence(repository);
     check(
       controller.loaded &&
           canonical(jsonDecode(controller.exportJson())) == canonical(imported),

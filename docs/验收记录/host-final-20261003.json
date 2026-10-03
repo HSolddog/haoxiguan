@@ -146,6 +146,31 @@
       "file": "native-driver-final.log",
       "bytes": 6888,
       "sha256": "f3fc5982251aadab6ff9dedf6242d6bd90b9d817a7c01b4f172cdd411a8b40f7"
+    },
+    {
+      "file": "native-semantics-validation.log",
+      "bytes": 534,
+      "sha256": "0102db01982635dec17c3304a52c8ec3a9f33b66700b76220bdbdd232bd119f0"
+    },
+    {
+      "file": "native-semantics-format-first.log",
+      "bytes": 87,
+      "sha256": "f2fb3bc78ef8bc77e7a08efdc60c66f2c8e6d690d74e410c084289b83b37fdc8"
+    },
+    {
+      "file": "tools/android-acceptance-semantics-final.log",
+      "bytes": 2245,
+      "sha256": "b508d566d32e75cbb01593a259f4698630009ca6086f48c4e22274aebb173100"
+    },
+    {
+      "file": "tools/android-acceptance-semantics-path-failure.log",
+      "bytes": 545,
+      "sha256": "bcab1782f050de36897ee715e6d995a32b97ac156680a114283ad0ea64fa727c"
+    },
+    {
+      "file": "tools/android-acceptance-semantics-path-inheritance-failure.log",
+      "bytes": 546,
+      "sha256": "1359c7e1b8e1babeed27ad2e85f3e5ae4c0b6a0a4c28d323dc1354b5657ef36a"
     }
   ],
   "limitations": [
@@ -161,7 +186,7 @@
     "exitCode": 0,
     "testFile": "test/android_acceptance_protocol_test.dart",
     "log": "native-protocol-final.log",
-    "sourceScope": "Acceptance-only fixture and protocol changes added after ff8317b; production lib/android files restored unchanged. Native runtime validation is pending the next CI run.",
+    "sourceScope": "Acceptance-only fixture and protocol changes in 641f2366; production lib/android files restored unchanged. Native runtime validation follows in Android CI 37119579259.",
     "format": {
       "files": 90,
       "changed": 0,
@@ -204,6 +229,23 @@
       "durationSeconds": 0.276,
       "log": "native-driver-final.log",
       "independentReadReview": "UI scope and process-identity reviews found no remaining blocker; native execution still pending."
+    },
+    "sourceLocalCommit": "60209ab68de080404d7930a92f2ca3a036badf46",
+    "sourceRemoteCommit": "641f2366b4f32c2f6a2d9ffe3dbdcf8bba3facad",
+    "sourceTree": "2b2c1bf9bd9e31bddeebb3a5060428d7e55b1a63",
+    "semanticsFollowup": {
+      "formatChanged": 0,
+      "analyze": "No issues found",
+      "protocolTestsPassed": 3,
+      "buildExitCode": 0,
+      "buildSeconds": 231.9,
+      "signatureVerificationExitCodes": [
+        0,
+        0
+      ],
+      "productRestoredByteForByte": true,
+      "rawEvidence": "host-native-semantics-build-20261003.json",
+      "initialFailures": "Formatting check corrected; two pre-build PATH/Path inheritance failures left product files unchanged. Task-local child environment normalized; no global configuration changed."
     }
   }
 }

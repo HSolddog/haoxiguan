@@ -1,0 +1,345 @@
+{
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "641f2366b4f32c2f6a2d9ffe3dbdcf8bba3facad",
+  "pullRequestMergeCommit": "77caff11ea279e2ebee4b009c7f0ef16e189a3d0",
+  "workflowRunId": 37119579241,
+  "workflowRunUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37119579241",
+  "jobs": [
+    {
+      "name": "verify",
+      "jobId": 111192925716,
+      "conclusion": "success",
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37119579241/job/111192925716",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "conclusion": "success"
+        },
+        {
+          "name": "Format",
+          "conclusion": "success"
+        },
+        {
+          "name": "Vet and race tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Static Linux binaries",
+          "conclusion": "success"
+        },
+        {
+          "name": "Non-root container, durable restart and offline restore",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "arm64-smoke",
+      "jobId": 111193240339,
+      "conclusion": "success",
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37119579241/job/111193240339",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify native ARM64 and the same checked server artifact",
+          "conclusion": "success"
+        },
+        {
+          "name": "Native ARM64 non-root restart and offline restore",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "capacity",
+      "jobId": 111193240282,
+      "conclusion": "success",
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37119579241/job/111193240282",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build the same unprivileged server image",
+          "conclusion": "success"
+        },
+        {
+          "name": "C07 isolated HTTPS capacity and interrupted recovery",
+          "conclusion": "success"
+        },
+        {
+          "name": "Preserve capacity observations and verification evidence",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "sourceObjects": {
+    "headRootTree": "2b2c1bf9bd9e31bddeebb3a5060428d7e55b1a63",
+    "mergeRootTree": "2b2c1bf9bd9e31bddeebb3a5060428d7e55b1a63",
+    "localMatchingCommit": "60209ab68de080404d7930a92f2ca3a036badf46",
+    ".github/workflows/server.yml": {
+      "gitType": "blob",
+      "sha1": "7a36bc067e9c354751f6f950c9eeebb535f42a5c"
+    },
+    "server/": {
+      "gitType": "tree",
+      "sha1": "7dc1f34291c7b93cf157bffcf364207b8d3350d9"
+    },
+    "tools/container_smoke.py": {
+      "gitType": "blob",
+      "sha1": "866e4894a887f7148d83a7dad5af6469752f3fc7"
+    },
+    "tools/server_https_capacity.py": {
+      "gitType": "blob",
+      "sha1": "c373a7aba08009e28f555a0c67e38111318a5ec0"
+    },
+    "verification": "GitHub Git commit API reported identical head and pull-request merge root trees shown here. Local commit 60209ab68de080404d7930a92f2ca3a036badf46 has that identical root tree; path objects were read from that exact local commit. All three CI jobs checked out the pull-request merge commit named above, as recorded in their job logs."
+  },
+  "reports": {
+    "capacity": {
+      "path": "server-https-capacity-641f236.json",
+      "rawJsonSha256": "a950fc21f97bde2f43c7b76e183c10275d643f72f7180aa49a747abbcf70c74a",
+      "rawJsonBytes": 39953,
+      "artifactId": 11273057920,
+      "artifactName": "server-https-capacity-77caff11ea279e2ebee4b009c7f0ef16e189a3d0",
+      "artifactZipSha256": "4d4a39f5224541d9d6e654526cffa6eb2ca0a45fb52ad781fd3225ac14ed0490",
+      "artifactZipBytes": 4915,
+      "artifactExpiresAtUTC": "2026-10-17T11:43:06Z",
+      "preservation": "Exact downloaded report.json bytes, without metadata edits. ZIP SHA256 matched the GitHub artifact digest; source and saved report SHA256 matched."
+    },
+    "arm64": {
+      "path": "server-arm64-641f236.json",
+      "savedJsonSha256": "2016c757ac94a5436d1cfec511b42e03ac05bbadd9fc7f23ae29d370738b91e9",
+      "source": "ARM64_SMOKE_REPORT line in job 111193240339 logs; original fields and exact raw JSON are preserved with CI metadata.",
+      "rawLogJsonSha256": "ca9c44e607f7fa720612b51c8950cf07e92352b8e2f8d00e1cb4acf0ea3e8146"
+    },
+    "amd64Smoke": {
+      "source": "Exact container-smoke.json bytes inside the digest-verified sync-server artifact from verify job 111192925716.",
+      "rawJsonSha256": "fee2e2e3885374f4da3188bc1a746506720e93205d892b846d3d06ab730174b5",
+      "rawJsonBytes": 303,
+      "rawJson": "{\n  \"status\": \"passed\",\n  \"uid\": \"65532:65532\",\n  \"cpuLimit\": 1,\n  \"memoryLimitGiB\": 1,\n  \"readOnlyRoot\": true,\n  \"persistentRestart\": true,\n  \"consistentBackupRestore\": true,\n  \"restoredCredentialsRevoked\": true,\n  \"opaqueObjectPreserved\": true,\n  \"idleMemoryOnlyNotLoadBenchmark\": \"5.391MiB / 1GiB\"\n}\n",
+      "observations": {
+        "status": "passed",
+        "uid": "65532:65532",
+        "cpuLimit": 1,
+        "memoryLimitGiB": 1,
+        "readOnlyRoot": true,
+        "persistentRestart": true,
+        "consistentBackupRestore": true,
+        "restoredCredentialsRevoked": true,
+        "opaqueObjectPreserved": true,
+        "idleMemoryOnlyNotLoadBenchmark": "5.391MiB / 1GiB"
+      }
+    }
+  },
+  "binaryArtifact": {
+    "id": 11272811956,
+    "name": "sync-server-77caff11ea279e2ebee4b009c7f0ef16e189a3d0",
+    "zipSha256": "39046ad502ad7f6abf08b9eba131d009f66194ec67143f11e4374d1b29b01eb9",
+    "sizeBytes": 18457701,
+    "artifactExpiresAtUTC": "2026-10-17T11:27:02Z",
+    "validation": "Downloaded ZIP SHA256 matched the GitHub artifact digest. Both dependent jobs downloaded this same-merge dual-architecture artifact and verified its SHA256SUMS before building the owned container. Local byte-only verification independently matched the manifest entries; no binary was executed.",
+    "checksumManifest": {
+      "path": "SHA256SUMS",
+      "bytes": 295,
+      "sha256": "ce740a198eccde04db920e930a0d39ad6c851db912af1f3bca707c74e6aed478"
+    },
+    "verifiedManifestEntries": [
+      {
+        "path": "dist/THIRD_PARTY_NOTICES.txt",
+        "sha256": "a416c13a1bb1d669e9ebc00b781a374152403b106d80cac2645b9c7dfbad6c08"
+      },
+      {
+        "path": "dist/haoxiguan-server-linux-amd64",
+        "sha256": "7a984464223749e839990f5ce13d2c84981b2860f2278542406b26fcce308bce"
+      },
+      {
+        "path": "dist/haoxiguan-server-linux-arm64",
+        "sha256": "b410731397398833505ffb00a556001a7d05d646789a87fe83c17950c0ec5439"
+      }
+    ],
+    "elfMachineIds": {
+      "haoxiguan-server-linux-amd64": 62,
+      "haoxiguan-server-linux-arm64": 183
+    },
+    "manifestScope": "SHA256SUMS covers the two executables and THIRD_PARTY_NOTICES.txt. container-smoke.json was generated afterwards and is covered by the downloaded ZIP digest and its separate raw JSON hash."
+  },
+  "capacityObservations": {
+    "elapsedSeconds": 938.2,
+    "users": 20,
+    "devices": 60,
+    "initialObjects": 100000,
+    "ciphertextBytesPerObject": 1024,
+    "cpuLimit": 1,
+    "memoryLimitGiB": 1,
+    "architecture": "amd64",
+    "uid": "65532:65532",
+    "all60BootstrapHistoriesFullyVerified": true,
+    "recoveredHistoryFullyVerified": true,
+    "opIdReplayDidNotDuplicateChanges": true,
+    "restoredSnapshotHistoryFullyVerified": true,
+    "snapshotQuickCheck": "ok",
+    "objects": 100000,
+    "changes": 102200,
+    "operations": 102200,
+    "abruptRestartCount": 1,
+    "outstandingWorkersAtInterruption": 40,
+    "recoverySeconds": 0.269,
+    "consistentBackupSeconds": 2.004,
+    "resourceSampleCount": 193,
+    "maxSampledMemoryBytesIncludingPageCache": 504946688,
+    "idleMemoryBytesIncludingPageCache": 6336512,
+    "snapshotBytes": 457269248,
+    "initialDatabaseBytes": 451678208,
+    "initialWalBytes": 4577352,
+    "afterUpdateDatabaseBytes": 459243520,
+    "afterUpdateWalBytes": 4577352,
+    "http429Responses": 740,
+    "controlledFaultTransportErrors": 39,
+    "httpStatusCountsByBucket": {
+      "health": {
+        "200": 3
+      },
+      "enroll": {
+        "201": 60,
+        "429": 144
+      },
+      "push": {
+        "200": 1000,
+        "429": 52
+      },
+      "bootstrap": {
+        "200": 1600,
+        "429": 374,
+        "transport_error": 20
+      },
+      "refresh_before_fault": {
+        "200": 40,
+        "429": 76
+      },
+      "concurrent_update": {
+        "200": 200,
+        "transport_error": 19,
+        "429": 11
+      },
+      "lost_response_replay": {
+        "200": 1
+      },
+      "concurrent_delete": {
+        "200": 20,
+        "429": 3
+      },
+      "acknowledged_creation_replay": {
+        "200": 20
+      },
+      "recovered_bootstrap": {
+        "200": 1040,
+        "429": 80
+      }
+    },
+    "push100ObjectsSuccessfulAttemptP95Ms": 1477.009,
+    "push100ObjectsLogicalRequestIncludingRetriesP95Ms": 30035.943,
+    "bootstrapSuccessfulAttemptP95Ms": 572.279,
+    "bootstrapLogicalRequestIncludingRetriesP95Ms": 30395.236,
+    "bootstrapBucketScope": "1600 successful pages: initial 1500 plus 100 concurrent fault-phase pages; not an initial-only distribution."
+  },
+  "scope": [
+    "Capacity observations are from one synthetic amd64 CI run over an isolated internal Docker bridge, with real TLS certificate/hostname verification and unchanged service rate limits. No forwarded-IP spoofing or public port.",
+    "Latency values are observations; no new acceptance threshold or production performance promise is inferred. Logical latency includes bounded Retry-After waits.",
+    "Docker memory samples include page cache and are not exact peak RSS. Client work is outside the server CPU/memory cgroup.",
+    "Capacity restore is an isolated same-epoch consistent snapshot reopen, not production cross-machine RPO/RTO acceptance.",
+    "ARM64 job is a native aarch64 container lifecycle, persistence, credential revocation and consistent restore smoke test; it is not an ARM64 capacity benchmark.",
+    "Reports contain synthetic statistics and CI identifiers only. No real user data, tokens, credentials or private keys are included.",
+    "Verify and ARM64 idle-memory smoke observations are not load benchmarks. The capacity report retains all 429 responses, fault transport errors, attempt latencies and logical latencies including retries."
+  ],
+  "workflowConclusion": "success",
+  "workflowRunAttempt": 1,
+  "workflowStartedAtUTC": "2026-10-03T11:24:58Z",
+  "workflowCompletedAtUTC": "2026-10-03T11:43:09Z",
+  "verifyObservations": {
+    "gofmt": "passed",
+    "goVet": "passed",
+    "goRaceTests": "passed",
+    "testedPackages": [
+      "server/cmd/haoxiguan-server",
+      "server/internal/syncapi"
+    ],
+    "thirdPartyNoticesCheck": "passed",
+    "staticLinuxArchitectures": [
+      "amd64",
+      "arm64"
+    ],
+    "nonRootContainerDurableRestartAndOfflineRestore": "passed",
+    "savedDecodedJobLogSha256": "49ce34e70f01ade271ae26cc442d1e27f677f65fabd6c42088768a941bec225f",
+    "executionScope": "These commands ran on the isolated GitHub ubuntu-24.04 CI runner. This evidence collection performed file reads, hashes and JSON handling only; it did not execute Go, Flutter, Docker or any downloaded binary."
+  }
+}
