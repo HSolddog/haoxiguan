@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:uuid/uuid.dart';
+
 import '../data/snapshot_codec.dart';
 import '../models/habit.dart';
 
@@ -137,6 +139,8 @@ class SyncEntities {
     final local = encode(snapshot);
     final merged = <String, dynamic>{};
     final conflicts = <String>{};
+    final structural = <String>{};
+    final items = <SyncConflict>[];
     try {
       assemble(snapshot, remote);
     } on Object {
@@ -156,6 +160,7 @@ class SyncEntities {
         } on Object {
           if (base['h/$id'] == null && local['h/$id'] == null) rethrow;
           conflicts.add(id);
+          structural.add(id);
         }
       }
       if (conflicts.isEmpty) rethrow;
@@ -177,9 +182,44 @@ class SyncEntities {
             ? l
             : r;
       } else {
-        merged[key] = l;
         final id = habitId(key, l ?? r ?? b);
-        if (id != null) conflicts.add(id);
+        if (key.startsWith('h/') && b is Map && l is Map && r is Map) {
+          // Unrelated habit fields can coexist; only overlapping edits need a
+          // choice. Arrays remain atomic so plan/availability semantics survive.
+          final value = <String, dynamic>{};
+          for (final field in {
+            ...b.keys,
+            ...l.keys,
+            ...r.keys,
+          }.cast<String>()) {
+            if (same(l[field], b[field]) || same(l[field], r[field])) {
+              value[field] = r[field];
+            } else if (same(r[field], b[field])) {
+              value[field] = l[field];
+            } else {
+              value[field] = l[field];
+              items.add(
+                SyncConflict(key, id!, l[field], r[field], field: field),
+              );
+              conflicts.add(id);
+            }
+          }
+          merged[key] = value;
+        } else {
+          merged[key] = l;
+          if (id != null) {
+            conflicts.add(id);
+            items.add(
+              SyncConflict(
+                key,
+                id,
+                l,
+                r,
+                allowRecordBoth: canDuplicateRecord(key, l, r, local, remote),
+              ),
+            );
+          }
+        }
       }
     }
     try {
@@ -190,11 +230,29 @@ class SyncEntities {
       for (final key in {...base.keys, ...local.keys, ...remote.keys}) {
         if (!same(local[key], remote[key])) {
           final id = habitId(key, local[key] ?? remote[key] ?? base[key]);
-          if (id != null) conflicts.add(id);
+          if (id != null) {
+            conflicts.add(id);
+            structural.add(id);
+          }
         }
       }
     }
-    return MergeDecision(merged, conflicts, local, remote);
+    final decision = MergeDecision(
+      merged,
+      conflicts,
+      local,
+      remote,
+      base,
+      items,
+    );
+    // Invalid cross-entity combinations require selecting the involved items;
+    // validation after selection prevents orphaned records or overlapping plans.
+    for (final id in conflicts) {
+      if (structural.contains(id) || !items.any((item) => item.habitId == id)) {
+        decision.reviewHabit(id);
+      }
+    }
+    return decision;
   }
 
   static bool _sameBooleanCompletion(
@@ -218,6 +276,21 @@ class SyncEntities {
         a['date'] == b['date'] &&
         a['value'] == 1 &&
         b['value'] == 1;
+  }
+
+  static bool canDuplicateRecord(
+    String key,
+    dynamic l,
+    dynamic r,
+    EntityMap local,
+    EntityMap remote,
+  ) {
+    if (!key.startsWith('r/') || l is! Map || r is! Map) return false;
+    final h = local['h/${l['habitId']}'] ?? remote['h/${l['habitId']}'];
+    return h is Map &&
+        const {'count', 'duration'}.contains(h['recordType']) &&
+        l['data']['deleted'] == false &&
+        r['data']['deleted'] == false;
   }
 
   static void chooseHabit(
@@ -246,8 +319,176 @@ class SyncEntities {
   }
 }
 
+enum SyncChoice { local, remote, both, manual }
+
+class SyncSelection {
+  const SyncSelection(this.choice, {this.text});
+  final SyncChoice choice;
+  final String? text;
+}
+
+class SyncConflict {
+  const SyncConflict(
+    this.logicalId,
+    this.habitId,
+    this.local,
+    this.remote, {
+    this.field,
+    this.allowRecordBoth = false,
+  });
+  final String logicalId, habitId;
+  final String? field;
+  final bool allowRecordBoth;
+  final dynamic local, remote;
+  String get id => jsonEncode([logicalId, field]);
+  bool get isNote => logicalId.startsWith('n/') && field == null;
+  bool get canKeepBoth =>
+      field == null &&
+      local != null &&
+      remote != null &&
+      (isNote || allowRecordBoth);
+  String get label => field == null
+      ? logicalId.startsWith('n/')
+            ? '每日备注'
+            : logicalId.startsWith('r/')
+            ? '记录条目'
+            : logicalId.startsWith('p/')
+            ? '计划版本'
+            : '习惯状态'
+      : const {
+              'title': '名称',
+              'emoji': '图标',
+              'colorValue': '颜色',
+              'category': '分类',
+              'reminderTime': '提醒时间',
+              'exemptions': '休息日期',
+              'pausedAt': '暂停日期',
+              'archivedAt': '归档日期',
+              'deletedAt': '删除日期',
+              'unit': '单位',
+              'createdAt': '开始日期',
+            }[field] ??
+            field!;
+}
+
 class MergeDecision {
-  MergeDecision(this.entities, this.conflicts, this.local, this.remote);
-  final EntityMap entities, local, remote;
+  MergeDecision(
+    this.entities,
+    this.conflicts,
+    this.local,
+    this.remote,
+    this.base,
+    this.items,
+  );
+  final EntityMap entities, local, remote, base;
   final Set<String> conflicts;
+  final List<SyncConflict> items;
+  final _reviewedHabits = <String>{};
+  late final _itemLogicalIds = items.map((item) => item.logicalId).toSet();
+  late final _differentKeysByHabit = _groupDifferences();
+
+  Map<String, List<String>> _groupDifferences() {
+    final result = <String, List<String>>{};
+    for (final key in {...local.keys, ...remote.keys, ...base.keys}) {
+      if (SyncEntities.same(local[key], remote[key])) continue;
+      final id = SyncEntities.habitId(
+        key,
+        local[key] ?? remote[key] ?? base[key],
+      );
+      if (id != null) result.putIfAbsent(id, () => []).add(key);
+    }
+    return result;
+  }
+
+  /// Initial/recovery review includes one-sided absence: it is never silently
+  /// interpreted as permission to delete or resurrect a habit.
+  void reviewHabit(String habitId) {
+    conflicts.add(habitId);
+    if (!_reviewedHabits.add(habitId)) return;
+    for (final key in _differentKeysByHabit[habitId] ?? <String>[]) {
+      if (!_itemLogicalIds.add(key)) continue;
+      items.add(
+        SyncConflict(
+          key,
+          habitId,
+          local[key],
+          remote[key],
+          allowRecordBoth: SyncEntities.canDuplicateRecord(
+            key,
+            local[key],
+            remote[key],
+            local,
+            remote,
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Identity covers all candidates, including independently added records, so
+  /// a dialog cannot overwrite edits made after it was opened.
+  String get fingerprint => SyncEntities.canonical([local, remote, base]);
+
+  EntityMap select(Map<String, SyncSelection> selections) {
+    if (!SyncEntities.same(
+      selections.keys.toList()..sort(),
+      items.map((e) => e.id).toList()..sort(),
+    )) {
+      throw const FormatException('请逐项选择全部冲突内容');
+    }
+    final result = Map<String, dynamic>.from(
+      jsonDecode(jsonEncode(entities)) as Map,
+    );
+    for (final item in items) {
+      final selection = selections[item.id]!;
+      dynamic value;
+      switch (selection.choice) {
+        case SyncChoice.local:
+          value = item.local;
+        case SyncChoice.remote:
+          value = item.remote;
+        case SyncChoice.both:
+          if (!item.canKeepBoth) throw const FormatException('此项不能同时保留两个值');
+          value = item.local;
+          if (item.isNote) {
+            value = {
+              ...item.local as Map,
+              'text': '${item.local['text']}\n\n${item.remote['text']}',
+            };
+          } else {
+            final duplicate = Map<String, dynamic>.from(item.remote as Map);
+            final data = Map<String, dynamic>.from(duplicate['data'] as Map);
+            final id = const Uuid().v4();
+            data['id'] = id;
+            data['revision'] = 1;
+            duplicate['data'] = data;
+            result['r/$id'] = duplicate;
+          }
+        case SyncChoice.manual:
+          if (!item.isNote ||
+              selection.text == null ||
+              selection.text!.trim().isEmpty) {
+            throw const FormatException('请输入合并后的备注');
+          }
+          value = {
+            ...(item.local ?? item.remote) as Map,
+            'text': selection.text,
+          };
+      }
+      if (item.isNote &&
+          (selection.choice == SyncChoice.both ||
+              selection.choice == SyncChoice.manual) &&
+          (value['text'] as String).length > 2000) {
+        throw const FormatException('合并后的备注超过 2000 字，请选择手工合并并缩短；两份原文仍保留');
+      }
+      if (item.field != null) {
+        (result[item.logicalId] as Map)[item.field] = value;
+      } else if (value == null) {
+        result.remove(item.logicalId);
+      } else {
+        result[item.logicalId] = value;
+      }
+    }
+    return result;
+  }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/sqlite_habit_repository.dart';
+import '../models/record_entry.dart';
 import '../services/backup_files.dart';
 import '../services/backup_settings.dart';
 import '../services/device_task_lock.dart';
@@ -13,6 +14,7 @@ import '../services/sync_engine.dart';
 import '../services/sync_entities.dart';
 import '../services/sync_recovery.dart';
 import '../state/habit_controller.dart';
+import 'unsaved_changes_guard.dart';
 
 class SyncScreen extends StatefulWidget {
   const SyncScreen({super.key, required this.controller});
@@ -203,13 +205,27 @@ class _SyncScreenState extends State<SyncScreen> {
       throw const FormatException('请先保存加密恢复文件，避免换机后无法解密');
     }
     try {
-      final result = await _withEngine(
+      var result = await _withEngine(
         (engine) => engine.run(
           onProgress: (count) {
             if (mounted) setState(() => _message = '已确认上传 $count 个变更，正在继续核对…');
           },
         ),
       );
+      if (result.preview != null) {
+        if (!mounted) return;
+        final preview = result.preview!;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (_) => InitialSyncPreviewDialog(preview: preview),
+        );
+        if (confirmed != true) {
+          _message = '已取消首次同步。本机与远端内容均未改变；下次同步将重新预览。';
+          return;
+        }
+        await _withEngine((engine) => engine.confirmInitialSync(preview));
+        result = await _withEngine((engine) => engine.run());
+      }
       _message = result.conflicts.isNotEmpty
           ? '${result.conflicts.length} 个习惯需要处理冲突，本机内容尚未被替换。'
           : result.complete
@@ -227,116 +243,16 @@ class _SyncScreenState extends State<SyncScreen> {
       _message = '当前没有需要处理的冲突。';
       return;
     }
-    final choices = <String, bool>{};
-    final allowed = <String, bool>{};
-    for (final id in decision.conflicts) {
-      final candidate = Map<String, dynamic>.from(decision.local);
-      SyncEntities.chooseHabit(candidate, decision.remote, id, [
-        decision.local,
-        decision.remote,
-      ]);
-      try {
-        SyncEntities.assemble(widget.controller.exportJson(), candidate);
-        allowed[id] = true;
-      } on Object {
-        allowed[id] = false;
-      }
-    }
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('选择每个习惯保留的版本'),
-          content: SizedBox(
-            width: 500,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '独立新增记录已自动合并；这里包含相互冲突的修改。选择以整个习惯为单位，本机原数据和远端候选都会先保留副本。',
-                  ),
-                  for (final id in decision.conflicts)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _title(id, decision.local, decision.remote),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text('本机：${_summary(id, decision.local)}'),
-                          Text('远端：${_summary(id, decision.remote)}'),
-                          if (allowed[id] == false)
-                            const Text('远端结构尚不完整，可保留本机版本，或取消并等待其他设备完成同步。'),
-                          DropdownButtonFormField<bool>(
-                            initialValue: choices[id],
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: '请选择保留的版本',
-                            ),
-                            items: [
-                              const DropdownMenuItem(
-                                value: false,
-                                child: Text('保留本机整个习惯'),
-                              ),
-                              DropdownMenuItem(
-                                value: true,
-                                enabled: allowed[id]!,
-                                child: const Text('采用远端整个习惯'),
-                              ),
-                            ],
-                            onChanged: (v) =>
-                                setDialogState(() => choices[id] = v!),
-                          ),
-                          TextButton(
-                            onPressed: () => showDialog<void>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('冲突内容详情'),
-                                content: SingleChildScrollView(
-                                  child: SelectableText(
-                                    const JsonEncoder.withIndent('  ').convert({
-                                      '本机': _subset(id, decision.local),
-                                      '远端': _subset(id, decision.remote),
-                                    }),
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('关闭'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            child: const Text('查看完整候选内容'),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('稍后处理'),
-            ),
-            FilledButton(
-              onPressed: choices.length == decision.conflicts.length
-                  ? () => Navigator.pop(context, true)
-                  : null,
-              child: const Text('保护副本并应用选择'),
-            ),
-          ],
-        ),
+      barrierDismissible: false,
+      builder: (_) => SyncConflictDialog(
+        decision: decision,
+        onApply: (choices) =>
+            _withEngine((engine) => engine.resolveItems(decision, choices)),
       ),
     );
     if (confirmed != true) return;
-    await _withEngine((engine) => engine.resolve(choices));
     await _readStatus();
     _message = '选择已保存，原内容已保护。请再次同步以提交选择并检查其他设备的新变更。';
   });
@@ -542,27 +458,6 @@ class _SyncScreenState extends State<SyncScreen> {
     _message = '已断开。本机继续独立保存记录。';
   });
 
-  static String _title(String id, EntityMap local, EntityMap remote) =>
-      (local['h/$id'] as Map?)?['title'] as String? ??
-      (remote['h/$id'] as Map?)?['title'] as String? ??
-      '已删除的习惯';
-  static EntityMap _subset(String id, EntityMap map) => {
-    for (final e in map.entries)
-      if (SyncEntities.habitId(e.key, e.value) == id) e.key: e.value,
-  };
-  static String _summary(String id, EntityMap map) {
-    final h = map['h/$id'];
-    final records = _subset(
-      id,
-      map,
-    ).entries.where((e) => e.key.startsWith('r/') && e.value != null).length;
-    final notes = _subset(id, map).entries
-        .where((e) => e.key.startsWith('n/') && e.value != null)
-        .map((e) => (e.value as Map)['text'])
-        .join('；');
-    return '${h == null ? '习惯已删除' : h['title']}，$records 条事实${notes.isEmpty ? '' : '；备注：$notes'}';
-  }
-
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_busy,
@@ -689,6 +584,263 @@ class _SyncScreenState extends State<SyncScreen> {
           ],
         ],
       ),
+    ),
+  );
+}
+
+String _syncHabitTitle(String id, EntityMap local, EntityMap remote) =>
+    (local['h/$id'] as Map?)?['title'] as String? ??
+    (remote['h/$id'] as Map?)?['title'] as String? ??
+    '已删除的习惯';
+
+String _syncSummary(EntityMap entities) {
+  int count(String prefix) => entities.entries
+      .where((e) => e.key.startsWith(prefix) && e.value != null)
+      .length;
+  final dates = <String>{};
+  for (final entry in entities.entries) {
+    if (entry.value == null) continue;
+    if (entry.key.startsWith('r/')) {
+      dates.add(entry.value['data']['date'] as String);
+    }
+    if (entry.key.startsWith('n/')) dates.add(entry.value['date'] as String);
+  }
+  final sorted = dates.toList()..sort();
+  return '${count('h/')} 个习惯 · ${count('p/')} 个计划 · ${count('r/')} 条记录 · ${count('n/')} 条备注\n'
+      '${sorted.isEmpty ? '暂无记录日期' : '记录日期：${sorted.first} 至 ${sorted.last}'}';
+}
+
+class InitialSyncPreviewDialog extends StatelessWidget {
+  const InitialSyncPreviewDialog({super.key, required this.preview});
+  final InitialSyncPreview preview;
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('首次同步预览'),
+    content: SizedBox(
+      width: 520,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('本机\n${_syncSummary(preview.local)}'),
+            const SizedBox(height: 16),
+            Text('远端\n${_syncSummary(preview.remote)}'),
+            const SizedBox(height: 16),
+            const Text(
+              '确认后才开始合并与上传。空的一端不会覆盖另一端；独立新增记录按原 ID 保留，冲突需要逐项选择。取消会保留两端现状。',
+            ),
+            if (preview.conflicts.isNotEmpty)
+              Text('${preview.conflicts.length} 个习惯需要进一步核对差异。'),
+            for (final id
+                in {...preview.local.keys, ...preview.remote.keys}
+                    .where((key) => key.startsWith('h/'))
+                    .map((key) => key.substring(2)))
+              ExpansionTile(
+                title: Text(_syncHabitTitle(id, preview.local, preview.remote)),
+                subtitle: Text(
+                  preview.local['h/$id'] == null
+                      ? '仅远端存在'
+                      : preview.remote['h/$id'] == null
+                      ? '仅本机存在'
+                      : '两端均有内容',
+                ),
+                children: [
+                  SelectableText(
+                    const JsonEncoder.withIndent('  ').convert({
+                      for (final side in {
+                        '本机': preview.local,
+                        '远端': preview.remote,
+                      }.entries)
+                        side.key: {
+                          for (final e in side.value.entries)
+                            if (SyncEntities.habitId(e.key, e.value) == id)
+                              e.key: e.value,
+                        },
+                    }),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('取消'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, true),
+        child: const Text('确认并继续同步'),
+      ),
+    ],
+  );
+}
+
+class SyncConflictDialog extends StatefulWidget {
+  const SyncConflictDialog({
+    super.key,
+    required this.decision,
+    required this.onApply,
+  });
+  final MergeDecision decision;
+  final Future<void> Function(Map<String, SyncSelection>) onApply;
+  @override
+  State<SyncConflictDialog> createState() => _SyncConflictDialogState();
+}
+
+class _SyncConflictDialogState extends State<SyncConflictDialog> {
+  final _guard = GlobalKey<UnsavedChangesGuardState>();
+  final _choices = <String, SyncChoice>{};
+  final _texts = <String, String>{};
+  bool _saving = false;
+  String? _error;
+  String _value(SyncConflict item, dynamic value) {
+    if (value == null) return '此项不存在 / 已删除';
+    if (item.isNote) return '${value['date']}：${value['text']}';
+    if (item.logicalId.startsWith('r/')) {
+      final data = value['data'] as Map;
+      final habit =
+          widget.decision.local['h/${item.habitId}'] ??
+          widget.decision.remote['h/${item.habitId}'] ??
+          widget.decision.base['h/${item.habitId}'];
+      final amount = data['value'] as int;
+      final label = habit == null
+          ? '原始数值 $amount（单位未知）'
+          : habit['recordType'] == 'duration'
+          ? '$amount 秒'
+          : '${formatFixed(amount, scale: habit['scale'] as int)} ${habit['unit']}';
+      return '${data['date']} · $label · ${data['deleted'] == true ? '已撤销' : '有效'}\n录入：${data['recordedAtUtc'] ?? '历史时间未知'}';
+    }
+    return value is String
+        ? value
+        : const JsonEncoder.withIndent('  ').convert(value);
+  }
+
+  Future<void> _apply() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.onApply({
+        for (final item in widget.decision.items)
+          item.id: SyncSelection(_choices[item.id]!, text: _texts[item.id]),
+      });
+      if (mounted) Navigator.pop(context, true);
+    } on FormatException catch (e) {
+      if (mounted) setState(() => _error = '${e.message}。选择与输入仍保留，请调整后重试。');
+    } on Object {
+      if (mounted) setState(() => _error = '合并尚未保存，原内容与输入仍保留，请重试。');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+    key: _guard,
+    dirty: _choices.isNotEmpty || _texts.isNotEmpty,
+    isDirty: () => _choices.isNotEmpty || _texts.isNotEmpty,
+    saving: _saving,
+    isSaving: () => _saving,
+    child: AlertDialog(
+      title: const Text('逐项合并同步差异'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '双方独立新增记录会保留。只处理下面列出的冲突；应用前会保存本机原数据与远端候选副本。计划和删除状态需保持一致，不能留下无所属习惯的记录。',
+              ),
+              const Text('远端版本未标注来源设备；“远端”表示此空间已同步的内容。'),
+              for (final item in widget.decision.items)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_syncHabitTitle(item.habitId, widget.decision.local, widget.decision.remote)} · ${item.label}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SelectableText('本机：${_value(item, item.local)}'),
+                      SelectableText('远端：${_value(item, item.remote)}'),
+                      DropdownButtonFormField<SyncChoice>(
+                        key: ValueKey(item.id),
+                        initialValue: _choices[item.id],
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: '选择此项的合并方式',
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: SyncChoice.local,
+                            child: Text('保留本机此项'),
+                          ),
+                          const DropdownMenuItem(
+                            value: SyncChoice.remote,
+                            child: Text('采用远端此项'),
+                          ),
+                          if (item.canKeepBoth)
+                            const DropdownMenuItem(
+                              value: SyncChoice.both,
+                              child: Text('两者都保留'),
+                            ),
+                          if (item.isNote)
+                            const DropdownMenuItem(
+                              value: SyncChoice.manual,
+                              child: Text('手工合并备注'),
+                            ),
+                        ],
+                        onChanged: _saving
+                            ? null
+                            : (choice) =>
+                                  setState(() => _choices[item.id] = choice!),
+                      ),
+                      if (item.canKeepBoth && item.logicalId.startsWith('r/'))
+                        const Text(
+                          '两者都保留会给远端候选分配新记录 ID，两个有效数值都会计入当天总量；若是同一次行为，请只选一项。',
+                        ),
+                      if (_choices[item.id] == SyncChoice.manual)
+                        TextFormField(
+                          key: ValueKey('manual-${item.id}'),
+                          initialValue: _texts[item.id],
+                          minLines: 2,
+                          maxLines: 6,
+                          enabled: !_saving,
+                          decoration: const InputDecoration(
+                            labelText: '合并后的备注',
+                          ),
+                          onChanged: (text) => _texts[item.id] = text,
+                        ),
+                    ],
+                  ),
+                ),
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              if (_saving) const LinearProgressIndicator(),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => _guard.currentState?.leave(),
+          child: const Text('稍后处理'),
+        ),
+        FilledButton(
+          onPressed: _saving || _choices.length != widget.decision.items.length
+              ? null
+              : _apply,
+          child: const Text('保护副本并应用合并'),
+        ),
+      ],
     ),
   );
 }

@@ -5,6 +5,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:haoxiguan/data/sqlite_habit_repository.dart';
 import 'package:haoxiguan/services/sync_client.dart';
+import 'package:haoxiguan/services/backup_codec.dart';
+import 'package:haoxiguan/services/sync_recovery.dart';
 import 'package:haoxiguan/services/sync_crypto.dart';
 import 'package:haoxiguan/services/sync_engine.dart';
 import 'package:haoxiguan/services/sync_entities.dart';
@@ -42,7 +44,7 @@ class Device {
           'accessExpiresAt': 9999999999,
           'deviceId': 'd' * 32,
           'vaultId': keys.vault,
-          'epoch': TestSyncRelay.epoch,
+          'epoch': relay.epochId,
         },
       );
     }
@@ -69,7 +71,11 @@ class Device {
   }
 
   Future<SyncOutcome> sync() async {
-    final result = await engine.run();
+    var result = await engine.run();
+    if (result.preview != null) {
+      await engine.confirmInitialSync(result.preview!);
+      result = await engine.run();
+    }
     await controller.load();
     return result;
   }
@@ -145,6 +151,14 @@ void main() {
       final pending =
           (await a.repository.readSyncFrame()).state!['pending'] as List;
       expect(pending, isNotEmpty);
+      expect(
+        (await a.repository.readSyncFrame()).state!['lastFailureCode'],
+        'unavailable',
+      );
+      expect(
+        (await a.repository.readSyncFrame()).state!['lastFailureAt'],
+        isA<String>(),
+      );
       final acceptedBefore = relay.changes.length;
       await a.close();
       await a.open();
@@ -154,6 +168,10 @@ void main() {
       expect(relay.changes.length, acceptedBefore + 1);
       expect(b.controller.habitById(id)!.entries.length, 2);
       expect((await a.repository.readSyncFrame()).state!['pending'], isEmpty);
+      expect(
+        (await a.repository.readSyncFrame()).state!['lastFailureCode'],
+        isNull,
+      );
     },
   );
 
@@ -262,8 +280,8 @@ void main() {
       final archives = await b.repository.database
           .customSelect('SELECT payload FROM sync_protections')
           .get();
-      expect(archives.length, 1);
-      expect(archives.single.read<String>('payload'), contains('h/$id'));
+      expect(archives, isNotEmpty);
+      expect(archives.last.read<String>('payload'), contains('h/$id'));
     },
   );
 
@@ -331,6 +349,9 @@ void main() {
         b.repository,
         SyncSession(settings, SyncSettingsStore(MemorySecrets()), relay),
       );
+      final preview = (await engine.run()).preview!;
+      expect(relay.changes.length, before);
+      await engine.confirmInitialSync(preview);
       expect((await engine.run()).conflicts, [id]);
       expect(relay.changes.length, before);
       expect(b.controller.habitById(id), isNotNull);
@@ -395,6 +416,391 @@ void main() {
         (await b.repository.readSyncFrame()).state!['rotationPrepared'],
         isNull,
       );
+    },
+  );
+
+  test(
+    'first sync previews both empty sides and cancellation survives reopen',
+    () async {
+      final first = await a.engine.run();
+      expect(first.preview, isNotNull);
+      expect(first.complete, false);
+      expect(relay.changes, isEmpty);
+      await a.close();
+      await a.open();
+      final repeated = await a.engine.run();
+      expect(repeated.preview, isNotNull);
+      expect(
+        (await a.repository.readSyncFrame()).state!['previewRequired'],
+        true,
+      );
+      await a.engine.confirmInitialSync(repeated.preview!);
+      expect((await a.engine.run()).complete, true);
+    },
+  );
+
+  test(
+    'nonempty local and empty remote wait for explicit confirmation',
+    () async {
+      final id = await a.add();
+      final before = a.controller.exportJson();
+      final preview = (await a.engine.run()).preview!;
+      expect(preview.local['h/$id'], isNotNull);
+      expect(preview.remote, isEmpty);
+      expect(relay.changes, isEmpty);
+      expect(a.controller.exportJson(), before);
+      await a.engine.confirmInitialSync(preview);
+      expect((await a.sync()).complete, true);
+      expect(relay.changes, isNotEmpty);
+    },
+  );
+
+  test(
+    'empty local previews remote, and remote change invalidates confirmation',
+    () async {
+      final id = await a.add();
+      await a.sync();
+      final preview = (await b.engine.run()).preview!;
+      expect(preview.local, isEmpty);
+      expect(preview.remote['h/$id'], isNotNull);
+      await b.controller.load();
+      expect(b.controller.habits, isEmpty);
+      await a.controller.setNote(id, today, '预览后新备注');
+      await a.sync();
+      await expectLater(
+        b.engine.confirmInitialSync(preview),
+        throwsFormatException,
+      );
+      expect(
+        (await b.repository.readSyncFrame()).state!['previewRequired'],
+        true,
+      );
+      expect(b.controller.habits, isEmpty);
+      final updated = (await b.engine.run()).preview!;
+      await b.engine.confirmInitialSync(updated);
+      await b.sync();
+      expect(b.controller.habitById(id)!.notes.values, ['预览后新备注']);
+    },
+  );
+
+  test('local change invalidates initial preview without uploading', () async {
+    final id = await a.add();
+    final preview = (await a.engine.run()).preview!;
+    await a.controller.addValue(id, today, 10);
+    await expectLater(
+      a.engine.confirmInitialSync(preview),
+      throwsFormatException,
+    );
+    expect(relay.changes, isEmpty);
+    expect(a.controller.habitById(id)!.entries.single.value, 10);
+  });
+
+  test(
+    'note keep-both preserves both independent entry IDs and converges',
+    () async {
+      final id = await a.add();
+      await a.sync();
+      await b.sync();
+      await a.controller.addValue(id, today, 10);
+      await b.controller.addValue(id, today, 20);
+      final entryIds = {
+        a.controller.habitById(id)!.entries.single.id,
+        b.controller.habitById(id)!.entries.single.id,
+      };
+      await a.controller.setNote(id, today, '远端备注');
+      await b.controller.setNote(id, today, '本机备注');
+      await a.sync();
+      expect((await b.sync()).conflicts, [id]);
+      final decision = await b.engine.conflicts();
+      expect(decision.items.single.isNote, true);
+      await b.engine.resolveItems(decision, {
+        decision.items.single.id: const SyncSelection(SyncChoice.both),
+      });
+      await b.controller.load();
+      expect(
+        b.controller.habitById(id)!.entries.map((e) => e.id).toSet(),
+        entryIds,
+      );
+      expect(b.controller.habitById(id)!.notes.values.single, '本机备注\n\n远端备注');
+      await b.sync();
+      await a.sync();
+      expect(
+        SyncEntities.encode(a.controller.exportJson()),
+        SyncEntities.encode(b.controller.exportJson()),
+      );
+      final protections = await b.repository.database
+          .customSelect('SELECT payload FROM sync_protections')
+          .get();
+      expect(protections.last.read<String>('payload'), contains('远端备注'));
+    },
+  );
+
+  test(
+    'manual note merge retries failed persistence and rejects stale candidates',
+    () async {
+      final id = await a.add();
+      await a.sync();
+      await b.sync();
+      await a.controller.setNote(id, today, '甲');
+      await b.controller.setNote(id, today, '乙');
+      await a.sync();
+      await b.sync();
+      final decision = await b.engine.conflicts();
+      final choices = {
+        decision.items.single.id: const SyncSelection(
+          SyncChoice.manual,
+          text: '共同编辑的备注',
+        ),
+      };
+      b.repository.database.beforeSyncCommit = () async =>
+          throw const FileSystemException('disk full');
+      await expectLater(
+        b.engine.resolveItems(decision, choices),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(b.controller.habitById(id)!.notes.values.single, '乙');
+      b.repository.database.beforeSyncCommit = null;
+      await b.engine.resolveItems(decision, choices);
+      await b.controller.load();
+      expect(b.controller.habitById(id)!.notes.values.single, '共同编辑的备注');
+      await expectLater(
+        b.engine.resolveItems(decision, choices),
+        throwsFormatException,
+      );
+    },
+  );
+
+  test('field-level choice preserves independent habit fields', () async {
+    final id = await a.add();
+    await a.sync();
+    await b.sync();
+    Future<void> update(
+      Device device,
+      String title,
+      String category,
+      int color,
+    ) async {
+      final h = device.controller.habitById(id)!;
+      expect(
+        await device.controller.updateHabit(
+          habitId: id,
+          title: title,
+          emoji: h.emoji,
+          colorValue: color,
+          weekdays: h.weekdays,
+          category: category,
+        ),
+        true,
+      );
+    }
+
+    await update(a, '远端名称', '远端分类', 0xff223344);
+    await update(b, '本机名称', '未分类', 0xff556677);
+    await a.sync();
+    expect((await b.sync()).conflicts, [id]);
+    final decision = await b.engine.conflicts();
+    expect(decision.items.map((e) => e.field), ['title']);
+    await b.engine.resolveItems(decision, {
+      decision.items.single.id: const SyncSelection(SyncChoice.local),
+    });
+    await b.controller.load();
+    final habit = b.controller.habitById(id)!;
+    expect(habit.title, '本机名称');
+    expect(habit.category, '远端分类');
+    expect(habit.colorValue, 0xff556677);
+  });
+
+  test(
+    'conflicting numeric record versions keep original ID and explicit duplicate',
+    () async {
+      final id = await a.add();
+      await a.controller.addValue(id, today, 10);
+      await a.sync();
+      await b.sync();
+      final entryId = a.controller.habitById(id)!.entries.single.id;
+      Future<void> correct(Device device, int value) async {
+        final snapshot =
+            jsonDecode(device.controller.exportJson()) as Map<String, dynamic>;
+        final record =
+            ((snapshot['habits'] as List).single['entries'] as List).single
+                as Map;
+        record['value'] = value;
+        record['revision'] = (record['revision'] as int) + 1;
+        await device.repository.save(jsonEncode(snapshot));
+        await device.controller.load();
+      }
+
+      await correct(a, 20);
+      await correct(b, 30);
+      await a.sync();
+      await b.sync();
+      final decision = await b.engine.conflicts();
+      expect(decision.items.single.canKeepBoth, true);
+      await b.engine.resolveItems(decision, {
+        decision.items.single.id: const SyncSelection(SyncChoice.both),
+      });
+      await b.controller.load();
+      final entries = b.controller.habitById(id)!.entries;
+      expect(entries.length, 2);
+      expect(entries.map((e) => e.id), contains(entryId));
+      expect(entries.map((e) => e.id).toSet().length, 2);
+      expect(entries.map((e) => e.value).toSet(), {20, 30});
+      await b.sync();
+      await a.sync();
+      expect(a.controller.habitById(id)!.valueOn(today), 50);
+    },
+  );
+
+  test(
+    'export restore new-service pairing preserves full facts and leaves old service unchanged',
+    () async {
+      final id = await a.add();
+      await a.controller.addValue(id, today, 15);
+      await a.controller.setNote(id, today, '迁出备注');
+      await a.sync();
+      await b.sync();
+      await a.controller.addValue(
+        id,
+        today,
+        25,
+      ); // Includes the unsent local intention.
+      final before = a.controller.exportJson();
+      final originalObjects = jsonEncode(relay.objects);
+      final backup = await BackupCodec.encrypt(
+        before,
+        'synthetic migration backup password',
+      );
+      final restored = await BackupCodec.decrypt(
+        backup,
+        'synthetic migration backup password',
+      );
+      expect(SyncEntities.encode(restored), SyncEntities.encode(before));
+      final nextRelay = TestSyncRelay(vaultId: 'n' * 32, epochId: 'f' * 32);
+      final nextKeys = await SyncKeyring.create(nextRelay.vaultId);
+      final c = Device(
+        await Directory('${root.path}/migrated').create(),
+        nextKeys,
+        nextRelay,
+      );
+      SyncKeyring? peerKeys;
+      Device? peer;
+      await c.open(first: true);
+      try {
+        expect(await c.controller.importJson(restored), true);
+        final restoredVault =
+            jsonDecode(c.controller.exportJson())['vaultId'] as String;
+        expect(restoredVault, isNot(a.settings.localVault));
+        c.settings = SyncSettings(
+          id: const Uuid().v4(),
+          endpoint: 'https://second.example.test',
+          localVault: restoredVault,
+          keys: nextKeys,
+          tokens: {...c.settings.tokens, 'vaultId': nextKeys.vault},
+          recoveryExported: true,
+        );
+        c.engine = SyncEngine(
+          c.repository,
+          SyncSession(
+            c.settings,
+            SyncSettingsStore(MemorySecrets()),
+            nextRelay,
+          ),
+        );
+        final preview = (await c.engine.run()).preview!;
+        expect(preview.remote, isEmpty);
+        expect(nextRelay.changes, isEmpty);
+        await c.engine.confirmInitialSync(preview);
+        expect((await c.sync()).complete, true);
+        final recovery = await SyncRecoveryCodec.encrypt(
+          nextKeys,
+          'synthetic new pairing password',
+        );
+        peerKeys = await SyncRecoveryCodec.decrypt(
+          recovery,
+          'synthetic new pairing password',
+        );
+        peer = Device(
+          await Directory('${root.path}/new-peer').create(),
+          peerKeys,
+          nextRelay,
+        );
+        await peer.open(first: true);
+        expect((await peer.sync()).complete, true);
+        expect(
+          SyncEntities.encode(peer.controller.exportJson()),
+          SyncEntities.encode(before),
+        );
+        expect(nextKeys.idKey, isNot(keys.idKey));
+        expect(
+          nextRelay.objects.keys.toSet().intersection(
+            relay.objects.keys.toSet(),
+          ),
+          isEmpty,
+        );
+        expect(jsonEncode(relay.objects), originalObjects);
+        expect(
+          peer.controller.habitById(id)!.entries.map((e) => e.value).toSet(),
+          {15, 25},
+        );
+      } finally {
+        await c.close();
+        await peer?.close();
+        peerKeys?.dispose();
+        nextKeys.dispose();
+      }
+    },
+  );
+  test(
+    'overlength note combination keeps both originals until valid manual merge',
+    () async {
+      final id = await a.add();
+      await a.sync();
+      await b.sync();
+      await a.controller.setNote(id, today, '甲' * 2000);
+      await b.controller.setNote(id, today, '乙' * 2000);
+      await a.sync();
+      await b.sync();
+      final decision = await b.engine.conflicts();
+      await expectLater(
+        b.engine.resolveItems(decision, {
+          decision.items.single.id: const SyncSelection(SyncChoice.both),
+        }),
+        throwsFormatException,
+      );
+      expect(b.controller.habitById(id)!.notes.values.single, '乙' * 2000);
+      expect((await b.engine.conflicts()).remote, decision.remote);
+      await b.engine.resolveItems(decision, {
+        decision.items.single.id: const SyncSelection(
+          SyncChoice.manual,
+          text: '双方核对后的摘要',
+        ),
+      });
+      await b.controller.load();
+      expect(b.controller.habitById(id)!.notes.values.single, '双方核对后的摘要');
+    },
+  );
+
+  test(
+    'identical initial join clears full review after explicit confirmation',
+    () async {
+      b.settings = SyncSettings(
+        id: b.settings.id,
+        endpoint: b.settings.endpoint,
+        localVault: b.settings.localVault,
+        keys: keys,
+        tokens: b.settings.tokens,
+        initialReview: true,
+      );
+      b.engine = SyncEngine(
+        b.repository,
+        SyncSession(b.settings, SyncSettingsStore(MemorySecrets()), relay),
+      );
+      expect((await b.sync()).complete, true);
+      expect((await b.repository.readSyncFrame()).state!['reviewAll'], false);
+      final id = await a.add();
+      await a.sync();
+      expect((await b.sync()).complete, true);
+      expect(b.controller.habitById(id), isNotNull);
     },
   );
 }

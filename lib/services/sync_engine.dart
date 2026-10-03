@@ -13,10 +13,24 @@ class SyncOutcome {
     this.conflicts = const [],
     this.complete = false,
     this.uploaded = 0,
+    this.preview,
   });
   final List<String> conflicts;
   final bool complete;
   final int uploaded;
+  final InitialSyncPreview? preview;
+}
+
+class InitialSyncPreview {
+  const InitialSyncPreview(
+    this.local,
+    this.remote,
+    this.fingerprint,
+    this.conflicts,
+  );
+  final EntityMap local, remote;
+  final String fingerprint;
+  final List<String> conflicts;
 }
 
 /// All network operations happen outside the business database transaction.
@@ -30,6 +44,7 @@ class SyncEngine {
   Map<String, dynamic> _fresh(String epoch) => {
     'version': 1,
     'reviewAll': settings.initialReview,
+    'previewRequired': true,
     'binding': settings.id,
     'epoch': epoch,
     'cursor': '',
@@ -66,6 +81,41 @@ class SyncEngine {
   };
 
   Future<SyncOutcome> run({void Function(int uploaded)? onProgress}) async {
+    try {
+      return await _run(onProgress: onProgress);
+    } on Object catch (error) {
+      // Persist only allowlisted categories, never server text or credentials.
+      try {
+        final frame = await repository.readSyncFrame();
+        _checkLocal(frame);
+        final state =
+            frame.state == null || frame.state!['binding'] != settings.id
+            ? _fresh(settings.tokens['epoch'] as String)
+            : _state(frame);
+        state['lastFailureCode'] =
+            error is SyncApiException &&
+                const {
+                  'unauthorized',
+                  'epoch_changed',
+                  'device_stale',
+                  'maintenance_read_only',
+                  'quota_exceeded',
+                  'rate_limited',
+                }.contains(error.code)
+            ? error.code
+            : error is FormatException
+            ? 'invalid_data'
+            : 'unavailable';
+        state['lastFailureAt'] = DateTime.now().toUtc().toIso8601String();
+        await repository.commitSyncFrame(frame, state);
+      } on Object {
+        // Failure reporting cannot replace the original storage/network error.
+      }
+      rethrow;
+    }
+  }
+
+  Future<SyncOutcome> _run({void Function(int uploaded)? onProgress}) async {
     final caps = await session.transport.request('GET', '/v1/capabilities');
     if (caps['protocol'] != 1 ||
         caps['epoch'] is! String ||
@@ -76,9 +126,6 @@ class SyncEngine {
     _checkLocal(frame);
     if (frame.state == null || frame.state!['binding'] != settings.id) {
       final fresh = _fresh(caps['epoch'] as String);
-      if (frame.state == null && SyncEntities.encode(frame.snapshot).isEmpty) {
-        fresh['reviewAll'] = false;
-      }
       await repository.commitSyncFrame(frame, fresh);
     } else if (_state(frame)['epoch'] != caps['epoch']) {
       // A restored server may have forgotten previously acknowledged writes or
@@ -89,6 +136,20 @@ class SyncEngine {
     for (var round = 0; round < 1000; round++) {
       frame = await repository.readSyncFrame();
       var state = _state(frame);
+      if (state['previewRequired'] == true) {
+        await _pull();
+        frame = await repository.readSyncFrame();
+        state = _state(frame);
+        final decision = _decision(frame, state);
+        return SyncOutcome(
+          preview: InitialSyncPreview(
+            decision.local,
+            decision.remote,
+            _previewFingerprint(frame, state),
+            decision.conflicts.toList()..sort(),
+          ),
+        );
+      }
       if ((state['pending'] as List).isNotEmpty) {
         uploaded += await _push(frame, state);
         onProgress?.call(uploaded);
@@ -110,6 +171,7 @@ class SyncEngine {
       final snapshot = SyncEntities.assemble(frame.snapshot, decision.entities);
       state['base'] = remote;
       state['conflicts'] = <dynamic>[];
+      state['reviewAll'] = false;
       // Save incoming facts and the baseline in the same transaction.
       await repository.commitSyncFrame(
         frame,
@@ -130,6 +192,8 @@ class SyncEngine {
             ..sort();
       if (changes.isEmpty) {
         state['lastSuccess'] = DateTime.now().toUtc().toIso8601String();
+        state.remove('lastFailureCode');
+        state.remove('lastFailureAt');
         await repository.commitSyncFrame(frame, state);
         return SyncOutcome(complete: true, uploaded: uploaded);
       }
@@ -335,11 +399,38 @@ class SyncEngine {
             key,
             decision.local[key] ?? remote[key],
           );
-          if (id != null) decision.conflicts.add(id);
+          if (id != null) decision.reviewHabit(id);
         }
       }
     }
     return decision;
+  }
+
+  String _previewFingerprint(SyncFrame frame, Map<String, dynamic> state) =>
+      SyncEntities.canonical([
+        settings.id,
+        state['epoch'],
+        SyncEntities.encode(frame.snapshot),
+        state['remote'],
+      ]);
+
+  /// Downloading a preview never mutates business facts or sends an outbox.
+  /// An explicit confirmation also checks for changes since the dialog opened.
+  Future<void> confirmInitialSync(InitialSyncPreview preview) async {
+    await _pull();
+    final frame = await repository.readSyncFrame();
+    final state = _state(frame);
+    if (state['previewRequired'] != true ||
+        _previewFingerprint(frame, state) != preview.fingerprint) {
+      throw const FormatException('预览后本机或远端数据已变化，请重新预览并确认');
+    }
+    state['previewRequired'] = false;
+    await repository.commitSyncFrame(
+      frame,
+      state,
+      snapshot: frame.snapshot,
+      protect: true,
+    );
   }
 
   /// Only after explicit server-restore confirmation and fresh authorization.
@@ -360,6 +451,10 @@ class SyncEngine {
   /// Read-only preparation allows frozen outboxes to be reconciled without
   /// submitting their old ciphertext. Local unsent intentions stay in facts.
   Future<SyncOutcome> prepareRotation() async {
+    final initialFrame = await repository.readSyncFrame();
+    if (_state(initialFrame)['previewRequired'] == true) {
+      throw const FormatException('请先完成首次同步预览确认');
+    }
     final before = await session.request('GET', '/v1/vault');
     if (before['readOnly'] != true ||
         before['vaultId'] != settings.keys.vault) {
@@ -400,11 +495,40 @@ class SyncEngine {
     return _decision(frame, state);
   }
 
+  Future<void> resolveItems(
+    MergeDecision reviewed,
+    Map<String, SyncSelection> selections,
+  ) async {
+    final frame = await repository.readSyncFrame();
+    final state = _state(frame);
+    if (state['previewRequired'] == true) {
+      throw const FormatException('请先完成首次同步预览确认');
+    }
+    final current = _decision(frame, state);
+    if (current.fingerprint != reviewed.fingerprint) {
+      throw const FormatException('冲突内容已更新，请重新核对');
+    }
+    final entities = current.select(selections);
+    final snapshot = SyncEntities.assemble(frame.snapshot, entities);
+    state['base'] = _payloads(state);
+    state['conflicts'] = <dynamic>[];
+    state['reviewAll'] = false;
+    await repository.commitSyncFrame(
+      frame,
+      state,
+      snapshot: snapshot,
+      protect: true,
+    );
+  }
+
   /// A choice applies to one whole habit, protecting cross-entity invariants.
   /// The previous local snapshot remains in protections before any replacement.
   Future<void> resolve(Map<String, bool> useRemote) async {
     final frame = await repository.readSyncFrame();
     final state = _state(frame), remote = _payloads(_state(frame));
+    if (state['previewRequired'] == true) {
+      throw const FormatException('请先完成首次同步预览确认');
+    }
     final decision = _decision(frame, state);
     if (!SyncEntities.same(
       useRemote.keys.toList()..sort(),
