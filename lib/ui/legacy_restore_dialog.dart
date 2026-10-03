@@ -51,7 +51,7 @@ class _LegacyRestoreDialogState extends State<_LegacyRestoreDialog> {
     });
     try {
       final raw = _text.text;
-      final preview = BackupPreview.fromSnapshot(raw);
+      final preview = BackupPreview.forRestore(raw);
       final restored = await showDialog<bool>(
         context: context,
         barrierDismissible: false,

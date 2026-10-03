@@ -433,12 +433,199 @@ class NativeSyncDriverTest(unittest.TestCase):
         self.assertEqual(input_calls[2], ('input', 'keyevent', *(['67'] * len('old.hgr'))))
 
     def test_ui_snapshot_is_removed_even_after_xml_parse_error_and_not_archived(self):
-        def shell(*values, **kwargs):
-            return '<SECRET-invalid' if values[0] == 'cat' else ''
-        with patch.object(self.driver, 'shell', side_effect=shell) as call, self.assertRaises(ET.ParseError):
+        def command(*values, **kwargs):
+            return result(b'<SECRET-invalid' if values[1] == 'cat' else b'')
+        with patch.object(self.driver, 'adb_command', side_effect=command) as call, self.assertRaises(ET.ParseError):
             self.driver.read_ui()
-        self.assertEqual(call.call_args.args, ('rm', '-f', '/sdcard/sync-acceptance-ui.xml'))
+        self.assertEqual(call.call_args.args, ('shell', 'rm', '-f', '/sdcard/sync-acceptance-ui.xml'))
+        self.assertEqual(sum(item.args[1] == 'rm' for item in call.call_args_list), 2)
         self.assertFalse(any(path.suffix in ('.xml', '.png') for path in self.args.output.iterdir()))
+        self.assertFalse(any(item['event'] == 'ui-snapshot-unavailable' for item in self.events()))
+
+    def test_missing_snapshot_retries_only_fresh_reads_and_never_replays_touch_actions(self):
+        missing = b'cat: /sdcard/sync-acceptance-ui.xml: No such file or directory\n'
+        reads = [result(code=1, stderr=missing), result(b'<hierarchy><node text="SECRET"/></hierarchy>')]
+        def command(*values, **kwargs):
+            return reads.pop(0) if values[1] == 'cat' else result()
+        owned_action = ('select', 'B', 'awaitingRecoveryJoin', FIRST_LAUNCH)
+        self.driver.actions.add(owned_action)
+        with patch.object(self.driver, 'adb_command', side_effect=command) as call, patch.object(driver.time, 'sleep'):
+            self.assertEqual(self.driver.read_ui().tag, 'hierarchy')
+        self.assertEqual(self.driver.actions, {owned_action})
+        self.assertEqual([item.args[1] for item in call.call_args_list],
+                         ['rm', 'uiautomator', 'cat', 'rm'] * 2)
+        self.assertEqual([item['reason'] for item in self.events()], ['ui_snapshot_missing'])
+        self.assertNotIn('SECRET', (self.args.output / 'driver-events.jsonl').read_text())
+        self.assertFalse(any(path.suffix in ('.xml', '.png') for path in self.args.output.iterdir()))
+
+    def test_exact_aosp_idle_diagnostic_retries_without_reading_a_nonexistent_file(self):
+        dumps = [result(stderr=b'ERROR: could not get idle state.\n'), result()]
+        def command(*values, **kwargs):
+            if values[1] == 'uiautomator':
+                return dumps.pop(0)
+            return result(b'<hierarchy/>') if values[1] == 'cat' else result()
+        with patch.object(self.driver, 'adb_command', side_effect=command) as call, patch.object(driver.time, 'sleep'):
+            self.driver.read_ui()
+        self.assertEqual([item.args[1] for item in call.call_args_list],
+                         ['rm', 'uiautomator', 'rm', 'rm', 'uiautomator', 'cat', 'rm'])
+        self.assertEqual([item['reason'] for item in self.events()], ['ui_snapshot_idle'])
+
+    def test_exact_aosp_null_root_diagnostic_is_a_bounded_read_only_retry(self):
+        dumps = [result(stderr=b'ERROR: null root node returned by UiTestAutomationBridge.\n'), result()]
+        def command(*values, **kwargs):
+            if values[1] == 'uiautomator':
+                return dumps.pop(0)
+            return result(b'<hierarchy/>') if values[1] == 'cat' else result()
+        with patch.object(self.driver, 'adb_command', side_effect=command) as call, patch.object(driver.time, 'sleep'):
+            self.driver.read_ui()
+        self.assertEqual([item.args[1] for item in call.call_args_list],
+                         ['rm', 'uiautomator', 'rm', 'rm', 'uiautomator', 'cat', 'rm'])
+        self.assertEqual([item['reason'] for item in self.events()], ['ui_snapshot_no_root'])
+
+    def test_unknown_snapshot_errors_do_not_retry_or_archive_original_diagnostics(self):
+        missing = b'cat: /sdcard/sync-acceptance-ui.xml: No such file or directory\n'
+        cases = [('cat', result(code=1, stderr=b'cat: /other.xml: No such file or directory\n')),
+                 ('cat', result(code=1, stderr=b'Permission denied SECRET')),
+                 ('cat', result(b'SECRET', code=1, stderr=missing)),
+                 ('cat', result(b'<hierarchy/>', stderr=b'unknown SECRET')),
+                 ('uiautomator', result(stderr=b'unknown SECRET')),
+                 ('uiautomator', result(code=1, stderr=b'ERROR: could not get idle state.\n'))]
+        for operation, failure in cases:
+            with self.subTest(operation=operation, code=failure.returncode):
+                def command(*values, **kwargs):
+                    if values[1] == operation:
+                        return failure
+                    return result(b'<hierarchy/>') if values[1] == 'cat' else result()
+                with patch.object(self.driver, 'adb_command', side_effect=command) as call, self.assertRaises(RuntimeError):
+                    self.driver.read_ui()
+                self.assertEqual(sum(item.args[1] == 'rm' for item in call.call_args_list), 2)
+                self.assertLessEqual(len(call.call_args_list), 4)
+        self.assertEqual(self.events(), [])
+
+    def test_snapshot_transient_retries_are_capped_at_three_attempts(self):
+        def command(*values, **kwargs):
+            return result(code=1, stderr=b'cat: /sdcard/sync-acceptance-ui.xml: No such file or directory\n') if values[1] == 'cat' else result()
+        with patch.object(self.driver, 'adb_command', side_effect=command) as call, patch.object(
+                driver.time, 'sleep'), self.assertRaises(RuntimeError):
+            self.driver.read_ui()
+        self.assertEqual([item.args[1] for item in call.call_args_list],
+                         ['rm', 'uiautomator', 'cat', 'rm'] * 3)
+        self.assertEqual([item['attempt'] for item in self.events()], [1, 2, 3])
+
+    def test_snapshot_commands_respect_the_remaining_total_budget(self):
+        elapsed = [0.0]
+        limits = []
+        def command(*values, **kwargs):
+            timeout = kwargs['timeout']
+            self.assertGreater(timeout, 0)
+            self.assertLessEqual(timeout, 45 - elapsed[0])
+            limits.append(timeout)
+            elapsed[0] += timeout
+            return result(stderr=b'ERROR: could not get idle state.\n') if values[1] == 'uiautomator' else result()
+        with patch.object(driver.time, 'monotonic', side_effect=lambda: elapsed[0]), patch.object(
+                self.driver, 'adb_command', side_effect=command) as call, patch.object(
+                driver.time, 'sleep', side_effect=lambda value: elapsed.__setitem__(0, elapsed[0] + value)), self.assertRaises(TimeoutError):
+            self.driver.read_ui()
+        self.assertEqual([item.args[1] for item in call.call_args_list], ['rm', 'uiautomator', 'rm'])
+        self.assertEqual(limits, [10, 25, 10])
+        self.assertEqual(elapsed[0], 45)
+
+    def test_protocol_deadline_limits_reads_but_keeps_final_private_deletion_bounded(self):
+        elapsed = [0.0]
+        self.driver.deadline = 0.5
+        limits = []
+        def command(*values, **kwargs):
+            limits.append(kwargs['timeout'])
+            if len(limits) == 1:
+                elapsed[0] += kwargs['timeout']
+            return result()
+        with patch.object(driver.time, 'monotonic', side_effect=lambda: elapsed[0]), patch.object(
+                self.driver, 'adb_command', side_effect=command) as call, self.assertRaises(TimeoutError):
+            self.driver.read_ui()
+        self.assertEqual([item.args[1] for item in call.call_args_list], ['rm', 'rm'])
+        self.assertEqual(limits, [0.5, 10])
+        self.assertEqual(self.events(), [])
+
+    def test_real_python_snapshot_timeout_reaps_owned_child_and_still_deletes_private_file(self):
+        children = []
+        def start(values, **kwargs):
+            script = 'import time; time.sleep(10)' if not children else 'pass'
+            windows = driver.os.name == 'nt'
+            process = subprocess.Popen(
+                [driver.sys.executable, '-c', script], start_new_session=not windows,
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0) if windows else 0, **kwargs)
+            if not windows:
+                process._sync_owned_group = process.pid
+            children.append(process)
+            return process
+        started = driver.time.monotonic()
+        try:
+            with patch.object(driver, 'UI_SNAPSHOT_READ_SECONDS', 0.05), patch.object(
+                    driver, 'start_owned', side_effect=start) as call, self.assertRaises(RuntimeError):
+                self.driver.read_ui()
+            self.assertEqual(len(children), 2)
+            self.assertLess(driver.time.monotonic() - started, 5)
+            self.assertTrue(all(process.poll() is not None for process in children))
+            self.assertTrue(all(process.stdout.closed and process.stderr.closed for process in children))
+            self.assertEqual([item.args[0][-3:] for item in call.call_args_list],
+                             [['rm', '-f', '/sdcard/sync-acceptance-ui.xml']] * 2)
+            self.assertEqual([item['event'] for item in self.events()], ['command-timeout'])
+        finally:
+            for process in children:
+                driver.stop_process(process)
+
+    def test_snapshot_terminal_owned_cleanup_has_a_fixed_twenty_second_cap(self):
+        process = Mock(pid=123)
+        process._sync_owned_group = process.pid
+        process.poll.return_value = None
+        process.wait.side_effect = [subprocess.TimeoutExpired('owned', 10), None]
+        process.communicate.side_effect = [subprocess.TimeoutExpired('owned', 0.05),
+                                           subprocess.TimeoutExpired('owned', 5)]
+        with patch.object(driver, 'start_owned', return_value=process), patch.object(
+                driver.os, 'killpg', create=True), patch.object(
+                driver.signal, 'SIGKILL', 9, create=True), self.assertRaises(subprocess.TimeoutExpired):
+            driver.run_owned(['owned-python'], timeout=0.05)
+        self.assertEqual([item.kwargs['timeout'] for item in process.wait.call_args_list], [10, 5])
+        self.assertEqual(process.communicate.call_args.kwargs['timeout'], 5)
+        self.assertEqual(10 + 5 + 5, driver.UI_SNAPSHOT_OWNED_CLEANUP_SECONDS)
+        self.assertEqual(driver.UI_SNAPSHOT_TOTAL_BOUND_SECONDS, 95)
+
+    def test_snapshot_cleanup_and_event_failures_preserve_the_first_error(self):
+        for xml, expected in ((b'<SECRET-invalid', ET.ParseError), (b'<hierarchy/>', RuntimeError)):
+            with self.subTest(expected=expected.__name__):
+                removes = [0]
+                def command(*values, **kwargs):
+                    if values[1] == 'rm':
+                        removes[0] += 1
+                        if removes[0] == 2:
+                            raise RuntimeError('synthetic cleanup failure')
+                    return result(xml) if values[1] == 'cat' else result()
+                with patch.object(self.driver, 'adb_command', side_effect=command), patch.object(
+                        self.driver, 'event', side_effect=OSError('synthetic event failure')) as event, self.assertRaises(expected):
+                    self.driver.read_ui()
+                event.assert_called_once_with('ui-snapshot-cleanup-failed', errorType='RuntimeError')
+
+    def test_snapshot_command_timeout_fails_closed_and_preserves_private_cleanup(self):
+        def command(*values, **kwargs):
+            if values[1] == 'uiautomator':
+                raise RuntimeError('read native picker UI timed out')
+            return result()
+        with patch.object(self.driver, 'adb_command', side_effect=command) as call, self.assertRaises(RuntimeError):
+            self.driver.read_ui()
+        self.assertEqual([item.args[1] for item in call.call_args_list], ['rm', 'uiautomator', 'rm'])
+        self.assertEqual(self.events(), [])
+
+    def test_emulator_exit_stops_snapshot_retry_before_another_read_or_touch(self):
+        def command(*values, **kwargs):
+            if values[1] == 'cat':
+                self.driver.process.poll.return_value = 1
+                return result(code=1, stderr=b'cat: /sdcard/sync-acceptance-ui.xml: No such file or directory\n')
+            return result()
+        with patch.object(self.driver, 'adb_command', side_effect=command) as call, self.assertRaises(RuntimeError):
+            self.driver.read_ui()
+        self.assertEqual([item.args[1] for item in call.call_args_list], ['rm', 'uiautomator', 'cat'])
+        self.assertEqual([item['event'] for item in self.events()],
+                         ['ui-snapshot-unavailable', 'ui-snapshot-cleanup-failed'])
 
     def test_keyboard_can_hide_once_before_and_once_after_filename_edit(self):
         self.driver.foreground_role = 'A'

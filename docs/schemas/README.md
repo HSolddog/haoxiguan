@@ -27,7 +27,7 @@ HTTP capabilities、认证、设备、push／pull／bootstrap 等请求和响应
 
 本机保存／完整导出与外部导入采用不同边界。逻辑 Schema 描述现有存储兼容范围，标题上界为 1000，备注不在此截断；不能据此绕过外部导入的 80／2000 限制，也不能用外部输入限额删改旧本机事实。导入是否接受必须再由相应运行时入口判断。
 
-同步实体 Schema 同样描述现有序列化结构，复用快照的记录／计划／分类及习惯字段，不把可完整导出的旧本机事实截断。真正外部恢复由 `decodeImport`／预览／Controller 校验 80／2000，认证后的远端同步输入由 `SyncEngine._receive` 检查相同边界。兼容导出通过结构契约，不等于允许将超限旧文本重新作为外部输入。
+同步实体 Schema 同样描述现有序列化结构，复用快照的记录／计划／分类及习惯字段，不把可完整导出的旧本机事实截断。普通直接导入由 `decodeImport`／Controller 校验 80／2000，认证后的远端同步输入由 `SyncEngine._receive` 检查相同边界。用户备份恢复入口单独调用 `BackupPreview.forRestore`：完整校验已支持结构后列明超限标题／备注，默认不勾选；用户明确选择完整保留历史文本后，才经 `restoreCompatibleBackup` 使用原保护事务恢复全部原文，今后编辑仍按当前限额。此例外协调原 P44 输入限制与 P9/F08/V76 完整恢复承诺，不放宽版本、结构、日期、ID、文件大小或加密认证。格式版本和 manifest 不证明旧版来源，升级后的新格式导出也可能含历史文本。
 
 `sync-decrypted-object-v1` 的根层是通用加密器真实接受的二字段包装；现有跨语言向量的 `records:synthetic-record` 是通用逻辑 ID，并非生产实体。需要验证当前业务实体时应引用 `sync-decrypted-object-v1.schema.json#/$defs/entity`：习惯 h/ 不含 `entries`／`plans`／`notes`／`completions`，记录 r/、计划 p/ 和备注 n/ 各自独立寻址。h/ 保留未知习惯字段；记录和计划的 canonical `data` 及各子对象 wrapper 关闭额外字段。删除候选的 payload 为 null；其逻辑 ID 和删除上下文仍需运行时一致。
 

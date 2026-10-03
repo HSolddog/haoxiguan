@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:math';
+import 'dart:ui' show IsolateNameServer;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -17,6 +21,136 @@ import 'package:haoxiguan/state/habit_controller.dart';
 import 'package:haoxiguan/ui/backup_restore_dialog.dart';
 
 final acceptanceNavigator = GlobalKey<NavigatorState>();
+
+const acceptancePackage = 'com.haoxiguan.haoxiguan.acceptance';
+
+class AcceptanceLaunch {
+  AcceptanceLaunch._(this.data);
+  final Map<String, Object?> data;
+  String get nonce => data['nonce']! as String;
+  String get build => data['build']! as String;
+  String get phase => data['phase']! as String;
+  String? get previous => data['previousRunId'] as String?;
+
+  factory AcceptanceLaunch.decode(String raw, {required String build}) {
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) {
+      throw const FormatException('launch must be an object');
+    }
+    final value = decoded.cast<String, Object?>();
+    final previous = value['previousRunId'];
+    if (value['version'] is! int ||
+        value['version'] != 1 ||
+        value['package'] != acceptancePackage ||
+        value['build'] != build ||
+        !['10001', '10002'].contains(build) ||
+        value['nonce'] is! String ||
+        !RegExp(r'^[a-f0-9]{32}$').hasMatch(value['nonce']! as String) ||
+        !['create', 'reopen'].contains(value['phase']) ||
+        (build == '10002' && value['phase'] != 'reopen') ||
+        (previous != null &&
+            (previous is! String || !RegExp(r'^\d+$').hasMatch(previous))) ||
+        (value['phase'] == 'create' && previous != null) ||
+        (value['phase'] == 'reopen' && previous == null)) {
+      throw const FormatException('invalid isolated host launch identity');
+    }
+    return AcceptanceLaunch._(value);
+  }
+}
+
+String acceptanceEntryId() => List.generate(
+  16,
+  (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
+).join();
+
+/// One atomic process-local owner, retained even after the terminal report.
+/// A duplicate is only a spectator; a positive ping does not prove UI attachment.
+class AcceptanceOwner with WidgetsBindingObserver {
+  AcceptanceOwner._(this.launch, this.result, this.entryId, this.name);
+  final AcceptanceLaunch launch;
+  final Map<String, Object?> result;
+  final String entryId;
+  final String name;
+  final ReceivePort port = ReceivePort();
+  String lifecycle = 'entry';
+  static final retained = <AcceptanceOwner>[];
+
+  static AcceptanceOwner? claim(
+    AcceptanceLaunch launch,
+    Map<String, Object?> result,
+    String entryId, {
+    String name = 'haoxiguan.acceptance.single-owner',
+  }) {
+    final owner = AcceptanceOwner._(launch, result, entryId, name);
+    if (!IsolateNameServer.registerPortWithName(owner.port.sendPort, name)) {
+      owner.port.close();
+      return null;
+    }
+    retained.add(owner);
+    owner.port.listen((message) {
+      if (message is Map &&
+          message['reply'] is SendPort &&
+          message['challenge'] is String) {
+        (message['reply'] as SendPort).send({
+          'challenge': message['challenge'],
+          'package': acceptancePackage,
+          'nonce': launch.nonce,
+          'build': launch.build,
+          'phase': launch.phase,
+          'pid': pid,
+          'entryId': entryId,
+          'runId': result['runId'],
+          'status': result['status'],
+          'stage': result['stage'],
+          'lifecycle': owner.lifecycle,
+        });
+      }
+    });
+    return owner;
+  }
+
+  static Future<Map<String, Object?>?> observe(
+    AcceptanceLaunch launch, {
+    String name = 'haoxiguan.acceptance.single-owner',
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    final target = IsolateNameServer.lookupPortByName(name);
+    if (target == null) return null;
+    final response = ReceivePort();
+    final challenge = acceptanceEntryId();
+    try {
+      target.send({'challenge': challenge, 'reply': response.sendPort});
+      final reply = await response.first.timeout(timeout);
+      if (reply is! Map ||
+          reply['challenge'] != challenge ||
+          reply['package'] != acceptancePackage ||
+          reply['nonce'] != launch.nonce ||
+          reply['build'] != launch.build ||
+          reply['phase'] != launch.phase ||
+          reply['pid'] != pid ||
+          reply['entryId'] is! String ||
+          !RegExp(r'^[a-f0-9]{32}$').hasMatch(reply['entryId'] as String) ||
+          reply['runId'] is! String ||
+          !RegExp(r'^\d+$').hasMatch(reply['runId'] as String) ||
+          !['running', 'passed', 'failed'].contains(reply['status'])) {
+        return null;
+      }
+      return reply.cast<String, Object?>();
+    } on TimeoutException {
+      return null;
+    } finally {
+      response.close();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    lifecycle = state.name;
+    debugPrint(
+      'ACCEPTANCE_LIFECYCLE ${jsonEncode({'pid': pid, 'entryId': entryId, 'nonce': launch.nonce, 'state': lifecycle, 'runId': result['runId']})}',
+    );
+  }
+}
 
 const notificationStages = [
   'awaitingNotificationDeny',
@@ -83,6 +217,20 @@ class SettingsCheckpoint {
           result['notificationCheckpointVersion'] is int &&
           result['notificationCheckpointVersion'] == 1,
       'report identity',
+    );
+    final launch = AcceptanceLaunch.decode(
+      jsonEncode(value['launch']),
+      build: build,
+    );
+    require(
+      result['launchNonce'] == launch.nonce &&
+          result['phase'] == launch.phase &&
+          result['previousRunId'] == launch.previous &&
+          result['ownerPid'] is int &&
+          result['ownerPid'] == value['pid'] &&
+          result['entryId'] is String &&
+          RegExp(r'^[a-f0-9]{32}$').hasMatch(result['entryId']! as String),
+      'launch and owner identity',
     );
     for (final field in ['original', 'model']) {
       require(
@@ -213,6 +361,14 @@ class SettingsCheckpoint {
       'model': model,
       'database': database,
       'result': result,
+      'launch': {
+        'version': 1,
+        'package': acceptancePackage,
+        'build': result['build'],
+        'phase': result['phase'],
+        'nonce': result['launchNonce'],
+        'previousRunId': result['previousRunId'],
+      },
     }),
     build: result['build']! as String,
   );
@@ -239,25 +395,47 @@ class FailedCheckpointConflict extends CheckpointConflict {
 Future<SettingsCheckpoint?> readSettingsCheckpoint(
   Directory directory,
   String build,
-  File report,
-) async {
+  File report, {
+  AcceptanceLaunch? launch,
+}) async {
   final file = File('${directory.path}/acceptance-settings-checkpoint.json');
   final previous = await report.exists()
       ? jsonDecode(await report.readAsString())
       : null;
-  if (previous is Map &&
-      previous['build'] == build &&
-      previous['status'] == 'failed') {
+  if (previous is Map && previous['status'] == 'failed') {
     throw FailedCheckpointConflict(previous.cast<String, Object?>());
   }
   if (!await file.exists()) {
-    if (previous is Map &&
-        previous['build'] == build &&
-        previous['status'] == 'running') {
+    if (previous is Map && previous['status'] == 'running') {
       throw CheckpointConflict(
         previous.cast<String, Object?>(),
         'missing continuation for an unfinished logical run; refusing a fresh replay',
       );
+    }
+    if (launch != null && previous != null) {
+      if (previous is! Map ||
+          previous['status'] != 'passed' ||
+          previous['runId'] != launch.previous ||
+          previous['launchNonce'] == launch.nonce ||
+          launch.phase != 'reopen' ||
+          (build == '10001' &&
+              (previous['build'] != '10001' ||
+                  previous['phase'] != 'create')) ||
+          (build == '10002' &&
+              (!['10001', '10002'].contains(previous['build']) ||
+                  previous['phase'] != 'reopen'))) {
+        if (previous is Map) {
+          throw CheckpointConflict(
+            previous.cast<String, Object?>(),
+            'fresh host launch conflicts with retained report',
+          );
+        }
+        throw const FormatException(
+          'fresh host launch conflicts with retained report',
+        );
+      }
+    } else if (launch != null && launch.previous != null) {
+      throw const FormatException('host reopen has no retained passed report');
     }
     return null;
   }
@@ -267,10 +445,17 @@ Future<SettingsCheckpoint?> readSettingsCheckpoint(
       await file.readAsString(),
       build: build,
     );
+    if (launch != null &&
+        nativeSnapshotDifferencePaths(
+          checkpoint.data['launch'],
+          launch.data,
+        ).isNotEmpty) {
+      throw const FormatException(
+        'checkpoint belongs to a different host launch',
+      );
+    }
   } on FormatException catch (error) {
-    if (previous is Map &&
-        previous['build'] == build &&
-        previous['status'] == 'running') {
+    if (previous is Map && previous['status'] == 'running') {
       throw CheckpointConflict(previous.cast<String, Object?>(), error.message);
     }
     rethrow;
@@ -279,7 +464,14 @@ Future<SettingsCheckpoint?> readSettingsCheckpoint(
     if (previous is! Map ||
         previous['runId'] != checkpoint.result['runId'] ||
         previous['build'] != build ||
+        previous['launchNonce'] != checkpoint.result['launchNonce'] ||
         previous['status'] != 'running') {
+      if (previous is Map) {
+        throw CheckpointConflict(
+          previous.cast<String, Object?>(),
+          'Settings checkpoint conflicts with terminal or unrelated report',
+        );
+      }
       throw const FormatException(
         'Settings checkpoint conflicts with terminal or unrelated report',
       );
@@ -322,6 +514,51 @@ Future<Map<String, Object?>> verifyCheckpointStorage(
 // Never install this entrypoint over a user's normal application.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final directory = await getApplicationSupportDirectory();
+  final entryId = acceptanceEntryId();
+  const build = String.fromEnvironment('ACCEPTANCE_BUILD');
+  late AcceptanceLaunch launch;
+  try {
+    launch = AcceptanceLaunch.decode(
+      await File('${directory.path}/acceptance-launch.json').readAsString(),
+      build: build,
+    );
+  } catch (error) {
+    // No host authorization: retain all existing reports and business bytes.
+    debugPrint(
+      'ACCEPTANCE_ENTRY_REJECTED ${jsonEncode({'pid': pid, 'entryId': entryId, 'build': build, 'error': error.toString()})}',
+    );
+    return;
+  }
+  final result = <String, Object?>{
+    'build': build,
+    'phase': launch.phase,
+    'status': 'running',
+    'runId': DateTime.now().toUtc().microsecondsSinceEpoch.toString(),
+    'launchNonce': launch.nonce,
+    'previousRunId': launch.previous,
+    'ownerPid': pid,
+    'entryId': entryId,
+  };
+  // Synchronous register is the first operation after decoding authorization.
+  // No report read/write, widget tree or database work precedes this claim.
+  final owner = AcceptanceOwner.claim(launch, result, entryId);
+  if (owner == null) {
+    Map<String, Object?>? observation;
+    try {
+      observation = await AcceptanceOwner.observe(launch);
+    } catch (error) {
+      debugPrint('ACCEPTANCE_SPECTATOR_PING_ERROR $error');
+    }
+    debugPrint(
+      'ACCEPTANCE_SPECTATOR ${jsonEncode({'pid': pid, 'entryId': entryId, 'nonce': launch.nonce, 'isolate': Isolate.current.debugName, 'ownerReply': observation, 'uiAttachmentProven': false})}',
+    );
+    return;
+  }
+  WidgetsBinding.instance.addObserver(owner);
+  debugPrint(
+    'ACCEPTANCE_OWNER ${jsonEncode({'pid': pid, 'entryId': entryId, 'nonce': launch.nonce, 'build': build, 'phase': launch.phase, 'isolate': Isolate.current.debugName})}',
+  );
   // This isolated fixture is driven through Android's accessibility hierarchy.
   // Keep Flutter semantics active even without a physical accessibility service.
   final acceptanceSemantics = WidgetsBinding.instance.ensureSemantics();
@@ -331,26 +568,22 @@ Future<void> main() async {
       home: const Scaffold(body: Center(child: Text('好习惯隔离验收正在运行'))),
     ),
   );
-  final directory = await getApplicationSupportDirectory();
   final report = File('${directory.path}/acceptance-report.json');
   final baseline = File('${directory.path}/acceptance-baseline.json');
   SqliteHabitRepository? repository;
   HabitController? controller;
-  final result = <String, Object?>{
-    'build': const String.fromEnvironment('ACCEPTANCE_BUILD'),
-    'status': 'running',
-    'runId': DateTime.now().toUtc().microsecondsSinceEpoch.toString(),
-  };
   try {
     final continuation = await readSettingsCheckpoint(
       directory,
       result['build']! as String,
       report,
+      launch: launch,
     );
     if (continuation != null) {
       result
         ..clear()
         ..addAll(continuation.result);
+      result.addAll({'ownerPid': pid, 'entryId': entryId});
     }
     await writeAtomic(report, jsonEncode(result));
     repository = await SqliteHabitRepository.open();
@@ -483,6 +716,10 @@ Future<void> main() async {
         );
         result['phase'] = 'reopen';
       }
+      check(
+        result['phase'] == launch.phase,
+        'actual persistence phase matches host launch',
+      );
       final habits = controller.habits;
       check(habits.length == 3, 'habit count');
       check(
@@ -853,6 +1090,26 @@ Future<void> expectReminderAccess(
   );
 }
 
+List<Map<String, Object?>>? channelObservation(
+  List<AndroidNotificationChannel>? channels,
+) => channels
+    ?.map(
+      (channel) => <String, Object?>{
+        'id': channel.id,
+        'name': channel.name,
+        'description': channel.description,
+        'groupId': channel.groupId,
+        'importance': channel.importance.value,
+        'bypassDnd': channel.bypassDnd,
+        'playSound': channel.playSound,
+        'enableVibration': channel.enableVibration,
+        'vibrationPattern': channel.vibrationPattern?.toList(),
+        'showBadge': channel.showBadge,
+        'enableLights': channel.enableLights,
+      },
+    )
+    .toList();
+
 /// Synthetic CI evidence keeps the full stored representation and every table.
 /// Comparing these observations also detects same-content rewrites of revision,
 /// journal or protection rows. It never compares SQL storage with a model export.
@@ -1114,6 +1371,10 @@ Future<void> verifyNativeReminderAccess(
       if (step <= 2) {
         if (continuation?.stage != 'awaitingChannelDisable') {
           final before = await android.getNotificationChannels();
+          result['nativeChannelBeforeDisableObservation'] = channelObservation(
+            before,
+          );
+          await writeAtomic(report, jsonEncode(result));
           check(
             before?.any(
                   (channel) =>
@@ -1146,6 +1407,10 @@ Future<void> verifyNativeReminderAccess(
           'app permission remains granted when only channel is disabled',
         );
         final blocked = await android.getNotificationChannels();
+        result['nativeChannelAfterDisableObservation'] = channelObservation(
+          blocked,
+        );
+        await writeAtomic(report, jsonEncode(result));
         check(
           blocked?.any(
                 (channel) =>
@@ -1185,6 +1450,10 @@ Future<void> verifyNativeReminderAccess(
         'consistent channel repair Android SDK',
       );
       await expectReminderAccess(controller, ReminderAccess.ready);
+      result['nativeChannelAfterEnableObservation'] = channelObservation(
+        await android.getNotificationChannels(),
+      );
+      await writeAtomic(report, jsonEncode(result));
       check(
         await controller.rebuildReminders(),
         'user-enabled channel rebuild succeeds',

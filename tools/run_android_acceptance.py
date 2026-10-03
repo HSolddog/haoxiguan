@@ -7,6 +7,7 @@ import re
 import subprocess
 import time
 import traceback
+import uuid
 import xml.etree.ElementTree as ET
 
 package = 'com.haoxiguan.haoxiguan.acceptance'
@@ -523,14 +524,56 @@ def archive_settings_checkpoint(value):
             saved.get('runId') != value['runId'] or saved.get('stage') != value['stage'] or
             saved.get('status') != 'running' or saved.get('build') != '10002'):
         raise RuntimeError('Settings checkpoint does not match the active isolated run and stage')
+    launch = checkpoint.get('launch')
+    if (not isinstance(launch, dict) or type(launch.get('version')) is not int or launch.get('version') != 1 or
+            launch.get('package') != package or launch.get('build') != value['build'] or
+            launch.get('phase') != value.get('phase') or
+            launch.get('nonce') != value.get('launchNonce') or
+            launch.get('previousRunId') != value.get('previousRunId') or
+            saved.get('launchNonce') != value.get('launchNonce') or
+            saved.get('previousRunId') != value.get('previousRunId')):
+        raise RuntimeError('Settings checkpoint does not match the active host launch nonce')
     destination = args.output / f"checkpoint-{value['runId']}-{value['stage']}.json"
     destination.write_bytes(raw)
     event('checkpoint-archived', runId=value['runId'], stage=value['stage'], pid=checkpoint['pid'])
 
 
+def prepare_launch(build, phase, previous):
+    """Authorize one of the existing four launches; never called for OS Back."""
+    if build not in (10001, 10002) or phase not in ('create', 'reopen') or (
+            (phase == 'create' and (build != 10001 or previous is not None)) or
+            (phase == 'reopen' and (not isinstance(previous, str) or not re.fullmatch(r'[0-9]+', previous)))):
+        raise ValueError('invalid host phase predecessor')
+    prior = command(adb, 'exec-out', 'run-as', package, 'cat',
+                    'files/acceptance-report.json', check=False, timeout=15)
+    if previous is None:
+        if prior.returncode == 0:
+            raise RuntimeError('initial launch refuses an existing acceptance report')
+    else:
+        try:
+            saved = json.loads(prior.stdout)
+        except (json.JSONDecodeError, UnicodeDecodeError) as error:
+            raise RuntimeError('reopen requires its retained passed predecessor') from error
+        if (prior.returncode != 0 or not isinstance(saved, dict) or saved.get('status') != 'passed' or
+                saved.get('runId') != previous or
+                (build == 10001 and (saved.get('build'), saved.get('phase')) != ('10001', 'create')) or
+                (build == 10002 and (saved.get('build') not in ('10001', '10002') or saved.get('phase') != 'reopen'))):
+            raise RuntimeError('host launch refuses a failed, unfinished or unrelated predecessor')
+    launch = {'version': 1, 'package': package, 'build': str(build), 'phase': phase,
+              'previousRunId': previous, 'nonce': uuid.uuid4().hex}
+    raw = json.dumps(launch).encode()
+    # One mutation, no retries. Rename publishes the complete authorization.
+    command(adb, 'shell', 'run-as', package, 'sh', '-c',
+            "'mkdir -p files && cat > files/acceptance-launch.json.pending && mv files/acceptance-launch.json.pending files/acceptance-launch.json'",
+            input=raw, timeout=15)
+    (args.output/f"launch-{launch['nonce']}.json").write_bytes(raw)
+    return launch['nonce']
+
+
 def start_and_wait(build, phase, previous=None):
     require_emulator(f'{build}/{phase} launch')
-    event('launch', build=build, phase=phase, previous=previous)
+    nonce = prepare_launch(build, phase, previous)
+    event('launch', build=build, phase=phase, previous=previous, nonce=nonce)
     shell('am', 'start', '-n', activity)
     # Schema3 adds four real Settings round trips and two restore dialogs to
     # SAF and the bounded WorkManager check. Each Dart UI stage also has its
@@ -545,10 +588,17 @@ def start_and_wait(build, phase, previous=None):
         try:
             value = json.loads(report.stdout)
             (args.output/'last-report.json').write_text(json.dumps(value, ensure_ascii=False, indent=2))
-            if active_run is not None and (value.get('runId') != active_run or value.get('build') != str(build)):
+            if active_run is not None and (value.get('runId') != active_run or value.get('build') != str(build) or value.get('launchNonce') != nonce):
                 event('logical-run-drift', expected=active_run, observed=value.get('runId'), build=value.get('build'))
                 raise RuntimeError('logical run identity changed; refusing further UI mutations')
             if value.get('runId') != previous and value.get('build') == str(build):
+                if value.get('launchNonce') != nonce:
+                    if active_run is None:
+                        time.sleep(2)
+                        continue
+                    raise RuntimeError('acceptance host launch nonce changed')
+                if value.get('previousRunId') != previous or value.get('phase') != phase:
+                    raise RuntimeError('acceptance report has a different host phase predecessor')
                 run_id = value.get('runId')
                 if not isinstance(run_id, str) or not re.fullmatch(r'[0-9]+', run_id):
                     if run_id is None and active_run is None:
@@ -560,9 +610,10 @@ def start_and_wait(build, phase, previous=None):
                 key = (run_id, value.get('stage'), value.get('status'))
                 if key not in archived:
                     stage = value.get('stage', value.get('status'))
-                    if not isinstance(stage, str) or not re.fullmatch(r'[A-Za-z]+', stage):
+                    status = value.get('status')
+                    if status not in ('running', 'passed', 'failed') or not isinstance(stage, str) or not re.fullmatch(r'[A-Za-z]+', stage):
                         raise RuntimeError('acceptance report has an invalid stage')
-                    (args.output/f'report-{run_id}-{stage}.json').write_bytes(report.stdout)
+                    (args.output/f'report-{run_id}-{stage}-{status}.json').write_bytes(report.stdout)
                     if value.get('status') == 'running' and value.get('stage') in notification_stages:
                         archive_settings_checkpoint(value)
                     archived.add(key)
@@ -609,7 +660,9 @@ def collect_diagnostics(emulator, log, runtime_process=None, runtime_log=None):
         command(adb, 'get-state', timeout=5).stdout))
     diagnostic('runtime', lambda: (args.output/'runtime.log').write_bytes(command(
         adb, 'logcat', '-d', '-s', 'flutter', 'AndroidRuntime', 'ActivityManager',
-        'libc', 'DEBUG', 'lowmemorykiller', 'WM-WorkerWrapper', 'WM-SystemJobService', timeout=10).stdout))
+        'ActivityTaskManager', 'FlutterActivity', 'FlutterActivityAndFragmentDelegate',
+        'FlutterEngine', 'FlutterJNI', 'libc', 'DEBUG', 'lowmemorykiller',
+        'WM-WorkerWrapper', 'WM-SystemJobService', timeout=10).stdout))
     diagnostic('last-screen', lambda: (args.output/'last-screen.png').write_bytes(
         command(adb, 'exec-out', 'screencap', '-p', timeout=10).stdout))
     # Host memory is useful for investigating abrupt hosted-AVD exits; this
@@ -681,7 +734,9 @@ def main(argv=None):
         runtime_log = (args.output/'runtime-live.log').open('wb')
         runtime_process = subprocess.Popen(
             adb_values('logcat', '-v', 'threadtime', 'flutter:V', 'AndroidRuntime:V',
-             'ActivityManager:I', 'libc:W', 'DEBUG:I', 'lowmemorykiller:I',
+             'ActivityManager:I', 'ActivityTaskManager:V', 'FlutterActivity:V',
+             'FlutterActivityAndFragmentDelegate:V', 'FlutterEngine:V', 'FlutterJNI:V',
+             'libc:W', 'DEBUG:I', 'lowmemorykiller:I',
              'WM-WorkerWrapper:V', 'WM-SystemJobService:V', '*:S'),
             stdout=runtime_log, stderr=subprocess.STDOUT)
         shell('input', 'keyevent', '82')

@@ -1,0 +1,61 @@
+{
+  "recordedAtUtc": "2026-10-03",
+  "scope": "Compatible backup restoration final host full regression",
+  "baseLocalCommit": "1fe6d18ac325a41983e6f4a496a3eb9fcf0521a3",
+  "baseRemoteCommit": "5249d5d2c41e26a28192a3b2cfa8ed25891277cc",
+  "testedFileSha256": {
+    "lib/data/snapshot_codec.dart": "06d5a343a472f8e9b03f4fde589f9a594bd2aefe29aabc40499da6b70794eba6",
+    "lib/services/backup_preview.dart": "60462e9a3ba98d815e9d0e90e3f5700431cc3dc9a61bbe3bbd2911685ddeacdf",
+    "lib/state/habit_controller.dart": "7af17ee01a105ddb492739bd24a0e6eceba05075e9adf67ef3f62783b2c4d67d",
+    "lib/ui/backup_restore_dialog.dart": "5b91858c2a054069e9aa2e982f31a12a689ffb373ce917c9527c8a28533f6202",
+    "lib/ui/data_screen.dart": "414c6b919907318215eebfbe6459e8f1dd850b6c25c5b04727bf16f76d5eabda",
+    "lib/ui/legacy_restore_dialog.dart": "d6593a415aa25d6d6c283659c9c3b7e35bb6bbc870cfd61444445856ea413e0c",
+    "lib/ui/webdav_screen.dart": "13eea97aac12151f3fe10f2857dee313e37133cf10edd3b24b9b2a8f0bf60eb3",
+    "test/external_import_limits_test.dart": "836a098e311891683388e77c08737a7fdc23d36fcaed70427aa3a337b7809668",
+    "test/compatible_restore_test.dart": "d306184737d992a6a6c93446f5900979a176d2ea3bf7e8eb6f40aa76e66a8d1a",
+    "lib/services/sync_engine.dart": "56089538a94f91022d8c677ca292295741a5dc2619bade110554eb0e22544303",
+    "lib/data/sqlite_habit_repository.dart": "340ab16a06e7e184143714c798a45878a9cef954352c271ec876dfd7fbcfc90b"
+  },
+  "checks": {
+    "format": {
+      "command": "dart format --output=none --set-exit-if-changed lib test tools",
+      "files": 106,
+      "changed": 0,
+      "exitCode": 0
+    },
+    "analyze": {
+      "command": "flutter analyze --no-pub",
+      "seconds": 6.2,
+      "issues": 0,
+      "exitCode": 0
+    },
+    "test": {
+      "command": "flutter test --no-pub --concurrency=1 --reporter expanded",
+      "passed": 298,
+      "skipped": 3,
+      "failed": 0,
+      "exitCode": 0
+    }
+  },
+  "logs": [
+    {
+      "taskRootRelativePath": "compatible-restore-full-format.log",
+      "bytes": 50,
+      "sha256": "ae64b93e30326b8c1cf8166432819344e8a61eeccdfc6fc27acb88844a6cd697"
+    },
+    {
+      "taskRootRelativePath": "compatible-restore-full-analyze.log",
+      "bytes": 98,
+      "sha256": "608fdfa9eb7a7c504efb89d1a6fde41def5ce5da7767326007bef75849981cee"
+    },
+    {
+      "taskRootRelativePath": "compatible-restore-full-tests.log",
+      "bytes": 128662,
+      "sha256": "8e1c0283d0ee6bd2789c9566bd5d1549410b0df889d45411659b577c5432ab1b"
+    }
+  ],
+  "limitations": [
+    "Three real-service tests remain skipped in default host suite; final-source CI must explicitly execute them.",
+    "No physical phone/OEM/TalkBack or independent security sign-off is claimed."
+  ]
+}

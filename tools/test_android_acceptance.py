@@ -52,6 +52,9 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         driver.process.poll.return_value = None
         driver.ui_stages.clear()
         driver.device_api = 24
+        self.launch_patch = patch.object(driver, 'prepare_launch', return_value='a' * 32)
+        self.launch_patch.start()
+        self.addCleanup(self.launch_patch.stop)
 
     def events(self):
         return [json.loads(line) for line in (driver.args.output/'driver-events.jsonl').read_text().splitlines()]
@@ -497,7 +500,8 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         self.assertEqual(len([e for e in self.events() if e['event'] == 'diagnostic-failed']), 3)
 
     def test_app_report_failure_is_not_retried_as_infrastructure(self):
-        report = {'build': '10002', 'runId': '123', 'status': 'failed', 'error': 'Keystore failure'}
+        report = {'build': '10002', 'runId': '123', 'status': 'failed', 'error': 'Keystore failure',
+                  'launchNonce': 'a' * 32, 'phase': 'reopen', 'previousRunId': 'old'}
         with patch.object(driver, 'shell') as shell, patch.object(driver, 'command', return_value=result(json.dumps(report).encode())):
             with self.assertRaisesRegex(RuntimeError, 'Keystore failure'):
                 driver.start_and_wait(10002, 'reopen', 'old')
@@ -508,6 +512,7 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
                   'nativeReminderScheduling', 'workManagerRenewal', 'periodicTasksRegistered')
         for missing in fields:
             report = {'build': '10002', 'runId': '123', 'status': 'passed', 'phase': 'reopen', 'schema': 3,
+                      'launchNonce': 'a' * 32, 'previousRunId': 'old',
                       **{field: field != missing for field in fields}}
             with self.subTest(missing=missing), patch.object(driver, 'shell'), patch.object(driver, 'command', return_value=result(json.dumps(report).encode())):
                 with self.assertRaises(AssertionError):
@@ -520,7 +525,8 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
                 driver.start_and_wait(10001, 'reopen', 'old')
 
     def test_permission_kill_cannot_change_logical_run_or_replay_ui(self):
-        waiting = {'build': '10002', 'runId': '123', 'status': 'running', 'stage': 'awaitingNotificationDeny'}
+        waiting = {'build': '10002', 'runId': '123', 'status': 'running', 'stage': 'awaitingNotificationDeny',
+                   'launchNonce': 'a' * 32, 'phase': 'reopen', 'previousRunId': '122'}
         restarted = {**waiting, 'runId': '456', 'stage': 'awaitingDocumentSave'}
         with patch.object(driver, 'shell') as shell, \
                 patch.object(driver, 'command', side_effect=[result(json.dumps(waiting).encode()), result(json.dumps(restarted).encode())]), \
@@ -532,12 +538,14 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         shell.assert_called_once_with('am', 'start', '-n', driver.activity)
         archive.assert_called_once_with(waiting)
         ui.assert_called_once_with(waiting)
-        self.assertTrue((driver.args.output/'report-123-awaitingNotificationDeny.json').exists())
+        self.assertTrue((driver.args.output/'report-123-awaitingNotificationDeny-running.json').exists())
 
     def test_same_run_continuation_preserves_first_report_and_checkpoint_once(self):
-        waiting = {'build': '10002', 'runId': '123', 'status': 'running', 'stage': 'awaitingNotificationDeny'}
+        waiting = {'build': '10002', 'runId': '123', 'status': 'running', 'stage': 'awaitingNotificationDeny',
+                   'launchNonce': 'a' * 32, 'phase': 'reopen', 'previousRunId': '122'}
         resumed = {**waiting, 'notificationProcessResumes': [{'pid': 2}]}
         completed = {'build': '10002', 'runId': '123', 'status': 'passed', 'phase': 'reopen', 'schema': 3,
+                     'launchNonce': 'a' * 32, 'previousRunId': '122',
                      'notificationApiLevel': 24, 'nativeChannelDiagnosis': 'notApplicable', 'nativeChannelRecovery': 'notApplicable',
                      **{field: True for field in ('safExportReadback', 'safOpenDecrypt', 'safSizeLimit',
                         'nativeReminderScheduling', 'workManagerRenewal', 'periodicTasksRegistered',
@@ -549,11 +557,14 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
                 patch.object(driver, 'drive_native_ui', return_value=True), patch.object(driver.time, 'sleep'):
             self.assertEqual(driver.start_and_wait(10002, 'reopen', '122'), completed)
         archive.assert_called_once_with(waiting)
-        self.assertEqual(json.loads((driver.args.output/'report-123-awaitingNotificationDeny.json').read_text()), waiting)
+        self.assertEqual(json.loads((driver.args.output/'report-123-awaitingNotificationDeny-running.json').read_text()), waiting)
 
     def test_checkpoint_archive_rejects_wrong_package_before_mutation(self):
-        waiting = {'build': '10002', 'runId': '123', 'stage': 'awaitingNotificationDeny', 'status': 'running'}
+        waiting = {'build': '10002', 'runId': '123', 'stage': 'awaitingNotificationDeny', 'status': 'running',
+                   'launchNonce': 'a' * 32, 'phase': 'reopen', 'previousRunId': '122'}
         checkpoint = {'version': 1, 'package': driver.package, 'build': '10002', 'schema': 3,
+                      'launch': {'version': 1, 'package': driver.package, 'build': '10002', 'phase': 'reopen',
+                                 'nonce': 'a' * 32, 'previousRunId': '122'},
                       'runId': '123', 'stage': waiting['stage'], 'pid': 11, 'deadlineMs': 123456789, 'result': waiting}
         for field, bad in [('package', 'com.other.app'), ('runId', '456'), ('stage', 'awaitingNotificationGrant'),
                            ('version', True), ('schema', '3'), ('pid', 0), ('deadlineMs', True)]:
@@ -564,6 +575,82 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         with patch.object(driver, 'command', return_value=result(raw)):
             driver.archive_settings_checkpoint(waiting)
         self.assertEqual((driver.args.output/'checkpoint-123-awaitingNotificationDeny.json').read_bytes(), raw)
+
+
+    def test_host_nonce_is_written_once_before_launch_and_bound_to_passed_predecessor(self):
+        self.launch_patch.stop()
+        saved = {'build': '10001', 'phase': 'reopen', 'status': 'passed', 'runId': '122'}
+        with patch.object(driver, 'command', side_effect=[result(json.dumps(saved).encode()), result()]) as command:
+            nonce = driver.prepare_launch(10002, 'reopen', '122')
+        self.assertRegex(nonce, r'^[a-f0-9]{32}$')
+        self.assertEqual(command.call_count, 2)
+        self.assertIn('mkdir -p files', command.call_args.args[-1])
+        launch = json.loads(command.call_args.kwargs['input'])
+        self.assertEqual(launch['previousRunId'], '122')
+        self.assertEqual(launch['nonce'], nonce)
+        self.assertIn('mv files/acceptance-launch.json.pending files/acceptance-launch.json', command.call_args.args[-1])
+        self.assertEqual(json.loads((driver.args.output/f'launch-{nonce}.json').read_text()), launch)
+
+    def test_failed_unfinished_or_wrong_phase_predecessor_cannot_receive_new_nonce(self):
+        self.launch_patch.stop()
+        for saved in [
+            {'build': '10001', 'phase': 'reopen', 'status': status, 'runId': '122'}
+            for status in ('failed', 'running')
+        ] + [{'build': '10001', 'phase': 'create', 'status': 'passed', 'runId': '122'}]:
+            with self.subTest(saved=saved), patch.object(driver, 'command', return_value=result(json.dumps(saved).encode())) as command:
+                with self.assertRaisesRegex(RuntimeError, 'refuses'):
+                    driver.prepare_launch(10002, 'reopen', '122')
+                command.assert_called_once()
+
+    def test_fresh_install_has_no_report_and_creates_files_in_its_single_publish(self):
+        self.launch_patch.stop()
+        with patch.object(driver, 'command', side_effect=[result(code=1, stderr=b'No such file'), result()]) as command:
+            nonce = driver.prepare_launch(10001, 'create', None)
+        self.assertRegex(nonce, r'^[a-f0-9]{32}$')
+        self.assertEqual(command.call_count, 2)
+        self.assertIn('mkdir -p files', command.call_args.args[-1])
+        self.assertIsNone(json.loads(command.call_args.kwargs['input'])['previousRunId'])
+
+    def test_same_run_nonce_drift_stops_before_second_ui_mutation(self):
+        waiting = {'build': '10002', 'phase': 'reopen', 'previousRunId': '122', 'launchNonce': 'a' * 32,
+                   'runId': '123', 'status': 'running', 'stage': 'awaitingNotificationDeny'}
+        drift = {**waiting, 'launchNonce': 'b' * 32}
+        with patch.object(driver, 'shell'), patch.object(driver, 'command', side_effect=[result(json.dumps(v).encode()) for v in [waiting, drift]]), \
+                patch.object(driver, 'archive_settings_checkpoint'), patch.object(driver, 'drive_native_ui', return_value=True) as ui, patch.object(driver.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'logical run identity changed'):
+                driver.start_and_wait(10002, 'reopen', '122')
+        ui.assert_called_once_with(waiting)
+
+    def test_checkpoint_nonce_mismatch_is_rejected_before_settings_mutation(self):
+        waiting = {'build': '10002', 'runId': '123', 'stage': 'awaitingNotificationDeny', 'status': 'running',
+                   'phase': 'reopen', 'launchNonce': 'a' * 32, 'previousRunId': '122'}
+        checkpoint = {'version': 1, 'package': driver.package, 'build': '10002', 'schema': 3,
+                      'runId': '123', 'stage': waiting['stage'], 'pid': 11, 'deadlineMs': 123456789, 'result': waiting,
+                      'launch': {'version': 1, 'package': driver.package, 'build': '10002', 'phase': 'reopen',
+                                 'nonce': 'b' * 32, 'previousRunId': '122'}}
+        with patch.object(driver, 'command', return_value=result(json.dumps(checkpoint).encode())):
+            with self.assertRaisesRegex(RuntimeError, 'host launch nonce'):
+                driver.archive_settings_checkpoint(waiting)
+        checkpoint['launch']['nonce'] = 'a' * 32
+        checkpoint['launch']['version'] = True
+        with patch.object(driver, 'command', return_value=result(json.dumps(checkpoint).encode())):
+            with self.assertRaisesRegex(RuntimeError, 'host launch nonce'):
+                driver.archive_settings_checkpoint(waiting)
+        self.assertFalse((driver.args.output/'checkpoint-123-awaitingNotificationDeny.json').exists())
+
+    def test_running_and_failed_raw_reports_at_the_same_stage_do_not_overwrite(self):
+        waiting = {'build': '10002', 'runId': '123', 'status': 'running', 'stage': 'awaitingNotificationDeny',
+                   'phase': 'reopen', 'launchNonce': 'a' * 32, 'previousRunId': '122'}
+        failed = {**waiting, 'status': 'failed', 'error': 'original SQL mismatch'}
+        first_raw, failed_raw = [json.dumps(v).encode() for v in (waiting, failed)]
+        with patch.object(driver, 'shell'), patch.object(driver, 'command', side_effect=[result(first_raw), result(failed_raw)]), \
+                patch.object(driver, 'archive_settings_checkpoint') as archive, patch.object(driver, 'drive_native_ui', return_value=True) as ui, patch.object(driver.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'original SQL mismatch'):
+                driver.start_and_wait(10002, 'reopen', '122')
+        self.assertEqual((driver.args.output/'report-123-awaitingNotificationDeny-running.json').read_bytes(), first_raw)
+        self.assertEqual((driver.args.output/'report-123-awaitingNotificationDeny-failed.json').read_bytes(), failed_raw)
+        archive.assert_called_once_with(waiting)
+        ui.assert_called_once_with(waiting)
 
 
 if __name__ == '__main__':

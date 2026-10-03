@@ -1075,9 +1075,24 @@ class HabitController extends ChangeNotifier {
 
   String exportJson() => jsonEncode(_stateJson());
 
-  Future<bool> importJson(String raw) async {
+  Future<bool> importJson(String raw) =>
+      _replaceImportedSnapshot(raw, preserveLegacyText: false);
+
+  /// Only after the restore preview explicitly confirms preserving legacy text.
+  /// Every structural constraint still applies; ordinary imports stay strict.
+  Future<bool> restoreCompatibleBackup(String raw) =>
+      _replaceImportedSnapshot(raw, preserveLegacyText: true);
+
+  Future<bool> _replaceImportedSnapshot(
+    String raw, {
+    required bool preserveLegacyText,
+  }) async {
     try {
-      SnapshotCodec.decodeImport(raw);
+      if (preserveLegacyText) {
+        SnapshotCodec.decode(raw);
+      } else {
+        SnapshotCodec.decodeImport(raw);
+      }
     } on Object {
       _saveError = '无法识别或不支持这份数据。原数据未修改。';
       notifyListeners();

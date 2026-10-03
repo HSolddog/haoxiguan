@@ -246,10 +246,7 @@ class _DataScreenState extends State<DataScreen> with WidgetsBindingObserver {
       raw = utf8.decode(bytes);
     }
     final restored = raw!;
-    final preview = BackupPreview.fromSnapshot(
-      restored,
-      createdAtUtc: createdAt,
-    );
+    final preview = BackupPreview.forRestore(restored, createdAtUtc: createdAt);
     if (!mounted) return null;
     final completed = await showDialog<bool>(
       context: context,

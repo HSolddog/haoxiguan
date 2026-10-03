@@ -10,6 +10,7 @@ import 'package:haoxiguan/state/habit_controller.dart';
 import '../tools/android_acceptance.dart'
     show
         SettingsCheckpoint,
+        AcceptanceLaunch,
         FailedCheckpointConflict,
         readSettingsCheckpoint,
         verifyCheckpointStorage,
@@ -30,6 +31,10 @@ Map<String, Object?> _result(
     'phase': 'reopen',
     'status': 'running',
     'runId': '123456',
+    'launchNonce': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    'previousRunId': '123455',
+    'ownerPid': 101,
+    'entryId': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
     'stage': stage,
     'notificationCheckpointVersion': 1,
     for (final flag in [
@@ -202,6 +207,30 @@ void main() {
         (await readSettingsCheckpoint(directory, '10002', report))!.data,
         cp.data,
       );
+      final request = AcceptanceLaunch.decode(
+        jsonEncode(cp.data['launch']),
+        build: '10002',
+      );
+      expect(
+        (await readSettingsCheckpoint(
+          directory,
+          '10002',
+          report,
+          launch: request,
+        ))!.result['runId'],
+        '123456',
+      );
+      for (final bad in [
+        {...request.data, 'nonce': 'cccccccccccccccccccccccccccccccc'},
+        {...request.data, 'previousRunId': '123456'},
+      ]) {
+        final wrong = AcceptanceLaunch.decode(jsonEncode(bad), build: '10002');
+        await expectLater(
+          readSettingsCheckpoint(directory, '10002', report, launch: wrong),
+          throwsFormatException,
+        );
+        expect(jsonDecode(await report.readAsString()), cp.result);
+      }
       // Updating the real target replaces it atomically without extending its deadline.
       await cp.write(file);
       expect(
@@ -258,7 +287,10 @@ void main() {
           'runId': 'previous',
         }),
       );
-      expect(await readSettingsCheckpoint(directory, '10002', report), isNull);
+      await expectLater(
+        readSettingsCheckpoint(directory, '10002', report),
+        throwsFormatException,
+      );
       await writeAtomic(report, jsonEncode({...cp.result, 'status': 'passed'}));
       expect(await readSettingsCheckpoint(directory, '10002', report), isNull);
     },
@@ -346,13 +378,16 @@ void main() {
       final created = resumed.controller.exportJson();
       final createdStored = await nativeDatabaseEvidence(resumed.repository);
       final grant = SettingsCheckpoint.create(
-        _result(
-          notificationStages[1],
-          original,
-          stored,
-          created,
-          createdStored,
-        ),
+        {
+          ..._result(
+            notificationStages[1],
+            original,
+            stored,
+            created,
+            createdStored,
+          ),
+          'ownerPid': 102,
+        },
         createdStored,
         created,
         original,

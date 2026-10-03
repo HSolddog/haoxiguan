@@ -54,8 +54,8 @@ class DeviceReminderDiagnostics implements ReminderDiagnostics {
         if (reminder?.importance == Importance.none) {
           return ReminderAccess.channelDisabled;
         }
-        // A missing channel is normal before the first scheduled reminder and
-        // on Android versions predating notification channels.
+        // Android versions predating notification channels return an empty list.
+        // The local service registers its channel before reading diagnostics.
         return ReminderAccess.ready;
       }
       final ios = _plugin

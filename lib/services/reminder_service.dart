@@ -102,6 +102,21 @@ class LocalReminderService implements ReminderScheduler, ReminderDiagnostics {
       settings: InitializationSettings(android: android, iOS: darwin),
       onDidReceiveNotificationResponse: _handleResponse,
     );
+    // Scheduling only stores pending notifications on Android. Register now so
+    // the channel settings are available before the first reminder is shown.
+    // Reusing the original values preserves the user's existing channel choices.
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _channelId,
+            _channelName,
+            description: _channelDescription,
+            importance: Importance.high,
+          ),
+        );
     final launch = await _plugin.getNotificationAppLaunchDetails();
     if (handleLaunchActions &&
         launch?.didNotificationLaunchApp == true &&

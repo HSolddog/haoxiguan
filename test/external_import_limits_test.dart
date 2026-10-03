@@ -266,7 +266,7 @@ void main() {
 
   for (final lengths in [(81, 2000), (80, 2001)]) {
     testWidgets(
-      'failed paste ${lengths.$1}/${lengths.$2} retains the exact draft',
+      'paste ${lengths.$1}/${lengths.$2} requires confirmation and retains the draft',
       (tester) async {
         final repository = _ProtectingRepository();
         final controller = HabitController(repository, clock: () => _today);
@@ -292,8 +292,29 @@ void main() {
         await tester.enterText(input, raw);
         await tester.tap(find.byKey(const Key('preview-legacy-json-button')));
         await tester.pumpAndSettle();
-        expect(find.byKey(const Key('legacy-json-error')), findsOneWidget);
-        expect(find.text('恢复预览'), findsNothing);
+        expect(
+          find.byKey(const Key('restore-legacy-text-summary')),
+          findsOneWidget,
+        );
+        expect(find.text('恢复预览'), findsOneWidget);
+        expect(
+          tester
+              .widget<CheckboxListTile>(
+                find.byKey(const Key('restore-preserve-legacy-text')),
+              )
+              .value,
+          isFalse,
+        );
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('confirm-restore-button')),
+              )
+              .onPressed,
+          isNull,
+        );
+        await tester.tap(find.widgetWithText(TextButton, '取消').last);
+        await tester.pumpAndSettle();
         expect(tester.widget<TextField>(input).controller!.text, raw);
         expect(repository.value, before);
         expect(repository.replacements, 0);

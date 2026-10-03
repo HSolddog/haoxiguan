@@ -1,0 +1,141 @@
+{
+  "sourceSha": "5249d5d2c41e26a28192a3b2cfa8ed25891277cc",
+  "sourceTree": "9ecc7de58fc74b65ae0665cd7a67daa4d17c46f5",
+  "mergeSha": "4cb86b6c97ef0b2d0d54881b81c49f2eb1da35d0",
+  "mergeTree": "9ecc7de58fc74b65ae0665cd7a67daa4d17c46f5",
+  "mergeParents": [
+    "8e390aa8bc1bf438e6f6a6c7cdf7ee10d773776a",
+    "5249d5d2c41e26a28192a3b2cfa8ed25891277cc"
+  ],
+  "runId": 37144662433,
+  "runUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37144662433",
+  "jobName": "native-sync",
+  "sdkInt": 35,
+  "status": "completed",
+  "conclusion": "failure",
+  "nativePassed": false,
+  "artifacts": [
+    {
+      "id": 11281793953,
+      "name": "android-native-sync-api-35-4cb86b6c97ef0b2d0d54881b81c49f2eb1da35d0",
+      "digest": "sha256:85d2cbba6747da1b5a2fdd4e3673ad3e5a551d81455b34104a3eb4398f41296e",
+      "sizeInBytes": 2756,
+      "localArchive": "native-sync-37144662433.zip",
+      "localDigestVerified": true,
+      "extractedDirectory": "native-sync-ci-37144662433-artifact"
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "path": "native-sync-ci-37144662433-job.log",
+      "sha256": "0c0f6460d40c084248c2d17d46f3469cd1c810352e8d6fdbf234289767b982da"
+    },
+    {
+      "path": "native-sync-ci-37144662433-artifact\\driver-events.jsonl",
+      "sha256": "534bb708c44929ecb931ee9518cf66bcbef0b8681c1c35a8eefdf9bf58bd0586"
+    },
+    {
+      "path": "native-sync-ci-37144662433-artifact\\failure.json",
+      "sha256": "6526a59b22c07c2ea194820c4ec28e13b7635bbac90645e0685aaecf58745b89"
+    },
+    {
+      "path": "native-sync-ci-37144662433-artifact\\report-a.json",
+      "sha256": "e42b07721b5b720dc8abfe94eb67516bd05f68f2ee985d1003b2ca8cd22e98af"
+    },
+    {
+      "path": "native-sync-ci-37144662433-artifact\\report-b.json",
+      "sha256": "a03511c8874975684d1bc44dca878dda211f4f0953117f4e7e2c558df9db64e0"
+    }
+  ],
+  "jobId": 111268131540,
+  "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37144662433/job/111268131540",
+  "jobStartedAt": "2026-10-03T18:45:19Z",
+  "fixtureArtifacts": [
+    {
+      "id": 11281554263,
+      "name": "android-sync-acceptance-4cb86b6c97ef0b2d0d54881b81c49f2eb1da35d0",
+      "sizeInBytes": 108772865,
+      "digest": "sha256:c426fc077a0e454ce8f751659606e63932003476fbbccaaa25f162aa9a123d48",
+      "sourceSha": "5249d5d2c41e26a28192a3b2cfa8ed25891277cc"
+    }
+  ],
+  "actualFailure": {
+    "kind": "driver_command",
+    "runId": "5ac6b89a6116407a987501cc84396018",
+    "errorType": "RuntimeError",
+    "operation": "read native picker tree",
+    "exit": 1,
+    "stdoutBytes": 0,
+    "stderrBytes": 63,
+    "originalStderrAvailable": false,
+    "specificSnapshotReasonKnown": false,
+    "fixtureFailures": {},
+    "lastValidatedStages": {
+      "B": "awaitingRecoveryJoin",
+      "A": "awaitingReplicaImport"
+    },
+    "emulatorExited": false
+  },
+  "actualReports": {
+    "A": {
+      "status": "running",
+      "stage": "awaitingReplicaImport",
+      "reportSequence": 31,
+      "launchId": "88fda863b97f4ac6a055e19184c764d6",
+      "diagnostic": {
+        "failureCode": "none",
+        "lastStage": "awaitingReplicaImport",
+        "lastAction": "await_replica_import",
+        "frameworkFailure": "none"
+      },
+      "passedFlags": [
+        "realSyncScreen",
+        "realTlsTransport",
+        "productionStorage",
+        "recoverySafVerified",
+        "initialPreviewCancelled",
+        "initialPreviewConfirmed",
+        "fullFactsTransferred"
+      ],
+      "evidenceKeys": [
+        "cancel",
+        "initialActualFactsSha256",
+        "initialExpectedFactsSha256"
+      ]
+    },
+    "B": {
+      "status": "running",
+      "stage": "awaitingRecoveryJoin",
+      "reportSequence": 11,
+      "launchId": "0c3d16c98554479482e678385e8dd2d4",
+      "diagnostic": {
+        "failureCode": "none",
+        "lastStage": "awaitingRecoveryJoin",
+        "lastAction": "enroll_device",
+        "frameworkFailure": "none"
+      },
+      "passedFlags": [
+        "realSyncScreen",
+        "productionStorage"
+      ],
+      "evidenceKeys": []
+    }
+  },
+  "safActions": [
+    {
+      "role": "A",
+      "stage": "awaitingRecoverySave",
+      "action": "save"
+    },
+    {
+      "role": "A",
+      "stage": "awaitingRecoveryReadback",
+      "action": "select"
+    },
+    {
+      "role": "B",
+      "stage": "awaitingRecoveryJoin",
+      "action": "select"
+    }
+  ]
+}

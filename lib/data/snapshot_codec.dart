@@ -8,8 +8,9 @@ class SnapshotCodec {
   static const currentVersion = 7;
   static const maxBytes = 50 * 1024 * 1024;
 
-  /// External restores obey current input limits. [decode] remains compatible
-  /// with existing local facts, migrations and lossless backup/export checks.
+  /// Ordinary external imports obey current input limits. [decode] preserves
+  /// existing local facts, migrations, lossless exports and explicitly confirmed
+  /// historical backup restores.
   static Map<String, Object?> decodeImport(String raw) {
     final document = decode(raw);
     for (final item in document['habits']! as List) {

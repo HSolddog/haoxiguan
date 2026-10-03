@@ -1,0 +1,251 @@
+{
+  "kind": "Host-only isolated acceptance owner/nonce, strict checkpoint and real SQLite validation; new Android runtime pending",
+  "originatingCI": {
+    "sourceHead": "5249d5d2c41e26a28192a3b2cfa8ed25891277cc",
+    "runId": 37144662433,
+    "index": "docs/验收记录/ci-5249d5d.json"
+  },
+  "repositoryHeadAtArchivingOnly": "0a9950e618ef8097df91b6190add985c754f1796",
+  "frozenSourceFiles": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\android_acceptance.dart",
+      "bytes": 60010,
+      "sha256": "6eb8c4b26335f2f83354f5f13e821fe8059f7f61505af6cb05790d68381120c4",
+      "sourceGitBlobSha256": "6eb8c4b26335f2f83354f5f13e821fe8059f7f61505af6cb05790d68381120c4",
+      "sourceGitBlobBytes": 60010,
+      "matchesSourceAfterGitLineEndingConversionOnly": true
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\run_android_acceptance.py",
+      "bytes": 43332,
+      "sha256": "5f006f673132bb0a4d82f7dfc20a5fd7976f0769c5c6232ee534721fd0dbffc3",
+      "sourceGitBlobSha256": "96376aa8cbed9efc628a162a6459ba1bb01e82e9dd23ad935b3ed95b9c815ec0",
+      "sourceGitBlobBytes": 43031,
+      "matchesSourceAfterGitLineEndingConversionOnly": true
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\test_android_acceptance.py",
+      "bytes": 43360,
+      "sha256": "4d94997da41c8f88105d901774081b1306a58bc61a30f60ca9ad37fa624b26a9",
+      "sourceGitBlobSha256": "22003e3aee3663119634b1bd806462154facb52cab7f37bb3cbd823aa74afd6d",
+      "sourceGitBlobBytes": 43142,
+      "matchesSourceAfterGitLineEndingConversionOnly": true
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\test\\android_acceptance_checkpoint_test.dart",
+      "bytes": 13656,
+      "sha256": "294a2cbb985d3fad846b296504471af7c81121ec4ac2e55c85f6a979f3dfcbe1",
+      "sourceGitBlobSha256": "294a2cbb985d3fad846b296504471af7c81121ec4ac2e55c85f6a979f3dfcbe1",
+      "sourceGitBlobBytes": 13656,
+      "matchesSourceAfterGitLineEndingConversionOnly": true
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\test\\android_acceptance_owner_test.dart",
+      "bytes": 9635,
+      "sha256": "8677d1ab01a21497a45cad766cf4c2217b05fc457e2395dd03ebc085cc281368",
+      "sourceGitBlobSha256": "8677d1ab01a21497a45cad766cf4c2217b05fc457e2395dd03ebc085cc281368",
+      "sourceGitBlobBytes": 9635,
+      "matchesSourceAfterGitLineEndingConversionOnly": true
+    }
+  ],
+  "schema2RepositoryFrozen": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\fixtures\\schema2_repository.dart.txt",
+    "bytes": 19326,
+    "sha256": "6b3f9879ef38e4c874f2bd1efe310d2307e44ec5b48f823604d91f68dc69e3dc"
+  },
+  "commands": [
+    {
+      "command": "flutter test --no-pub test/android_acceptance_protocol_test.dart test/android_acceptance_checkpoint_test.dart test/android_acceptance_restore_sqlite_test.dart test/android_acceptance_owner_test.dart",
+      "exitCode": 0,
+      "passed": 15,
+      "groups": {
+        "protocol": 3,
+        "checkpoint": 4,
+        "realRestoreSQLite": 3,
+        "owner": 5
+      },
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-target-frozen.log",
+        "bytes": 9073,
+        "sha256": "5776f8de48298700396d25866ce8ea9a3db742d3ba88603d0d4cd28c53175d71"
+      }
+    },
+    {
+      "command": "flutter analyze --no-pub tools/android_acceptance.dart test/android_acceptance_protocol_test.dart test/android_acceptance_checkpoint_test.dart test/android_acceptance_restore_sqlite_test.dart test/android_acceptance_owner_test.dart",
+      "exitCode": 0,
+      "result": "No issues found",
+      "seconds": 8.6,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-analyze-frozen.log",
+        "bytes": 98,
+        "sha256": "1058751231efaeec339cc6ffe2a59898b9361724201229b975ba1ed21ad00b5e"
+      }
+    },
+    {
+      "command": "python -m unittest tools/test_android_acceptance.py -q",
+      "exitCode": 0,
+      "passed": 53,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-python-frozen.log",
+        "bytes": 102,
+        "sha256": "350c7ec86e2603be3e87b0673a80c1e972de98c7916a0de223c8319b13d4d1c4"
+      }
+    },
+    {
+      "command": "dart format tools/android_acceptance.dart test/android_acceptance_checkpoint_test.dart test/android_acceptance_owner_test.dart",
+      "exitCode": 0,
+      "purpose": "actual formatting, not a zero-change format check",
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-format-frozen.log",
+        "bytes": 104,
+        "sha256": "0d28ad7e29351f95789d169e505cc5c78db693b6f20a2bc7be78167712b8ddd1"
+      }
+    }
+  ],
+  "realSqliteEvidence": [
+    {
+      "kind": "cancel-8e384927",
+      "raw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-host-frozen\\cancel-8e384927\\evidence.json",
+        "bytes": 17997,
+        "sha256": "7052481f3c3cf41ffb407ca32621d3da8bab301a4f1f8e4388129f10b3fab949"
+      }
+    },
+    {
+      "kind": "checkpoint-sqlite-77727306",
+      "raw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-host-frozen\\checkpoint-sqlite-77727306\\evidence.json",
+        "bytes": 85921,
+        "sha256": "bca47f7d4c3d2c6155a1d16ceca14a8d25f52ad12886fce6f79a7340098d38f2"
+      },
+      "deny": {
+        "runId": "123456",
+        "stage": "awaitingNotificationDeny",
+        "launch": {
+          "version": 1,
+          "package": "com.haoxiguan.haoxiguan.acceptance",
+          "build": "10002",
+          "phase": "reopen",
+          "nonce": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "previousRunId": "123455"
+        },
+        "exactSqlSame": true,
+        "completeModelSame": true,
+        "databaseDifferencePaths": [],
+        "sqlTables": [
+          "app_state",
+          "daily_notes",
+          "habits",
+          "legacy_sources",
+          "local_changes",
+          "plans",
+          "protections",
+          "records",
+          "sqlite_sequence",
+          "sync_protections",
+          "sync_state"
+        ]
+      },
+      "grant": {
+        "runId": "123456",
+        "stage": "awaitingNotificationGrant",
+        "launch": {
+          "version": 1,
+          "package": "com.haoxiguan.haoxiguan.acceptance",
+          "build": "10002",
+          "phase": "reopen",
+          "nonce": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "previousRunId": "123455"
+        },
+        "exactSqlSame": true,
+        "completeModelSame": true,
+        "databaseDifferencePaths": [],
+        "sqlTables": [
+          "app_state",
+          "daily_notes",
+          "habits",
+          "legacy_sources",
+          "local_changes",
+          "plans",
+          "protections",
+          "records",
+          "sqlite_sequence",
+          "sync_protections",
+          "sync_state"
+        ]
+      },
+      "interveningWriteRejected": true
+    },
+    {
+      "kind": "confirm-reopen-a30d4a5d",
+      "raw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-host-frozen\\confirm-reopen-a30d4a5d\\evidence.json",
+        "bytes": 50500,
+        "sha256": "92dd015dbf18cf7da2909456712166aebdba63f0a6180f4dd082126ec3abb384"
+      }
+    },
+    {
+      "kind": "reminder-storage-4bf1ed2f",
+      "raw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-host-frozen\\reminder-storage-4bf1ed2f\\evidence.json",
+        "bytes": 93486,
+        "sha256": "02af627223b06788389bdc5318c2eb9c3a6b9ef44d10e1868de37244f08d4f6a"
+      }
+    }
+  ],
+  "retainedEarlierIterationLogs": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-format-initial.log",
+      "bytes": 427,
+      "sha256": "21f70ee21a1c951025c6df0203132e7279a4dbafdf55e5cb8f1c3f8756cf5f77"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-target-initial.log",
+      "bytes": 6717,
+      "sha256": "ec389a0cea47ea556c3c3d3a1a1d744945197877e1ba1eed101e0d90b9779158"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-target-corrected.log",
+      "bytes": 3185,
+      "sha256": "fc039420819e6ff58799133b4084b296b4293c8566cc36affb7f2d09b35d2cd5"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-analyze-initial.log",
+      "bytes": 1321,
+      "sha256": "d9abc6aaf5b0e2e0603d06b447853ed526151589a55601b76a0081579fadd123"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-python-final.log",
+      "bytes": 877,
+      "sha256": "a8b4b58509750e6020a0772bdcf89592fd1f7ea2a8db5607711b526730ae6fdd"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-target-final.log",
+      "bytes": 9069,
+      "sha256": "9d05100bc36d0ca92e5f24ed85d79dbb6a7ea0934af63720e1c02dbf63072e07"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-5249d5d\\owner-python-corrected.log",
+      "bytes": 102,
+      "sha256": "5dc7fc7a34606559b38f89f05da2623d72dfa5496c5b6fbf86f83155278b8207"
+    }
+  ],
+  "implemented": [
+    "Exactly the four existing host launches publish an atomic random nonce bound to isolated package/build/phase/previous passed run. OS Settings Back does not publish another nonce.",
+    "IsolateNameServer synchronous atomic registration admits one process owner before report/SQL/widget work. Cross-isolate duplicate receives only a bounded challenge-bound identity ping, emits diagnostics and returns without business/report/ack writes.",
+    "Owner port remains registered after passed or failed. Silence, wrong challenge, wrong identity or different nonce never authorizes a replacement owner.",
+    "Cross-PID resume requires the saved checkpoint with the exact same host authorization and original absolute deadline; same runId and exact SQL/model comparisons remain mandatory.",
+    "Any retained failed or unfinished run is refused across build/nonce changes; first error and rejected report are preserved. Only a passed valid phase predecessor can authorize a fresh host run.",
+    "Raw running/failed/passed observations use distinct status-bearing filenames; a later failure at the same stage cannot overwrite its first running raw report.",
+    "Lifecycle/entry diagnostics and Android lifecycle logcat tags added; real channel observations saved before enabled/disabled assertions."
+  ],
+  "boundaries": [
+    "New native runtime still required to prove an original owner completes through all UI/business assertions; a positive owner ping does not prove visible Activity/engine attachment.",
+    "No cached FlutterEngine or product Activity changes were made; source of original re-entry is still unknown.",
+    "Host synthetic SQLite/Isolate tests do not prove Android notification/channel behavior or a complete native matrix."
+  ],
+  "sourceCommit": "0a9950e618ef8097df91b6190add985c754f1796",
+  "sourceTree": "2ed18a561b6f206bdbfed29e2e0297f349898c8d",
+  "testExecutionBaseCommit": "4a873fd077a231598dcc02fa7a8687bef1c0a930",
+  "commitBinding": "The target commands executed over the previous base plus the frozen files below; every file matches this source Git blob after only Git CRLF-to-LF conversion. This source is newer than CI5249 and has not yet run native Android."
+}

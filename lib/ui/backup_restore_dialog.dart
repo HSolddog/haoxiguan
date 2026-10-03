@@ -19,6 +19,7 @@ class BackupRestoreDialog extends StatefulWidget {
 
 class BackupRestoreDialogState extends State<BackupRestoreDialog> {
   bool _saving = false;
+  bool _preserveLegacyText = false;
   String? _error;
   @override
   Widget build(BuildContext context) => PopScope(
@@ -39,6 +40,24 @@ class BackupRestoreDialogState extends State<BackupRestoreDialog> {
               '将替换本机 ${widget.controller.habits.length} 个习惯。恢复前会自动保护当前数据；保护失败不会替换。\n\n'
               '恢复为空间副本，默认不连接原同步服务；WebDAV 自动备份需要为新空间重新配置。设备授权、存储密码和系统权限不会导入。',
             ),
+            if (widget.preview.requiresCompatibilityConfirmation) ...[
+              const SizedBox(height: 16),
+              Text(
+                widget.preview.compatibilitySummary,
+                key: const Key('restore-legacy-text-summary'),
+              ),
+              CheckboxListTile(
+                key: const Key('restore-preserve-legacy-text'),
+                value: _preserveLegacyText,
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('完整保留这些历史文本'),
+                subtitle: const Text('保留全部原文。今后编辑时，标题需为 1–80 个字符，备注最多 2000 字。'),
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() => _preserveLegacyText = value!),
+              ),
+            ],
             if (_saving) const LinearProgressIndicator(),
             if (_error != null) Text(_error!, key: const Key('restore-error')),
           ],
@@ -51,16 +70,22 @@ class BackupRestoreDialogState extends State<BackupRestoreDialog> {
         ),
         FilledButton(
           key: const Key('confirm-restore-button'),
-          onPressed: _saving
+          onPressed:
+              _saving ||
+                  (widget.preview.requiresCompatibilityConfirmation &&
+                      !_preserveLegacyText)
               ? null
               : () async {
                   setState(() {
                     _saving = true;
                     _error = null;
                   });
-                  final success = await widget.controller.importJson(
-                    widget.raw,
-                  );
+                  final success =
+                      widget.preview.requiresCompatibilityConfirmation
+                      ? await widget.controller.restoreCompatibleBackup(
+                          widget.raw,
+                        )
+                      : await widget.controller.importJson(widget.raw);
                   if (!context.mounted) return;
                   if (success) {
                     Navigator.pop(context, true);

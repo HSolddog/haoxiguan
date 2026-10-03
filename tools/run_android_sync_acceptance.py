@@ -64,6 +64,17 @@ CONTROL_PREREQUISITES = {
 CONFIG_FILE = 'files/sync_acceptance_config.json'
 REPORT_FILE = 'files/sync_acceptance_result.json'
 CONTROL_FILE = 'files/sync_acceptance_control.json'
+# Read/retry work shares one monotonic deadline. On a terminal command timeout,
+# run_owned can additionally spend 10+5+5 seconds reclaiming its owned child.
+# Final private-file deletion has a separate 10-second command budget and the
+# same possible 20-second child cleanup. Thus the conservative wall-clock bound
+# for this operation is 45+20+10+20 = 95 seconds, not 45 seconds.
+UI_SNAPSHOT_READ_SECONDS = 45
+UI_SNAPSHOT_FILE_CLEANUP_SECONDS = 10
+UI_SNAPSHOT_OWNED_CLEANUP_SECONDS = 20
+UI_SNAPSHOT_TOTAL_BOUND_SECONDS = (
+    UI_SNAPSHOT_READ_SECONDS + UI_SNAPSHOT_OWNED_CLEANUP_SECONDS +
+    UI_SNAPSHOT_FILE_CLEANUP_SECONDS + UI_SNAPSHOT_OWNED_CLEANUP_SECONDS)
 FACT_DIGESTS = tuple(f'{phase}{kind}FactsSha256'
                     for phase in ('initial', 'converged', 'offline')
                     for kind in ('Expected', 'Actual'))
@@ -444,11 +455,11 @@ class NativeSyncDriver:
         with (self.output / 'driver-events.jsonl').open('a', encoding='utf-8') as file:
             file.write(json.dumps({'event': kind, 'time': time.monotonic(), **fields}) + '\n')
 
-    def require_alive(self, stage):
+    def require_alive(self, stage, *, check_deadline=True):
         if self.process is None or self.process.poll() is not None:
             raise RuntimeError(f'isolated emulator exited during {stage}')
         self.relay.require_alive()
-        if self.deadline is not None and time.monotonic() >= self.deadline:
+        if check_deadline and self.deadline is not None and time.monotonic() >= self.deadline:
             raise TimeoutError('native sync total timeout')
 
     def execute(self, values, label, *, timeout=30, check=True, input=None, env=None):
@@ -721,13 +732,83 @@ class NativeSyncDriver:
         # Never write XML/screenshots/logcat to evidence: a recovery dialog or
         # the SyncScreen connection form can contain synthetic credentials.
         path = '/sdcard/sync-acceptance-ui.xml'
-        try:
-            self.shell('uiautomator', 'dump', path, label='read native picker UI', timeout=25)
-            xml = self.shell('cat', path, label='read native picker tree', timeout=10)
-            return ET.fromstring(xml)
-        finally:
-            # Delete sensitive guest diagnostics, including on parser failure.
-            self.shell('rm', '-f', path, label='remove private picker snapshot', timeout=10)
+        deadline = time.monotonic() + UI_SNAPSHOT_READ_SECONDS
+        if self.deadline is not None:
+            deadline = min(deadline, self.deadline)
+        # AOSP DumpCommand can return without creating its file when waitForIdle
+        # fails. These exact tool diagnostics are classified only in memory.
+        # Unknown ADB failures, timeouts and malformed XML never become retries.
+        dump_errors = {
+            b'ERROR: could not get idle state.': 'ui_snapshot_idle',
+            b'ERROR: null root node returned by UiTestAutomationBridge.': 'ui_snapshot_no_root',
+        }
+        missing_error = ('cat: ' + path + ': No such file or directory').encode()
+
+        def command(*values, label, limit, cleanup=False):
+            command_deadline = (time.monotonic() + UI_SNAPSHOT_FILE_CLEANUP_SECONDS
+                                if cleanup else deadline)
+            # Final deletion is allowed after the read/protocol deadline, while
+            # still requiring this emulator and relay to be alive.
+            self.require_alive('native picker snapshot', check_deadline=not cleanup)
+            remaining = command_deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('native picker snapshot exhausted its fixed budget')
+            return self.adb_command('shell', *values, label=label,
+                                    timeout=min(limit, remaining), check=False)
+
+        def checked(value, label):
+            if value.returncode:
+                raise RuntimeError(f'{label} failed with exit {value.returncode}')
+            if value.stderr.strip():
+                raise RuntimeError(label + ' returned unknown diagnostics')
+
+        for attempt in range(1, 4):
+            reason = None
+            primary_error = None
+            try:
+                cleared = command('rm', '-f', path, label='clear private picker snapshot', limit=10)
+                checked(cleared, 'clear private picker snapshot')
+                dumped = command('uiautomator', 'dump', path,
+                                 label='read native picker UI', limit=25)
+                transient_dump = (dump_errors.get(dumped.stderr.strip())
+                                  if dumped.returncode == 0 and not dumped.stdout else None)
+                if transient_dump is not None:
+                    reason = transient_dump
+                else:
+                    checked(dumped, 'read native picker UI')
+                    xml = command('cat', path, label='read native picker tree', limit=10)
+                    if (xml.returncode == 1 and not xml.stdout and
+                            xml.stderr.strip() == missing_error):
+                        reason = 'ui_snapshot_missing'
+                    else:
+                        checked(xml, 'read native picker tree')
+                        return ET.fromstring(xml.stdout)
+                self.event('ui-snapshot-unavailable', reason=reason, attempt=attempt)
+            except BaseException as error:
+                primary_error = error
+                raise
+            finally:
+                # Every attempt starts and ends with deletion of this owned path.
+                # Cleanup time consumes the same read deadline, so it cannot
+                # extend retries; final deletion retains its own bounded budget.
+                try:
+                    removed = command('rm', '-f', path,
+                                      label='remove private picker snapshot', limit=10, cleanup=True)
+                    checked(removed, 'remove private picker snapshot')
+                except BaseException as error:
+                    try:
+                        self.event('ui-snapshot-cleanup-failed', errorType=type(error).__name__)
+                    except Exception:
+                        pass  # Logging must never replace the first failure.
+                    if primary_error is None:
+                        raise
+            if attempt == 3:
+                raise RuntimeError('native picker snapshot remained unavailable after three read-only attempts')
+            self.require_alive('native picker snapshot retry')
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('native picker snapshot exhausted its fixed budget')
+            time.sleep(min(0.25, remaining))
 
     def tap(self, node, key):
         bounds = re.fullmatch(r'\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]',

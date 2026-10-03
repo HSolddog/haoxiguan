@@ -181,7 +181,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
     try {
       // Use the currently entered backup password so old-password snapshots remain recoverable.
       final raw = await client.restore(item, _backupPassword.text);
-      final preview = BackupPreview.fromSnapshot(
+      final preview = BackupPreview.forRestore(
         raw,
         createdAtUtc: item.created.toUtc(),
       );

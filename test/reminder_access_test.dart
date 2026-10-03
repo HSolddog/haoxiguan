@@ -32,6 +32,7 @@ void main() {
             case 'initialize':
               return true;
             case 'getNotificationAppLaunchDetails':
+            case 'createNotificationChannel':
             case 'cancelAll':
             case 'zonedSchedule':
               return null;
