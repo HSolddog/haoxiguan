@@ -8,6 +8,12 @@ import 'package:uuid/uuid.dart';
 
 import '../data/snapshot_codec.dart';
 
+class BackupContents {
+  const BackupContents(this.snapshot, this.createdAtUtc);
+  final String snapshot;
+  final DateTime? createdAtUtc;
+}
+
 /// The entire header has an explicit, stable AEAD encoding (see protocol docs).
 class BackupCodec {
   static const format = 'haoxiguan-backup';
@@ -21,6 +27,10 @@ class BackupCodec {
       Isolate.run(() => encryptHere(snapshot, password));
   static Future<String> decrypt(Uint8List bytes, String password) =>
       Isolate.run(() => decryptHere(bytes, password));
+  static Future<BackupContents> decryptWithMetadata(
+    Uint8List bytes,
+    String password,
+  ) => Isolate.run(() => decryptHereWithMetadata(bytes, password));
 
   static Future<Uint8List> encryptHere(String snapshot, String password) async {
     final data = SnapshotCodec.decode(snapshot);
@@ -97,7 +107,13 @@ class BackupCodec {
     }
   }
 
-  static Future<String> decryptHere(Uint8List bytes, String password) async {
+  static Future<String> decryptHere(Uint8List bytes, String password) async =>
+      (await decryptHereWithMetadata(bytes, password)).snapshot;
+
+  static Future<BackupContents> decryptHereWithMetadata(
+    Uint8List bytes,
+    String password,
+  ) async {
     if (bytes.length > maxFileBytes) {
       throw const FormatException('备份文件超过 50 MiB');
     }
@@ -168,7 +184,12 @@ class BackupCodec {
           manifest['habitCount'] != (snapshot['habits']! as List).length) {
         throw const FormatException('备份清单与内容不一致');
       }
-      return raw;
+      final createdAt = manifest['createdAtUtc'];
+      final created = createdAt is String ? DateTime.tryParse(createdAt) : null;
+      if (createdAt != null && (created == null || !created.isUtc)) {
+        throw const FormatException('备份创建时间无效');
+      }
+      return BackupContents(raw, created);
     } on SodiumException {
       throw const FormatException('密码不正确或备份被修改，原数据未改变');
     } finally {
