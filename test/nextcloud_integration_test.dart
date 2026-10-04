@@ -386,13 +386,34 @@ void main() {
         final tag = marker.headers['etag'];
         expect(tag, isNotNull);
         expect(tag, isNot(startsWith('W/')));
-        await client.request(
-          'PUT',
-          '${item.relativePath}.complete.json',
-          body: utf8.encode(jsonEncode(fixture.toJson())),
-          headers: {'If-Match': tag!},
-          allowed: {204},
+        final encoding = (marker.headers['content-encoding'] ?? '')
+            .trim()
+            .toLowerCase();
+        final representation = {
+          'responseContentEncoded':
+              encoding.isNotEmpty && encoding != 'identity',
+          'responseEtagHasGzipSuffix': tag!.endsWith('-gzip"'),
+          'responseStrongEtag': RegExp(
+            r'^"[\x21\x23-\x7e\x80-\xff]*"$',
+          ).hasMatch(tag),
+        };
+        debugPrint(
+          'NEXTCLOUD_MARKER_REPRESENTATION=${jsonEncode(representation)}',
         );
+        try {
+          await client.request(
+            'PUT',
+            '${item.relativePath}.complete.json',
+            body: utf8.encode(jsonEncode(fixture.toJson())),
+            headers: {'If-Match': tag},
+            allowed: {204},
+          );
+        } on DavFailure catch (error) {
+          fail(
+            'Synthetic marker conditional PUT failed (HTTP ${error.status}); '
+            'representation=${jsonEncode(representation)}',
+          );
+        }
         return fixture;
       }
 

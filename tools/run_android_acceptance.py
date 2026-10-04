@@ -62,7 +62,7 @@ def verify_page_size(image):
     if value.returncode == 0 and not value.stderr and re.fullmatch(rb'[1-9][0-9]*\r?\n?', value.stdout):
         page_size = int(value.stdout)
     event('device-page-size', image=image, api=device_api, serial=adb_serial,
-          expected=args.expected_page_size, actual=page_size, exit=value.returncode)
+          expected=args.expected_page_size, actual=page_size, exit=value.returncode, memoryMiB=args.memory_mb)
     image_directory = sdk / image.replace(';', '/')
     for name in ('package.xml', 'source.properties'):
         path = image_directory / name
@@ -77,7 +77,7 @@ def verify_page_size(image):
         properties[name] = shell('getprop', name).strip()
     evidence = {'image': image, 'api': device_api, 'serial': adb_serial,
                 'pageSize': page_size, 'expectedPageSize': args.expected_page_size,
-                'properties': properties}
+                'properties': properties, 'memoryMiB': args.memory_mb}
     (args.output/'device-environment.json').write_text(json.dumps(evidence, indent=2)+'\n', encoding='utf-8')
     print(f'{adb_serial}: getconf PAGE_SIZE={page_size}; image={image}')
 
@@ -1022,6 +1022,7 @@ def main(argv=None):
     parser.add_argument('--image-target', choices=('default', 'google_apis_ps16k'), default='default')
     parser.add_argument('--expected-page-size', type=int, choices=(4096, 16384))
     parser.add_argument('--product-apk', type=Path)
+    parser.add_argument('--memory-mb', type=int, choices=(2048, 4096), default=2048)
     args = parser.parse_args(argv)
     if args.port < 5554 or args.port > 5682 or args.port % 2:
         parser.error('--port must be an even emulator console port from 5554 to 5682')
@@ -1058,9 +1059,10 @@ def main(argv=None):
     if config.exists():
         config.write_text(re.sub(r'disk.dataPartition.size=.*', 'disk.dataPartition.size=2G', config.read_text()))
     log = (args.output/'emulator.log').open('wb')
+    event('emulator-launch', image=image, memoryMiB=args.memory_mb, serial=adb_serial)
     process = subprocess.Popen([str(sdk/'emulator/emulator'), '-avd', 'acceptance', '-port', str(args.port), '-no-window', '-no-audio',
                                 '-no-snapshot', '-no-boot-anim', '-no-metrics', '-accel', 'on',
-                                '-gpu', 'swiftshader', '-memory', '2048', '-skin', '720x1280',
+                                '-gpu', 'swiftshader', '-memory', str(args.memory_mb), '-skin', '720x1280',
                                 '-prop', 'qemu.sf.lcd_density=320'], stdout=log, stderr=subprocess.STDOUT)
     runtime_process = None
     runtime_log = None

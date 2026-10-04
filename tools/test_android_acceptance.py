@@ -83,7 +83,7 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
-        driver.args = SimpleNamespace(output=Path(self.directory.name), api=24)
+        driver.args = SimpleNamespace(output=Path(self.directory.name), api=24, memory_mb=2048)
         driver.adb = 'adb'
         driver.adb_serial = 'emulator-5580'
         driver.process = Mock(pid=123)
@@ -326,8 +326,10 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         self.assertEqual((driver.args.output/'device-page-size.txt').read_bytes(), b'16384\n')
         self.assertEqual((driver.args.output/'system-image-package.xml').read_bytes(), b'<package revision="5"/>\n')
         self.assertEqual(json.loads((driver.args.output/'device-environment.json').read_text())['pageSize'], 16384)
+        self.assertEqual(json.loads((driver.args.output/'device-environment.json').read_text())['memoryMiB'], 2048)
         self.assertEqual(driver.device_page_size, 16384)
         self.assertEqual(self.events()[-1]['image'], image)
+        self.assertEqual(self.events()[-1]['memoryMiB'], 2048)
 
     def test_wrong_failed_ambiguous_or_noisy_page_size_cannot_pass(self):
         image = self.image_metadata()
@@ -366,19 +368,32 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
             return result(b'4096\n' if 'getconf' in values else b'1\n')
         def cleanup(process, log, *others):
             log.close()
-        with patch.dict(os.environ, env), patch.object(driver.Path, 'cwd', return_value=Path(self.directory.name)), \
-                patch.object(driver.subprocess, 'run'), patch.object(driver.subprocess, 'Popen', return_value=driver.process), \
-                patch.object(driver, 'command', side_effect=reply) as command, \
-                patch.object(driver, 'require_unused_serial'), patch.object(driver, 'shell', return_value='35'), \
-                patch.object(driver, 'find_aapt') as aapt, patch.object(driver, 'verify_product_startup') as product, \
-                patch.object(driver, 'collect_diagnostics', side_effect=cleanup):
-            with self.assertRaisesRegex(RuntimeError, 'APK installation refused'):
+        for memory, options in ((2048, []), (4096, ['--memory-mb', '4096'])):
+            with self.subTest(memory=memory), patch.dict(os.environ, env), \
+                    patch.object(driver.Path, 'cwd', return_value=Path(self.directory.name)), \
+                    patch.object(driver.subprocess, 'run'), patch.object(driver.subprocess, 'Popen', return_value=driver.process) as launch, \
+                    patch.object(driver, 'command', side_effect=reply) as command, \
+                    patch.object(driver, 'require_unused_serial'), patch.object(driver, 'shell', return_value='35'), \
+                    patch.object(driver, 'find_aapt') as aapt, patch.object(driver, 'verify_product_startup') as product, \
+                    patch.object(driver, 'collect_diagnostics', side_effect=cleanup):
+                with self.assertRaisesRegex(RuntimeError, 'APK installation refused'):
+                    driver.main(['--api', '35', '--apks', self.directory.name, '--output', self.directory.name,
+                                 '--image-target', 'google_apis_ps16k', '--expected-page-size', '16384', *options])
+            aapt.assert_not_called()
+            product.assert_not_called()
+            self.assertFalse(any('install' in call.args for call in command.call_args_list))
+            self.assertEqual((driver.args.output/'device-page-size.txt').read_bytes(), b'4096\n')
+            launched = launch.call_args.args[0]
+            self.assertEqual(launched[launched.index('-memory') + 1], str(memory))
+            self.assertEqual(self.events()[-2]['memoryMiB'], memory)
+            self.assertEqual([row for row in self.events() if row['event'] == 'emulator-launch'][-1]['memoryMiB'], memory)
+
+    def test_memory_outside_owned_supported_configurations_is_rejected_before_sdk(self):
+        with patch.dict(os.environ, {}, clear=True), patch.object(driver.subprocess, 'run') as run:
+            with patch('sys.stderr', new=io.StringIO()), self.assertRaises(SystemExit):
                 driver.main(['--api', '35', '--apks', self.directory.name, '--output', self.directory.name,
-                             '--image-target', 'google_apis_ps16k', '--expected-page-size', '16384'])
-        aapt.assert_not_called()
-        product.assert_not_called()
-        self.assertFalse(any('install' in call.args for call in command.call_args_list))
-        self.assertEqual((driver.args.output/'device-page-size.txt').read_bytes(), b'4096\n')
+                             '--memory-mb', '8192'])
+            run.assert_not_called()
 
     def product_badging(self):
         raw = (Path(driver.__file__).resolve().parent.parent/'pubspec.yaml').read_text(encoding='utf-8')
