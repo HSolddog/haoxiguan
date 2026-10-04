@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "scope": "Synthetic fixture host tests and execution of its exact extracted pure Kotlin component. No Android device execution is asserted for this source.",
+  "sourceLocalCommit": "3e19895c6a12971c8c983d7d3c4110112e25b044",
+  "sourceTree": "e83006fbab4b5d4492aacfda7e939e9cb19d6eb6",
+  "sources": [
+    {
+      "file": "tools/fixtures/acceptance_engine_host.kt.txt",
+      "testedWorkingBytes": 10736,
+      "testedWorkingSha256": "af25b2e542e3d6ebca48b5bbc9a84c69458093c2a10853d64e86077b4356834f",
+      "gitBlobBytes": 10736,
+      "gitBlobSha256": "af25b2e542e3d6ebca48b5bbc9a84c69458093c2a10853d64e86077b4356834f"
+    },
+    {
+      "file": "tools/acceptance_semantics.dart",
+      "testedWorkingBytes": 8543,
+      "testedWorkingSha256": "8fa07a86a5c8dea2363c6b8bdff17b83eef3129b92f62afc333d13a46c8fbb6a",
+      "gitBlobBytes": 8543,
+      "gitBlobSha256": "8fa07a86a5c8dea2363c6b8bdff17b83eef3129b92f62afc333d13a46c8fbb6a"
+    },
+    {
+      "file": "tools/android_acceptance.dart",
+      "testedWorkingBytes": 68675,
+      "testedWorkingSha256": "31c74ce24587e9eac5fc00253927a74308c24db85ce016a3aacfd8218d756961",
+      "gitBlobBytes": 68675,
+      "gitBlobSha256": "31c74ce24587e9eac5fc00253927a74308c24db85ce016a3aacfd8218d756961"
+    },
+    {
+      "file": "test/android_acceptance_semantics_test.dart",
+      "testedWorkingBytes": 31292,
+      "testedWorkingSha256": "9682c0e3254f712c60ecd900fbf33061a9ed6912d8c00a92ec87f151b13af732",
+      "gitBlobBytes": 30461,
+      "gitBlobSha256": "4d9d6f46f22912804112954ab06d6e8c4bf263e53e5def1ef02099312ef4c6f3"
+    }
+  ],
+  "behavior": {
+    "nativeIdentity": "Every identity handler reads the same immutable current-host binding. An old queued handler cannot combine its own old host with a new global generation.",
+    "detachedGap": "Retained read-only identity handler responds with a coherent detached binding while the retained engine waits for reattachment.",
+    "staleCallbacks": "Old UI and cleanup callbacks keep their original generation and cannot change or notify the current host binding.",
+    "mutations": "Recreation remains bound to the original exact active host and generation, nonce and report identity. No business or UI mutation is retried.",
+    "consumer": "Foreign engine, generation regression and same-generation host conflict remain strict failures, with distinct read-only diagnostics."
+  },
+  "validation": {
+    "dart": {
+      "passed": 35,
+      "newTests": 3,
+      "existingTests": 32,
+      "exitCode": 0,
+      "interleavedFuture": "An old identity Future is held pending while a new-host observation queues. Its delayed hybrid reply fails without tree publication or State change; a coherent current reply publishes the tree once."
+    },
+    "python": {
+      "passed": 76,
+      "exitCode": 0
+    },
+    "pureKotlinJvm": {
+      "passed": 8,
+      "compileExitCode": 0,
+      "runExitCode": 0,
+      "componentSha256": "0045fe00380561c3bcef050a5b350d6209f1a970db24aa20ae69d1b4bfd37edd",
+      "privateFullProofSha256": "95cd0659dc3dc3c8de03acafd92ea4b0b57542a866d6f7250053214ad975c31f",
+      "coverage": [
+        "Captured old handler runs after new binding attach",
+        "Detached gap returns the same fixed generation and detached visibility",
+        "Old display and cleanup cannot change the new binding",
+        "Original generation required for mutation",
+        "Captured immutable snapshot remains unchanged",
+        "Operations on the wrong thread fail without changing state",
+        "Unbound identity is rejected"
+      ]
+    },
+    "analysis": {
+      "items": 3,
+      "issues": 0,
+      "seconds": 1.6,
+      "exitCode": 0
+    },
+    "format": {
+      "initialFiles": 3,
+      "initialChanged": 2,
+      "finalFiles": 3,
+      "finalChanged": 1,
+      "exitCode": 0
+    },
+    "retainedEarlierAnalysis": "The first analysis found one informational closure-style lint in a new test. It was fixed, with the original log retained and final tests/analysis rerun."
+  },
+  "logs": [
+    {
+      "log": "format.log",
+      "bytes": 146,
+      "sha256": "87815e23957bc2259406b2c89bf2a40a2991996747bfb1b3b4621cecaba52cc5"
+    },
+    {
+      "log": "analyze.log",
+      "bytes": 364,
+      "sha256": "d097670133dcea38e00c6152371dbd90e69c605400c93a782768f4c0cacfb8f7"
+    },
+    {
+      "log": "format-interleave-final.log",
+      "bytes": 103,
+      "sha256": "21ed50d2d539d9beb133f37714673a9533e7e96abc1f05e78d0c0fd5d13851e7"
+    },
+    {
+      "log": "target-interleave-final.log",
+      "bytes": 13011,
+      "sha256": "a8e4878a1ba2daca1c111e56f5d3122d817fb2aa5f299e76f725a963813baabd"
+    },
+    {
+      "log": "python.log",
+      "bytes": 180,
+      "sha256": "2f6d2696b531f15a33c112aac75a8f3ad28c6464ab050d31ae0303979ea872be"
+    },
+    {
+      "log": "analyze-interleave-final.log",
+      "bytes": 98,
+      "sha256": "77e62efc901dd3cbdd7802106ec6c297910a19e133f96b5c20cafefcae622df6"
+    }
+  ],
+  "boundaries": [
+    "The exact component JVM test proves component behavior; it does not prove Android lifecycle or Messenger scheduling.",
+    "The interleaved Future test proves the Dart asynchronous consumer and does not simulate an Android device.",
+    "93 API35 lacked the original identity samples. Its observed failure is compatible with the confirmed old-handler code risk, but that risk is not claimed as the uniquely established event.",
+    "New native four-API verification remains required.",
+    "No product source or schema2 warehouse baseline was changed."
+  ]
+}

@@ -457,6 +457,193 @@ void main() {
   );
 
   testWidgets(
+    'a captured old handler reads a coherent current binding through the detached gap',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        final key = GlobalKey<_OwnerState>();
+        await tester.pumpWidget(MaterialApp(home: _Owner(key: key)));
+        final state = key.currentState!;
+        final original = _hostIdentity();
+        final next = {...original, 'hostId': 'e' * 32, 'attachCount': 2};
+        var binding = original;
+        Future<Object?> capturedOldHandler() async => binding;
+        var reads = 0;
+        final errors = <Object>[];
+        final rebinder = AcceptanceSemanticsRebinder(
+          channel: const MethodChannel('acceptance-coherent-binding'),
+          decodeIdentity: (raw) =>
+              engineHostIdentity(raw, build: '10002', expectedPid: 313),
+          readIdentity: () {
+            reads++;
+            if (reads > 1) binding = next;
+            return capturedOldHandler();
+          },
+          onFailure: errors.add,
+          timeout: const Duration(milliseconds: 20),
+          pollInterval: const Duration(milliseconds: 1),
+          clock: tester.binding.clock.now,
+        );
+        binding = {...original, 'attached': false, 'uiDisplayed': false};
+        _Receiver.newBridge();
+        final observed = await _settleFuture(
+          tester,
+          rebinder.observeHost(original),
+        );
+        expectSync(reads, 2);
+        expectSync(observed['hostId'], next['hostId']);
+        expectSync(observed['attachCount'], 2);
+        expectSync(rebinder.observations.length, 1);
+        expectSync(_Receiver.batches.length, 1);
+        expectSync(_Receiver.nodes, contains(0));
+        expectSync(identical(key.currentState, state), isTrue);
+        expectSync(state.count, 0);
+        expectSync(errors, isEmpty);
+        expectSync(await rebinder.close(), isNull);
+      } finally {
+        handle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'hybrid old host with a new generation is rejected with exact comparison evidence',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(const MaterialApp(home: _Owner()));
+        final original = _hostIdentity();
+        final newHost = {...original, 'hostId': 'e' * 32, 'attachCount': 2};
+        final samples = [
+          (
+            'same_count_host_changed',
+            {...original, 'attachCount': 2, 'attached': false},
+            newHost,
+          ),
+          ('attach_regression', newHost, original),
+          ('foreign_engine', original, {...original, 'engineId': 'f' * 32}),
+        ];
+        for (final (comparison, notified, current) in samples) {
+          final errors = <Object>[];
+          final rebinder = AcceptanceSemanticsRebinder(
+            channel: const MethodChannel('acceptance-hybrid-binding-rejected'),
+            decodeIdentity: (raw) =>
+                engineHostIdentity(raw, build: '10002', expectedPid: 313),
+            readIdentity: () async => current,
+            onFailure: errors.add,
+          );
+          _Receiver.newBridge();
+          await _settleFuture(
+            tester,
+            expectLater(
+              rebinder.observeHost(notified),
+              throwsA(isA<AcceptanceHostIdentityConflict>()),
+            ),
+          );
+          final error = errors.single as AcceptanceHostIdentityConflict;
+          expectSync(error.comparison, comparison);
+          expectSync(error.diagnostic['comparison'], comparison);
+          expectSync(error.diagnostic['notified'], notified);
+          expectSync(error.diagnostic['floor'], notified);
+          expectSync(error.diagnostic['current'], current);
+          expectSync(_Receiver.batches, isEmpty);
+          expectSync(rebinder.observations, isEmpty);
+          expectSync(await rebinder.close(), same(error));
+        }
+      } finally {
+        handle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'a delayed captured identity reply interleaves with a queued new-host observation',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        final key = GlobalKey<_OwnerState>();
+        _OwnerState.creations = 0;
+        await tester.pumpWidget(MaterialApp(home: _Owner(key: key)));
+        final state = key.currentState!;
+        final original = _hostIdentity();
+        final nextHost = {...original, 'hostId': 'e' * 32, 'attachCount': 2};
+        for (final hybrid in [true, false]) {
+          final capturedReply = Completer<Object?>();
+          var reads = 0;
+          final errors = <Object>[];
+          final rebinder = AcceptanceSemanticsRebinder(
+            channel: const MethodChannel('acceptance-interleaved-binding'),
+            decodeIdentity: (raw) =>
+                engineHostIdentity(raw, build: '10002', expectedPid: 313),
+            readIdentity: () =>
+                ++reads == 1 ? capturedReply.future : Future.value(nextHost),
+            onFailure: errors.add,
+            timeout: const Duration(milliseconds: 20),
+            pollInterval: const Duration(milliseconds: 1),
+            clock: tester.binding.clock.now,
+          );
+          _Receiver.newBridge();
+          final oldObservation = rebinder.observeHost(original);
+          final oldChecked = expectLater(
+            oldObservation,
+            hybrid ? throwsA(isA<AcceptanceHostIdentityConflict>()) : completes,
+          );
+          await tester.pump(const Duration(milliseconds: 1));
+          expectSync(reads, 1);
+          // The new host is notified while the messenger-captured old handler's
+          // reply remains in flight. It must queue behind that pending read.
+          final newObservation = rebinder.observeHost(nextHost);
+          final newChecked = expectLater(
+            newObservation,
+            hybrid ? throwsStateError : completes,
+          );
+          await tester.pump(const Duration(milliseconds: 1));
+          expectSync(reads, 1);
+          expectSync(rebinder.observations, isEmpty);
+          expectSync(_Receiver.batches, isEmpty);
+          capturedReply.complete(
+            hybrid
+                ? {...original, 'attachCount': 2, 'attached': false}
+                : nextHost,
+          );
+          await _settleFuture(tester, Future.wait([oldChecked, newChecked]));
+          if (hybrid) {
+            final error = errors.single as AcceptanceHostIdentityConflict;
+            expectSync(error.comparison, 'same_count_host_changed');
+            expectSync(
+              (error.diagnostic['floor'] as Map)['hostId'],
+              original['hostId'],
+            );
+            expectSync(
+              (error.diagnostic['current'] as Map)['hostId'],
+              nextHost['hostId'],
+            );
+            expectSync(rebinder.observations, isEmpty);
+            expectSync(_Receiver.nodes, isEmpty);
+            expectSync(_Receiver.batches, isEmpty);
+            expectSync(await rebinder.close(), same(error));
+          } else {
+            expectSync(errors, isEmpty);
+            expectSync(rebinder.observations.length, 1);
+            expectSync(
+              rebinder.observations.single['hostId'],
+              nextHost['hostId'],
+            );
+            expectSync(_Receiver.batches.length, 1);
+            expectSync(_Receiver.nodes, contains(0));
+            expectSync(await rebinder.close(), isNull);
+          }
+          expectSync(identical(key.currentState, state), isTrue);
+          expectSync(_OwnerState.creations, 1);
+          expectSync(state.count, 0);
+        }
+      } finally {
+        handle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
     'foreign engine or in-frame refresh fails closed without replay or State mutation',
     (tester) async {
       final handle = tester.ensureSemantics();

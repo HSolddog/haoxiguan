@@ -764,7 +764,7 @@ Future<void> main() async {
         .invokeMapMethod<String, Object?>('identity')
         .timeout(const Duration(seconds: 2)),
     onFailure: (error) => debugPrint(
-      'ACCEPTANCE_SEMANTICS_FAILURE ${jsonEncode({'package': acceptancePackage, 'build': build, 'phase': launch.phase, 'nonce': launch.nonce, 'pid': pid, 'entryId': entryId, 'reason': error.toString()})}',
+      'ACCEPTANCE_SEMANTICS_FAILURE ${jsonEncode({'package': acceptancePackage, 'build': build, 'phase': launch.phase, 'nonce': launch.nonce, 'pid': pid, 'entryId': entryId, 'reason': error.toString(), if (error is AcceptanceHostIdentityConflict) 'identityComparison': error.diagnostic})}',
     ),
   )..start();
   result['nativeSemanticsRebinds'] = semanticsRebinder.observations;

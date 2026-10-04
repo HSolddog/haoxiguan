@@ -1,8 +1,47 @@
     // Injected only into the isolated acceptance APK, restored after each build.
+    // BEGIN ACCEPTANCE_HOST_BINDINGS: pure component also exercised on the JVM.
+    private data class AcceptanceHostBinding(
+        val id: String, val generation: Int, val attached: Boolean, val uiDisplayed: Boolean
+    )
+    private class AcceptanceHostBindings {
+        private val ownerThread = Thread.currentThread()
+        private var generation = 0
+        var current: AcceptanceHostBinding? = null
+            private set
+        private fun checkThread() = check(Thread.currentThread() === ownerThread)
+        fun attach(id: String): AcceptanceHostBinding {
+            checkThread()
+            generation += 1
+            return AcceptanceHostBinding(id, generation, true, false).also { current = it }
+        }
+        fun isCurrent(id: String, generation: Int): Boolean {
+            checkThread()
+            val value = current
+            return value != null && value.id == id && value.generation == generation && value.attached
+        }
+        fun detach(id: String, generation: Int): Boolean {
+            checkThread()
+            if (!isCurrent(id, generation)) return false
+            current = checkNotNull(current).copy(attached = false, uiDisplayed = false)
+            return true
+        }
+        fun display(id: String, generation: Int): Boolean {
+            checkThread()
+            if (!isCurrent(id, generation)) return false
+            current = checkNotNull(current).copy(uiDisplayed = true)
+            return true
+        }
+        fun identity(): Map<String, Any> {
+            checkThread()
+            val value = checkNotNull(current)
+            return mapOf("hostId" to value.id, "attachCount" to value.generation,
+                "attached" to value.attached, "uiDisplayed" to value.uiDisplayed)
+        }
+    }
+    // END ACCEPTANCE_HOST_BINDINGS
     private class AcceptanceEngineState(val engine: FlutterEngine) {
         val id = java.util.UUID.randomUUID().toString().replace("-", "")
-        var host: String? = null
-        var attaches = 0
+        val hosts = AcceptanceHostBindings()
         var requestId: String? = null
         var requestHost: String? = null
         var requestOutcome = "none"
@@ -13,6 +52,7 @@
         var acceptanceEngineState: AcceptanceEngineState? = null
     }
     private val acceptanceHostId = java.util.UUID.randomUUID().toString().replace("-", "")
+    private var acceptanceHostGeneration = 0
     private var acceptanceUiDisplayed = false
     private var acceptanceHostChannel: MethodChannel? = null
 
@@ -26,16 +66,18 @@
         val state = checkNotNull(acceptanceEngineState)
         return mapOf("package" to packageName, "build" to acceptanceVersion(),
             "pid" to android.os.Process.myPid(), "engineId" to state.id,
-            "hostId" to acceptanceHostId, "attachCount" to state.attaches,
             "requestId" to (state.requestId ?: ""), "requestHostId" to (state.requestHost ?: ""),
             "requestOutcome" to state.requestOutcome,
-            "attached" to (state.host == acceptanceHostId), "uiDisplayed" to acceptanceUiDisplayed,
-            "executingDart" to state.engine.dartExecutor.isExecutingDart)
+            "executingDart" to state.engine.dartExecutor.isExecutingDart) + state.hosts.identity()
     }
 
     private fun acceptanceEngineEvent(event: String) {
         android.util.Log.i("HaoxiguanAcceptanceEngine", org.json.JSONObject(mapOf(
             "event" to event, "pid" to android.os.Process.myPid(), "hostId" to acceptanceHostId,
+            "attachCount" to acceptanceHostGeneration,
+            "currentHostId" to acceptanceEngineState?.hosts?.current?.id,
+            "currentAttachCount" to acceptanceEngineState?.hosts?.current?.generation,
+            "currentAttached" to acceptanceEngineState?.hosts?.current?.attached,
             "engineId" to acceptanceEngineState?.id, "changingConfigurations" to isChangingConfigurations,
             "finishing" to isFinishing, "uiDisplayed" to acceptanceUiDisplayed,
             "requestId" to acceptanceEngineState?.requestId,
@@ -69,8 +111,7 @@
     private fun acceptanceEngineAttach(engine: FlutterEngine) {
         val state = checkNotNull(acceptanceEngineState)
         check(state.engine === engine)
-        state.host = acceptanceHostId
-        state.attaches += 1
+        acceptanceHostGeneration = state.hosts.attach(acceptanceHostId).generation
         acceptanceEngineEvent("hostConfigured")
         acceptanceHostChannel = MethodChannel(engine.dartExecutor.binaryMessenger,
             "com.haoxiguan.haoxiguan/acceptance_engine").also { channel ->
@@ -94,7 +135,7 @@
                             check(report.getString("package") == packageName && report.getString("build") == acceptanceVersion())
                             check(report.getString("launchNonce") == nonce && report.getString("runId") == run)
                             check(report.getString("entryId") == entry && report.getInt("ownerPid") == android.os.Process.myPid())
-                            check(report.getString("status") == "running" && state.host == acceptanceHostId)
+                            check(report.getString("status") == "running" && state.hosts.isCurrent(acceptanceHostId, acceptanceHostGeneration))
                             check(state.recreateNonces.add(nonce))
                             state.requestId = request
                             state.requestHost = acceptanceHostId
@@ -103,7 +144,7 @@
                             result.success(mapOf("queued" to true, "requestId" to request))
                             acceptanceEngineEvent("recreateRequested")
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                if (!isFinishing && state.host == acceptanceHostId) {
+                                if (!isFinishing && state.hosts.isCurrent(acceptanceHostId, acceptanceHostGeneration)) {
                                     state.requestOutcome = "executed"
                                     acceptanceEngineEvent("recreateExecuted")
                                     recreate()
@@ -124,17 +165,20 @@
 
     override fun cleanUpFlutterEngine(engine: FlutterEngine) {
         acceptanceEngineEvent("hostCleanup")
-        // An old host must never clear a new host's binding to this engine.
-        if (acceptanceEngineState?.host == acceptanceHostId) {
-            acceptanceEngineState?.host = null
-            acceptanceHostChannel?.setMethodCallHandler(null)
-        }
+        // Retain the read-only handler across detach/attach. Even a messenger-
+        // captured old handler reads the current coherent binding. Mutation is
+        // still guarded by this Activity's exact active host and generation.
+        acceptanceEngineState?.hosts?.detach(acceptanceHostId, acceptanceHostGeneration)
         super.cleanUpFlutterEngine(engine)
     }
 
     override fun onFlutterUiDisplayed() {
         super.onFlutterUiDisplayed()
         acceptanceUiDisplayed = true
+        if (acceptanceEngineState?.hosts?.display(acceptanceHostId, acceptanceHostGeneration) != true) {
+            acceptanceEngineEvent("staleUiDisplayed")
+            return
+        }
         acceptanceEngineEvent("uiDisplayed")
         // Notify the retained Dart owner after any host recreation. This only
         // refreshes the existing semantics tree; it never starts main or work.

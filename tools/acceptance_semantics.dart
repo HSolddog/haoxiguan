@@ -5,6 +5,38 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+class AcceptanceHostIdentityConflict extends StateError {
+  AcceptanceHostIdentityConflict(
+    this.comparison,
+    Map<String, Object?> notified,
+    Map<String, Object?> floor,
+    Map<String, Object?> current,
+  ) : diagnostic = {
+        'comparison': comparison,
+        'notified': _sample(notified),
+        'floor': _sample(floor),
+        'current': _sample(current),
+      },
+      super('semantics host identity conflict: $comparison');
+
+  final String comparison;
+  final Map<String, Object?> diagnostic;
+  static Map<String, Object?> _sample(Map<String, Object?> value) => {
+    for (final key in [
+      'package',
+      'build',
+      'pid',
+      'engineId',
+      'hostId',
+      'attachCount',
+      'attached',
+      'uiDisplayed',
+      'executingDart',
+    ])
+      key: value[key],
+  };
+}
+
 /// Rebinds semantics for every newly displayed acceptance Activity host,
 /// including a system recreation outside the explicit lifecycle exercise.
 class AcceptanceSemanticsRebinder {
@@ -77,7 +109,12 @@ class AcceptanceSemanticsRebinder {
       }
       final last = _last;
       if (last != null && notified['engineId'] != last['engineId']) {
-        throw StateError('semantics notification changed the retained engine');
+        throw AcceptanceHostIdentityConflict(
+          'foreign_engine',
+          notified,
+          last,
+          notified,
+        );
       }
       var floor =
           last != null &&
@@ -87,17 +124,39 @@ class AcceptanceSemanticsRebinder {
       if (last != null &&
           last['attachCount'] == notified['attachCount'] &&
           last['hostId'] != notified['hostId']) {
-        throw StateError('same semantics attachment has conflicting hosts');
+        throw AcceptanceHostIdentityConflict(
+          'same_count_host_changed',
+          notified,
+          last,
+          notified,
+        );
       }
       late Map<String, Object?> current;
       while (true) {
         current = decodeIdentity(await readIdentity().timeout(remaining()));
-        if (current['engineId'] != notified['engineId'] ||
-            (current['attachCount']! as int) < (floor['attachCount']! as int) ||
-            (current['attachCount'] == floor['attachCount'] &&
-                current['hostId'] != floor['hostId'])) {
-          throw StateError(
-            'semantics host changed the retained engine identity',
+        if (current['engineId'] != notified['engineId']) {
+          throw AcceptanceHostIdentityConflict(
+            'foreign_engine',
+            notified,
+            floor,
+            current,
+          );
+        }
+        if ((current['attachCount']! as int) < (floor['attachCount']! as int)) {
+          throw AcceptanceHostIdentityConflict(
+            'attach_regression',
+            notified,
+            floor,
+            current,
+          );
+        }
+        if (current['attachCount'] == floor['attachCount'] &&
+            current['hostId'] != floor['hostId']) {
+          throw AcceptanceHostIdentityConflict(
+            'same_count_host_changed',
+            notified,
+            floor,
+            current,
           );
         }
         // Every strictly decoded observation advances the floor, even before
