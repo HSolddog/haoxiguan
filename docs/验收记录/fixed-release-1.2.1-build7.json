@@ -1,0 +1,228 @@
+{
+  "status": "passed",
+  "artifact": "haoxiguan-1.2.1-build7-fixed-release.apk",
+  "sha256": "1ff80c7d78b50929892a7f2a2082139a7c03421089151dd013d97d2411e0a90b",
+  "bytes": 68723833,
+  "package": "com.haoxiguan.haoxiguan",
+  "versionName": "1.2.1",
+  "versionCode": 7,
+  "minSdk": 24,
+  "targetSdk": 36,
+  "debuggable": false,
+  "buildMode": "release",
+  "isolatedAcceptancePackage": false,
+  "signerCertificateSha256": "D675D16E4C0CC72C862DB337E2A6B2D7D92AFDF61135B014B95B44A016FC5ABC",
+  "v2SignatureVerified": true,
+  "zipalign16KiBVerified": true,
+  "archiveCrcVerified": true,
+  "nativeLibraries": [
+    {
+      "archivePath": "lib/arm64-v8a/libapp.so",
+      "sha256": "df37b726bdd667f2367843cf2a47d23f2be12200b5b3fcf5b21ba3e915690533",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ]
+    },
+    {
+      "archivePath": "lib/arm64-v8a/libdartjni.so",
+      "sha256": "0501d439d88a6ce168f3458cd18178b6a1b98619841c454d2cacbff1128d3d4d",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/arm64-v8a/libdatastore_shared_counter.so",
+      "sha256": "d3e48717c9aa147e0ab21063ba0e8e0211cabf8bf40b222640829519edbf58e1",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/arm64-v8a/libflutter.so",
+      "sha256": "30d867063c01c31e6ba07bb23feccd92f5f9f836d3db6f389dde0d9071c704f2",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ]
+    },
+    {
+      "archivePath": "lib/arm64-v8a/libsodium.so",
+      "sha256": "e22fb48f03b9e5b91d05fc64a87366755eaa83878575333364e35aee2b4753d1",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/arm64-v8a/libsqlite3.so",
+      "sha256": "081df67ee9ab852daea6a0679427e90fc89a0245d06f93dafe2309875c609c5c",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/armeabi-v7a/libapp.so",
+      "sha256": "3b562f7fe47f850085025eb56fba7bc46d600f8bc2f768b55d9947fae19b8b66",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/armeabi-v7a/libdartjni.so",
+      "sha256": "b9aadeab95ec462e7f48876c517ba92edaa77f86498281651ebd9a5db252e445",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/armeabi-v7a/libdatastore_shared_counter.so",
+      "sha256": "716c5d8d2cac8ca0edf65da8f139c7886b726ac79d542a14edeb94994ba6d3dc",
+      "loadAlignments": [
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/armeabi-v7a/libflutter.so",
+      "sha256": "40b97679dfbd7614b833f6dedac6a5f9945d5953e809e3e619a6d8d1b289f089",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ]
+    },
+    {
+      "archivePath": "lib/armeabi-v7a/libsodium.so",
+      "sha256": "3d8e3d1dad53a99a4044f260dcd4c55c2ef36aa092bce6d385ee080da5931acb",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/armeabi-v7a/libsqlite3.so",
+      "sha256": "5f331b44ef2549f1e3fa2153ad22d60d85c5a43766e4690a29cc49a0652db772",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/x86_64/libapp.so",
+      "sha256": "cfb9bdbb6ef308521b0c79c038b6f76e906fa8de74cb11f3e91cb75eb0338e02",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ]
+    },
+    {
+      "archivePath": "lib/x86_64/libdartjni.so",
+      "sha256": "da3a89a9416dd82adc9e685ed1b3723985c7e7cad300af0a62e2827b71438443",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/x86_64/libdatastore_shared_counter.so",
+      "sha256": "fb6c9208988c49ae94943bc3236fa763ba584722e044fa4ea9a12d2941027105",
+      "loadAlignments": [
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/x86_64/libflutter.so",
+      "sha256": "6751d61be66c019ee116ef92460083d312e8650c9c3530e1d50bcf0a81e62de2",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ]
+    },
+    {
+      "archivePath": "lib/x86_64/libsodium.so",
+      "sha256": "b7b7377d42ed5ebd9c88b3ec665b138ae05c1633c57fd7372e50661e5f2eab28",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ]
+    },
+    {
+      "archivePath": "lib/x86_64/libsqlite3.so",
+      "sha256": "c773c3a25e4c11a450cc700ac95d665c3a1ae75ad426a204fc9b7a7a69b0e191",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ]
+    }
+  ],
+  "allElfLoadSegmentsAtLeast16KiB": true,
+  "sourceDesignAcceptance": "f58dc14f0464a036c06c3ea5e9f0f44715001eb8",
+  "toolchain": {
+    "Flutter": "3.44.6",
+    "Dart": "3.12.2",
+    "JDK": "17.0.20",
+    "AndroidBuildTools": "36.0.0",
+    "NDK": "28.2.13676358"
+  },
+  "installedOnPhysicalDevice": false,
+  "longTermAcceptanceCompleted": false,
+  "sourceReleaseCommit": "b8eea8c30b7c1fc25d7a860f0fd374cb3f9d5844",
+  "localReleaseCommit": "950777dcb68973eedb2d8c56f66d71ebff264a00",
+  "sourceReleaseTree": "e57b7313804ec6aa18902f2ee71ff29e499e7280",
+  "sourceDiffFromAcceptedSnapshot": {
+    ".gitignore": {
+      "blob": "11d129f4c3a790ec200c00eeb07c14c7cc41b26a",
+      "sha256": "041860e4dff13299a0ff18242d2a024e9ea80856050fb768588834696030d7f5"
+    },
+    "android/gradle.properties": {
+      "blob": "107e352fbdf34ab6edbb3c5c14a405eb74713720",
+      "sha256": "f70c8139b2aa2339b81a96420cd2eb1731f9aacf477667d0befd9b1fa7f46087"
+    },
+    "pubspec.yaml": {
+      "blob": "8e274f530794cc17dda01e7d5ba994c54b96b6ed",
+      "sha256": "3d21559ce4c6c6c5d7dcedd53b0e33be48d7f20a53ebb6a6ca693191626f240f"
+    },
+    "scripts/build_release_apk.ps1": {
+      "blob": "22561f5e324b73dd2bf56afc2b15fb06936c03e2",
+      "sha256": "b64b319320445e5854f1630fe9f9302974096f3be58a382b9c58b823e33a7a66"
+    },
+    "scripts/tests/verify_release_signing.ps1": {
+      "blob": "a3847e3775a8b7d42d90787fa8c545f4815d0809",
+      "sha256": "bc612a8318e0a50571df82974c12879686adc58bc9dae9d633e2d2c1b1add32c"
+    }
+  },
+  "productLogicAndLockedDependenciesUnchanged": true,
+  "buildExitCode": 0,
+  "gradleAssembleReleaseSeconds": 746.1,
+  "signingScriptMockTestsPassed": 5,
+  "keystoreUploaded": false,
+  "newSigningKeyCreated": false,
+  "independentKeyBackupVerified": false,
+  "installationNotice": "Previous temporary/debug signing differs. Export and verify data first; replacing a different signer may require uninstalling the old app. Future updates reuse this fixed signer with increasing versionCode.",
+  "publicationStatusAtPreparation": "awaiting-local-GitHub-authorization"
+}
