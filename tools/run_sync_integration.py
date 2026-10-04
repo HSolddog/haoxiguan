@@ -26,14 +26,11 @@ def run(values, **kwargs):
 
 with tempfile.TemporaryDirectory(prefix='haoxiguan-sync-e2e-') as temporary:
     directory = Path(temporary)
-    binary, database = directory/'server', directory/'data.sqlite'
+    binary, database = directory/('server.exe' if os.name == 'nt' else 'server'), directory/'data.sqlite'
     cert, key = directory/'cert.pem', directory/'key.pem'
     run([args.go, 'build', '-trimpath', '-o', str(binary), './cmd/haoxiguan-server'],
         cwd=root/'server')
-    run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
-         '-keyout', str(key), '-out', str(cert), '-subj', '/CN=localhost',
-         '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    run([args.go, 'run', str(root/'tools'/'sync_test_certificate.go'), str(cert), str(key)])
     key.chmod(0o600)
     first, second = directory/'first.json', directory/'second.json'
     run([str(binary), 'create-user', '--db', str(database), '--name', 'synthetic-e2e', '--out', str(first)])
@@ -63,7 +60,7 @@ with tempfile.TemporaryDirectory(prefix='haoxiguan-sync-e2e-') as temporary:
                 time.sleep(0.2)
         else:
             raise TimeoutError('synthetic HTTPS test server did not become healthy')
-        run([args.flutter, 'test', 'test/sync_integration_test.dart',
+        run([args.flutter, 'test', '--no-pub', 'test/sync_integration_test.dart',
              f'--dart-define=TEST_SYNC_ENDPOINT=https://localhost:{port}',
              f'--dart-define=TEST_SYNC_CERT={cert}',
              f'--dart-define=TEST_SYNC_INVITES_FILE={invitations}',

@@ -1,0 +1,128 @@
+{
+  "baseSourceSha": "5249d5d2c41e26a28192a3b2cfa8ed25891277cc",
+  "baseTree": "9ecc7de58fc74b65ae0665cd7a67daa4d17c46f5",
+  "actualFailedRun": 37144662433,
+  "actualFailedJob": 111268131540,
+  "actualFailureReasonStillUnknown": true,
+  "actualFailure": {
+    "operation": "read native picker tree",
+    "exit": 1,
+    "stdoutBytes": 0,
+    "stderrBytes": 63,
+    "fixtureFailures": {}
+  },
+  "repair": {
+    "scope": [
+      "tools/run_android_sync_acceptance.py",
+      "tools/test_android_sync_acceptance.py"
+    ],
+    "ownedSnapshotPath": "/sdcard/sync-acceptance-ui.xml",
+    "maxReadAttempts": 3,
+    "freshDeletionBeforeAndAfterEachAttempt": true,
+    "aliveCheckBeforeEveryCommand": true,
+    "commandTimeoutUsesRemainingBudget": true,
+    "touchActionsReplay": false,
+    "retryReasons": [
+      "ui_snapshot_missing",
+      "ui_snapshot_idle",
+      "ui_snapshot_no_root"
+    ],
+    "missingPredicate": "exit1/empty_stdout/exact_cat_owned_path_missing_stderr",
+    "idlePredicate": "exit0/empty_stdout/exact_aosp_idle_stderr",
+    "unknownErrorsTimeoutsMalformedXmlFailClosed": true,
+    "readRetryBudgetSeconds": 45,
+    "finalPrivateDeletionBudgetSeconds": 10,
+    "ownedChildCleanupBudgetSeconds": 20,
+    "conservativeReadAndCleanupBoundSeconds": 95,
+    "boundBreakdownSeconds": [
+      45,
+      20,
+      10,
+      20
+    ],
+    "protocolRemainingDeadlineAlsoLimitsReads": true,
+    "cleanupConsumesOriginalReadDeadline": true,
+    "finalDeletionAllowedAfterReadDeadline": true,
+    "noRootPredicate": "exit0/empty_stdout/exact_aosp_null_root_stderr",
+    "cleanupAndEventFailurePreserveFirstError": true,
+    "genericProcessManagementChanged": false
+  },
+  "primarySource": {
+    "url": "https://android.googlesource.com/platform/frameworks/testing/+/refs/heads/main/uiautomator/cmds/uiautomator/src/com/android/commands/uiautomator/DumpCommand.java",
+    "blob": "c35f7fc3fcc8acb1250a53c9d61fdc7aaae624d9",
+    "supports": "idle_timeout_or_null_accessibility_root_emits_fixed_error_and_returns_without_creating_snapshot",
+    "doesNotProveActualCiStderr": true
+  },
+  "verification": {
+    "command": "python -m unittest discover -s tools -p test_android_sync_acceptance.py -v",
+    "testsPassed": 62,
+    "testDurationSeconds": 0.439,
+    "testExitCode": 0,
+    "pyCompileExitCode": 0,
+    "gitDiffCheckExitCode": 0,
+    "localFlutterGoAvdStarted": false,
+    "nativeRuntimePassed": false,
+    "realOwnedPythonSubprocessTimeoutAndReapVerified": true,
+    "firstSnapshotAndCleanupAndEventFailuresPreserveFirstErrorVerified": true
+  },
+  "evidenceFiles": [
+    {
+      "path": "haoxiguan\\tools\\run_android_sync_acceptance.py",
+      "bytes": 54696,
+      "sha256": "8608f7608b1ab16ae3e9a81156f1b6cbf55a12434e2f015724fdd95bea5c60c4"
+    },
+    {
+      "path": "haoxiguan\\tools\\test_android_sync_acceptance.py",
+      "bytes": 52553,
+      "sha256": "f9aa45eff7fdeaadf7d9e048d5981003f22ed1a19a4d36989716d3c30f48c9ba"
+    },
+    {
+      "path": "native-sync-runner-snapshot-final-tests.log",
+      "bytes": 11903,
+      "sha256": "c637540b1af10f260f702eaa8e1833b1c0cdfd25d4604523f9d80cadd6f65ae6"
+    },
+    {
+      "path": "native-sync-runner-snapshot-final-checks.log",
+      "bytes": 868,
+      "sha256": "d6735b5fcd106c73b88e36076368e1c36deab87d7abf798bb3c79c29f152473b"
+    },
+    {
+      "path": "native-sync-runner-snapshot-tests.log",
+      "bytes": 10832,
+      "sha256": "dc7b60f994ba453278e4b857f068f9953c4b038f0f6b95b52abfc364bb43a625"
+    },
+    {
+      "path": "native-sync-runner-snapshot-reviewed-tests.log",
+      "bytes": 12765,
+      "sha256": "6df2d5e0c5ee87a18452dbbd1f132e1570ce003b7586c7f11df6a6c87507c07e"
+    },
+    {
+      "path": "native-sync-ci-37144662433.json",
+      "bytes": 4472,
+      "sha256": "549c9c9bd28e73ea69c68f55472d19ec97e87475a20743a9287874634c023582"
+    }
+  ],
+  "revision": "reviewed",
+  "actualConfiguredBudgets": {
+    "workflowOverridesStageOrTotalTimeout": false,
+    "hostStageTimeoutSeconds": 180,
+    "hostProtocolTimeoutSeconds": 1200,
+    "dartBarrierTimeoutSeconds": 240,
+    "dartUiWaitDefaultSeconds": 120,
+    "dartSafStageHasExplicitTimeout": false
+  },
+  "priorVerification": [
+    {
+      "log": "native-sync-runner-snapshot-tests.log",
+      "testsPassed": 57,
+      "testExitCode": 0
+    },
+    {
+      "log": "native-sync-runner-snapshot-reviewed-tests.log",
+      "testCount": 62,
+      "testExitCode": 1,
+      "failure": "Windows_POSIX_signal_mock_missing_SIGKILL",
+      "productionChangeToFixTest": false
+    }
+  ]
+}

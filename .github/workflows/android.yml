@@ -61,6 +61,15 @@ jobs:
         run: flutter analyze
       - name: Test
         run: flutter test --coverage
+      - name: Test native sync runner isolation and protocol
+        run: python3 -m unittest discover -s tools -p test_android_sync_acceptance.py -v
+      - name: Test native acceptance driver and fixture restoration
+        run: python3 -m unittest discover -s tools -p 'test_android_acceptance*.py' -v
+      - name: Validate published JSON schemas
+        run: |
+          python3 -m venv "$RUNNER_TEMP/haoxiguan-schema-venv"
+          "$RUNNER_TEMP/haoxiguan-schema-venv/bin/python" -m pip install --disable-pip-version-check -r tools/json-schema-test-requirements.txt
+          "$RUNNER_TEMP/haoxiguan-schema-venv/bin/python" tools/test_json_schemas.py -v
       - name: Use Go for real encrypted sync interoperability
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
@@ -68,6 +77,21 @@ jobs:
           cache-dependency-path: server/go.sum
       - name: Real HTTPS sync, recovery and key rotation
         run: python3 tools/run_sync_integration.py
+      - name: Install pinned isolated WebDAV test service
+        run: |
+          python3 -m venv "$RUNNER_TEMP/haoxiguan-webdav-venv"
+          "$RUNNER_TEMP/haoxiguan-webdav-venv/bin/python" -m pip install --disable-pip-version-check -r tools/webdav-test-requirements.txt
+      - name: Real TLS WebDAV recovery preview
+        timeout-minutes: 7
+        run: '"$RUNNER_TEMP/haoxiguan-webdav-venv/bin/python" tools/run_webdav_integration.py'
+      - name: Preserve real WebDAV acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: webdav-integration-${{ github.sha }}
+          path: build/webdav-integration/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Build Android debug APK
         run: flutter build apk --debug
       - name: Upload debug APK
@@ -86,6 +110,15 @@ jobs:
           path: build/acceptance/*.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Build isolated native SyncScreen fixtures
+        run: python3 tools/build_android_sync_acceptance.py
+      - name: Upload isolated native sync fixtures
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: android-sync-acceptance-${{ github.sha }}
+          path: build/sync-acceptance/*.apk
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -102,7 +135,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [24, 35, 36]
+        api: [24, 33, 35, 36]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -116,12 +149,51 @@ jobs:
           test -c /dev/kvm
           sudo setfacl -m u:"$USER":rw /dev/kvm
       - name: Native storage, crypto and upgrade
-        run: python3 tools/run_android_acceptance.py --api ${{ matrix.api }} --apks acceptance-apks --output acceptance-results
+        run: |
+          python3 -m unittest discover -s tools -p 'test_android_acceptance*.py' -v
+          python3 tools/run_android_acceptance.py --api ${{ matrix.api }} --apks acceptance-apks --output acceptance-results
       - name: Preserve native acceptance evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: android-native-api-${{ matrix.api }}-${{ github.sha }}
           path: acceptance-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  native-sync:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: android-sync-acceptance-${{ github.sha }}
+          path: sync-acceptance-apks
+      - name: Use JDK 17 for Android tools
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Use Go for the disposable loopback TLS relay
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: server/go.sum
+      - name: Allow this runner to use KVM
+        run: |
+          test -c /dev/kvm
+          sudo setfacl -m u:"$USER":rw /dev/kvm
+      - name: Native SyncScreen TLS, recovery, merge and process reopen
+        run: python3 tools/run_android_sync_acceptance.py --api 35 --apks sync-acceptance-apks --output sync-acceptance-results
+      - name: Preserve sanitized native sync evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: android-native-sync-api-35-${{ github.sha }}
+          path: sync-acceptance-results/
           if-no-files-found: warn
           retention-days: 14

@@ -1,0 +1,387 @@
+{
+  "observedAtUtc": "2026-10-03T20:09:31.673553+00:00",
+  "sourceHead": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+  "localSnapshot": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "mergeSha": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+  "sourceTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "mergeTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "sourceEqualsMergeTree": true,
+  "androidRunId": 37148462733,
+  "androidRunUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733",
+  "status": "completed",
+  "conclusion": "failure",
+  "allFourNativePassed": false,
+  "relatedIndependentEvidence": {
+    "verify-8d28b98.json": {
+      "repositoryPath": "docs/验收记录/verify-8d28b98.json",
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\docs\\验收记录\\verify-8d28b98.json",
+      "bytes": 14317,
+      "sha256": "d420072ae9cca5a7010d1dc47e256b4ffeada6e7516847b859ea59d94409c95a"
+    },
+    "native-sync-ci-8d28b98.json": {
+      "repositoryPath": "docs/验收记录/native-sync-ci-8d28b98.json",
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\docs\\验收记录\\native-sync-ci-8d28b98.json",
+      "bytes": 12088,
+      "sha256": "b711a9f618ead58779030f6cc15be013e373d4fe09c6e4e629e8245e2aa0b97e"
+    },
+    "server-ci-8d28b98.json": {
+      "repositoryPath": "docs/验收记录/server-ci-8d28b98.json",
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\docs\\验收记录\\server-ci-8d28b98.json",
+      "bytes": 23840,
+      "sha256": "544ad537e4103f10e98726fe13561441a3c6e6f32d940e6d75eebdd6a678c0b5"
+    }
+  },
+  "native": [
+    {
+      "api": 24,
+      "jobId": 111279242365,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733/job/111279242365",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifactId": 11282403974,
+      "artifactName": "android-native-api-24-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "artifactDigest": "sha256:59a1404b8015df3bb51bf86c18fdde06e20fcece46b69918f022263b0cbc7875",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-24.zip",
+        "bytes": 172141,
+        "sha256": "59a1404b8015df3bb51bf86c18fdde06e20fcece46b69918f022263b0cbc7875"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-24-raw-manifest.json",
+        "bytes": 2863,
+        "sha256": "c55455112843486244d16ecb096440bc18bdfd0f2e0e4f8ff6d8a5e530611e43"
+      },
+      "completedJobLog": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-24-job.log",
+        "bytes": 51888,
+        "sha256": "4e3c66d77dd7a3de9c69ff49645ef8e2ce8b65c31860e62ab3a0222299ccb1c6"
+      },
+      "firstFailure": {
+        "type": "RuntimeError",
+        "message": "initial launch refuses an existing acceptance report",
+        "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 771, in main\n    value = start_and_wait(build, 'create' if build == 10001 else 'reopen',\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 575, in start_and_wait\n    nonce = prepare_launch(build, phase, previous)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 551, in prepare_launch\n    raise RuntimeError('initial launch refuses an existing acceptance report')\nRuntimeError: initial launch refuses an existing acceptance report\n",
+        "emulatorExit": null
+      },
+      "failureRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-24\\failure.json",
+        "bytes": 906,
+        "sha256": "5344d85ecdce27fa980bbc9ac0bbfa4b028631b16138b28aeeec97375a767c0b"
+      },
+      "driverEventsRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-24\\driver-events.jsonl",
+        "bytes": 1238,
+        "sha256": "999093df5580bda7ad51e8377b3406f716e251f9d366cf9f4bf416378963e7bc"
+      },
+      "hostLaunchCount": 0,
+      "completedPhases": 0,
+      "reports": [],
+      "fourPhaseEvidence": false,
+      "nonceFilesPublished": 0,
+      "checkpointFiles": 0,
+      "runtimeEntryLifecycleLines": [],
+      "nativeG05G09FlagsObserved": {},
+      "channelObservations": {},
+      "notificationKillContinuations": [],
+      "compiled10001ApkIdentity": {
+        "raw": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-24\\apk-10001-badging.txt",
+          "bytes": 6190,
+          "sha256": "be9902c4d3eb7007af69011309409864f710c5e81847eb327cde14acc833c689"
+        },
+        "events": [
+          {
+            "event": "fixture-apk-identity",
+            "time": 94.310175882,
+            "build": 10001,
+            "package": "com.haoxiguan.haoxiguan.acceptance",
+            "label": "好习惯隔离验收"
+          }
+        ]
+      },
+      "originalProbeStdoutAvailable": false,
+      "originalProbeStderrAvailable": false,
+      "actualFileAbsenceOrExistence": "Unknown: the old probe did not preserve stdout/stderr. ADB exec-out return 0 alone is not filesystem existence evidence.",
+      "sdkEvidenceBoundary": "The source verified ro.build.version.sdk before installation/preflight, but did not archive its value. No Dart report/notification acknowledgement executed.",
+      "primaryBoundary": "Stopped in host prepare_launch before nonce publication/am start; no owner/UI/SQL/channel/notification gate was exercised."
+    },
+    {
+      "api": 33,
+      "jobId": 111279242329,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733/job/111279242329",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifactId": 11283034978,
+      "artifactName": "android-native-api-33-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "artifactDigest": "sha256:bbd42a92bace39e688847119efb9d9de26bb61d7d1016982fcbc2a458a0c3433",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-33.zip",
+        "bytes": 579330,
+        "sha256": "bbd42a92bace39e688847119efb9d9de26bb61d7d1016982fcbc2a458a0c3433"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-33-raw-manifest.json",
+        "bytes": 2863,
+        "sha256": "f15d0da3046df4eff4e03aca8ec408f4b384a60e472b1ae4c27c2328e2fb4907"
+      },
+      "completedJobLog": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-33-job.log",
+        "bytes": 52546,
+        "sha256": "ee0a04e0a325c7bf51785cf0fac809c59d2bc69c073258d81ea82ee58ece7900"
+      },
+      "firstFailure": {
+        "type": "RuntimeError",
+        "message": "initial launch refuses an existing acceptance report",
+        "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 771, in main\n    value = start_and_wait(build, 'create' if build == 10001 else 'reopen',\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 575, in start_and_wait\n    nonce = prepare_launch(build, phase, previous)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 551, in prepare_launch\n    raise RuntimeError('initial launch refuses an existing acceptance report')\nRuntimeError: initial launch refuses an existing acceptance report\n",
+        "emulatorExit": null
+      },
+      "failureRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-33\\failure.json",
+        "bytes": 906,
+        "sha256": "5344d85ecdce27fa980bbc9ac0bbfa4b028631b16138b28aeeec97375a767c0b"
+      },
+      "driverEventsRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-33\\driver-events.jsonl",
+        "bytes": 2414,
+        "sha256": "7e9b579d58ba1df68b1bacf893b5455d1b09cb718d9d5568e1dc8f590bc3dc1a"
+      },
+      "hostLaunchCount": 0,
+      "completedPhases": 0,
+      "reports": [],
+      "fourPhaseEvidence": false,
+      "nonceFilesPublished": 0,
+      "checkpointFiles": 0,
+      "runtimeEntryLifecycleLines": [],
+      "nativeG05G09FlagsObserved": {},
+      "channelObservations": {},
+      "notificationKillContinuations": [],
+      "compiled10001ApkIdentity": {
+        "raw": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-33\\apk-10001-badging.txt",
+          "bytes": 6190,
+          "sha256": "be9902c4d3eb7007af69011309409864f710c5e81847eb327cde14acc833c689"
+        },
+        "events": [
+          {
+            "event": "fixture-apk-identity",
+            "time": 250.108783131,
+            "build": 10001,
+            "package": "com.haoxiguan.haoxiguan.acceptance",
+            "label": "好习惯隔离验收"
+          }
+        ]
+      },
+      "originalProbeStdoutAvailable": false,
+      "originalProbeStderrAvailable": false,
+      "actualFileAbsenceOrExistence": "Unknown: the old probe did not preserve stdout/stderr. ADB exec-out return 0 alone is not filesystem existence evidence.",
+      "sdkEvidenceBoundary": "The source verified ro.build.version.sdk before installation/preflight, but did not archive its value. No Dart report/notification acknowledgement executed.",
+      "primaryBoundary": "Stopped in host prepare_launch before nonce publication/am start; no owner/UI/SQL/channel/notification gate was exercised."
+    },
+    {
+      "api": 35,
+      "jobId": 111279242370,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733/job/111279242370",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifactId": 11283059789,
+      "artifactName": "android-native-api-35-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "artifactDigest": "sha256:e48a952c60691fa76ddbf63d3bdbd0e544a371effeae1b8555f1b56de0636a8d",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-35.zip",
+        "bytes": 622984,
+        "sha256": "e48a952c60691fa76ddbf63d3bdbd0e544a371effeae1b8555f1b56de0636a8d"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-35-raw-manifest.json",
+        "bytes": 2863,
+        "sha256": "cd4b9690c708fd349ec516f2315d7dd2af2b221ec448733073ff9f7014d4f8e1"
+      },
+      "completedJobLog": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-35-job.log",
+        "bytes": 52656,
+        "sha256": "ba72199bd481bba14c6c31f6be2207f38c100ea0aea3f9ddcd22a2cc9cd4ee8e"
+      },
+      "firstFailure": {
+        "type": "RuntimeError",
+        "message": "initial launch refuses an existing acceptance report",
+        "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 771, in main\n    value = start_and_wait(build, 'create' if build == 10001 else 'reopen',\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 575, in start_and_wait\n    nonce = prepare_launch(build, phase, previous)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 551, in prepare_launch\n    raise RuntimeError('initial launch refuses an existing acceptance report')\nRuntimeError: initial launch refuses an existing acceptance report\n",
+        "emulatorExit": null
+      },
+      "failureRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-35\\failure.json",
+        "bytes": 906,
+        "sha256": "5344d85ecdce27fa980bbc9ac0bbfa4b028631b16138b28aeeec97375a767c0b"
+      },
+      "driverEventsRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-35\\driver-events.jsonl",
+        "bytes": 2415,
+        "sha256": "5a63145c2f7b03272a6d47965966c288b4729e49bb7af54c9fb864e45b2b07a8"
+      },
+      "hostLaunchCount": 0,
+      "completedPhases": 0,
+      "reports": [],
+      "fourPhaseEvidence": false,
+      "nonceFilesPublished": 0,
+      "checkpointFiles": 0,
+      "runtimeEntryLifecycleLines": [],
+      "nativeG05G09FlagsObserved": {},
+      "channelObservations": {},
+      "notificationKillContinuations": [],
+      "compiled10001ApkIdentity": {
+        "raw": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-35\\apk-10001-badging.txt",
+          "bytes": 6190,
+          "sha256": "be9902c4d3eb7007af69011309409864f710c5e81847eb327cde14acc833c689"
+        },
+        "events": [
+          {
+            "event": "fixture-apk-identity",
+            "time": 188.337651668,
+            "build": 10001,
+            "package": "com.haoxiguan.haoxiguan.acceptance",
+            "label": "好习惯隔离验收"
+          }
+        ]
+      },
+      "originalProbeStdoutAvailable": false,
+      "originalProbeStderrAvailable": false,
+      "actualFileAbsenceOrExistence": "Unknown: the old probe did not preserve stdout/stderr. ADB exec-out return 0 alone is not filesystem existence evidence.",
+      "sdkEvidenceBoundary": "The source verified ro.build.version.sdk before installation/preflight, but did not archive its value. No Dart report/notification acknowledgement executed.",
+      "primaryBoundary": "Stopped in host prepare_launch before nonce publication/am start; no owner/UI/SQL/channel/notification gate was exercised."
+    },
+    {
+      "api": 36,
+      "jobId": 111279242335,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733/job/111279242335",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifactId": 11283019986,
+      "artifactName": "android-native-api-36-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "artifactDigest": "sha256:0bef818fd8690c3094462c17434d1d5049498facb5c1aabb31c8e75952a42fcf",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-36.zip",
+        "bytes": 696555,
+        "sha256": "0bef818fd8690c3094462c17434d1d5049498facb5c1aabb31c8e75952a42fcf"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-36-raw-manifest.json",
+        "bytes": 2863,
+        "sha256": "fcb70db2cc89682c0cec74dbf4d30931863f0d58756279dda66aa9d81ec4852a"
+      },
+      "completedJobLog": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-36-job.log",
+        "bytes": 52545,
+        "sha256": "d00773ad22582a13baf6afbe99ecd959a1118bc793316f7d959828259d1b6c2f"
+      },
+      "firstFailure": {
+        "type": "RuntimeError",
+        "message": "initial launch refuses an existing acceptance report",
+        "traceback": "Traceback (most recent call last):\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 771, in main\n    value = start_and_wait(build, 'create' if build == 10001 else 'reopen',\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 575, in start_and_wait\n    nonce = prepare_launch(build, phase, previous)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/haoxiguan/haoxiguan/tools/run_android_acceptance.py\", line 551, in prepare_launch\n    raise RuntimeError('initial launch refuses an existing acceptance report')\nRuntimeError: initial launch refuses an existing acceptance report\n",
+        "emulatorExit": null
+      },
+      "failureRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-36\\failure.json",
+        "bytes": 906,
+        "sha256": "5344d85ecdce27fa980bbc9ac0bbfa4b028631b16138b28aeeec97375a767c0b"
+      },
+      "driverEventsRaw": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-36\\driver-events.jsonl",
+        "bytes": 2650,
+        "sha256": "04bf9814fb507ace4828dfb8a04519032e304198a6ee623772ada778b21d5437"
+      },
+      "hostLaunchCount": 0,
+      "completedPhases": 0,
+      "reports": [],
+      "fourPhaseEvidence": false,
+      "nonceFilesPublished": 0,
+      "checkpointFiles": 0,
+      "runtimeEntryLifecycleLines": [],
+      "nativeG05G09FlagsObserved": {},
+      "channelObservations": {},
+      "notificationKillContinuations": [],
+      "compiled10001ApkIdentity": {
+        "raw": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-36\\apk-10001-badging.txt",
+          "bytes": 6190,
+          "sha256": "be9902c4d3eb7007af69011309409864f710c5e81847eb327cde14acc833c689"
+        },
+        "events": [
+          {
+            "event": "fixture-apk-identity",
+            "time": 175.05406505,
+            "build": 10001,
+            "package": "com.haoxiguan.haoxiguan.acceptance",
+            "label": "好习惯隔离验收"
+          }
+        ]
+      },
+      "originalProbeStdoutAvailable": false,
+      "originalProbeStderrAvailable": false,
+      "actualFileAbsenceOrExistence": "Unknown: the old probe did not preserve stdout/stderr. ADB exec-out return 0 alone is not filesystem existence evidence.",
+      "sdkEvidenceBoundary": "The source verified ro.build.version.sdk before installation/preflight, but did not archive its value. No Dart report/notification acknowledgement executed.",
+      "primaryBoundary": "Stopped in host prepare_launch before nonce publication/am start; no owner/UI/SQL/channel/notification gate was exercised."
+    }
+  ],
+  "protocolDefect": {
+    "classification": "Host-only pre-launch filesystem protocol defect; not a notification/SQL/product runtime failure.",
+    "sourceLocation": "tools/run_android_acceptance.py prepare_launch: exec-out cat then returncode==0 interpreted as existing report.",
+    "confirmedSourceProperty": "ADB exec-out opens exec:, copies output and returns 0 without the remote command exit code.",
+    "primarySource": "https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/client/commandline.cpp",
+    "observedPrimarySourceBlob": "5cd3ab66dd0a7ba0173b01f954fbe76c21269483",
+    "primarySourceLines": [
+      1822,
+      1847
+    ],
+    "actualInputLimitation": "The four original artifacts do not contain that cat stdout/stderr. No retrospective claim that a missing file produced any particular text is made."
+  },
+  "pinnedSource": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\source-driver-8d28b98.py",
+      "bytes": 43031,
+      "sha256": "96376aa8cbed9efc628a162a6459ba1bb01e82e9dd23ad935b3ed95b9c815ec0"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\source-android-acceptance-8d28b98.dart",
+      "bytes": 60010,
+      "sha256": "6eb8c4b26335f2f83354f5f13e821fe8059f7f61505af6cb05790d68381120c4"
+    }
+  ],
+  "metadataEvidence": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-source-metadata.json",
+      "bytes": 1364,
+      "sha256": "7790f63c40579b38d8921a2e8b083008b07f3cbaf7f9de7b0b126f418dec9497"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-merge-metadata.json",
+      "bytes": 2608,
+      "sha256": "7cffeaa8d915d4e6452e1b0f1ecacf90a5ff7d2c2335bcaf1fde29a7a9e11811"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-run-final-metadata.json",
+      "bytes": 12831,
+      "sha256": "5e913255847363ade910ffc75773a1e66f8447c3e71784c4d2979edec45cbed4"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-jobs-final-metadata.json",
+      "bytes": 19018,
+      "sha256": "6a29aa6e439bb90378da374b00108d94edfc6e71774089a9b82eb67bcacd3362"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\native-artifacts-final-metadata.json",
+      "bytes": 7667,
+      "sha256": "95614a05a885a752e4e2e8bfb15bd79c782ed71aef54490817306efc308320a7"
+    }
+  ],
+  "boundaries": [
+    "No API produced even the first of four native reports; all legacy native business gates remain pending for this source.",
+    "Verify succeeded and the separate native SyncScreen job succeeded; their proofs do not establish legacy notification G05/G09 acceptance.",
+    "Terminal-report and explicit report-probe fixes are newer unpushed patches and are not included in these actual source8d runtime results.",
+    "Earlier failure snapshots, raw artifacts and host proof indices remain unchanged."
+  ],
+  "rawRoot": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98",
+  "indexGenerationScript": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\index-native-preflight-failure.py",
+    "bytes": 10556,
+    "sha256": "cbf1ea4268e90ae6cfe7e1ca564fcc679bce465fb4efdb63d8f0887644c469f1"
+  }
+}

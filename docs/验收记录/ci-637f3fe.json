@@ -1,0 +1,58 @@
+{
+  "scope": "Synthetic data on isolated disposable GitHub Actions AVDs; no production device or user data.",
+  "remoteSha": "637f3fea26986658fb35b4205db4828ce1fcfa55",
+  "sourceCommit": "https://github.com/HSolddog/haoxiguan/commit/637f3fea26986658fb35b4205db4828ce1fcfa55",
+  "mergeSha": "cec9302b5bfce4ab8b3a98a2f6d0c8b40e0a14c8",
+  "tree": "684b8daba98283c51c18c2f220d13b6d1fba51dd",
+  "sourceAndMergeTreeEqual": true,
+  "workflow": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796",
+  "conclusion": "failure",
+  "allFourNativePassed": false,
+  "native": [
+    {
+      "api": 24,
+      "job": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/job/111292462232",
+      "conclusion": "success",
+      "completedPhases": 4,
+      "requiredPhases": 4,
+      "completeNativeProof": true,
+      "artifactId": 11284394152,
+      "artifactSha256": "3791d92fd3ffb962be70131391402dc580f171e3b4879a6ff55e6017ed804277",
+      "failureMechanism": null
+    },
+    {
+      "api": 33,
+      "job": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/job/111292462209",
+      "conclusion": "failure",
+      "completedPhases": 0,
+      "requiredPhases": 4,
+      "completeNativeProof": false,
+      "artifactId": 11284613756,
+      "artifactSha256": "54b6b35566a63781a7a43e54facd9d10e072c9c5f50aa90cd4d7831bcd9e2287",
+      "failureMechanism": "First schema2 phase timed out after the original Flutter owner detached and a second entry could not reach the retained owner. No phase completed. The exact lifecycle trigger was not established."
+    },
+    {
+      "api": 35,
+      "job": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/job/111292462181",
+      "conclusion": "success",
+      "completedPhases": 4,
+      "requiredPhases": 4,
+      "completeNativeProof": true,
+      "artifactId": 11285187127,
+      "artifactSha256": "5dd02e334ae8f44099c6fce607e30d2756382c14aa035b415fcc182c301a63cb",
+      "failureMechanism": null
+    },
+    {
+      "api": 36,
+      "job": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/job/111292462202",
+      "conclusion": "failure",
+      "completedPhases": 2,
+      "requiredPhases": 4,
+      "completeNativeProof": false,
+      "artifactId": 11285043311,
+      "artifactSha256": "22c41d3ac28b36fa2199755d4e2fd963cc00be42cea24b2983c98f9141c37101",
+      "failureMechanism": "After two schema2 phases and successful notification-denial/regrant continuation, schema3 timed out at channel disable. The channel title was exposed through content description; the text-only selector never drove the visible switch."
+    }
+  ],
+  "boundary": "API24 and API35 completed all four required phases. API33 and API36 failed. Later fixes and host protocol tests do not change these results. Detailed original evidence remains in the workflow artifacts and a private local archive."
+}

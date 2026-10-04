@@ -1,0 +1,370 @@
+{
+  "observedAtUtc": "2026-10-03T17:11:12.759072+00:00",
+  "headCommit": "682b818e880fdc0694fbe683b1aad2403d3ea0e2",
+  "localEquivalentCommit": "4df604c6d87f47452e8b05bd2277c41d907037c0",
+  "pullRequestMergeCommit": "87c5886a237359bb171873fefbb89e4a9c023be1",
+  "sourceTree": "b8e07549d33c4fc9565034a8b57db41cc8115532",
+  "mergeTree": "b8e07549d33c4fc9565034a8b57db41cc8115532",
+  "android": {
+    "run": 37139114335,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37139114335",
+    "verifyJob": 111249679960,
+    "verifyConclusion": "failure",
+    "status": "verify_failed_native_sync_host_mock_before_all_native_jobs",
+    "format": {
+      "result": "success",
+      "files": 97,
+      "changed": 0
+    },
+    "analyze": {
+      "result": "success",
+      "seconds": 9.8
+    },
+    "normalTests": {
+      "passed": 265,
+      "skipped": 3,
+      "failed": 0,
+      "executed": true,
+      "stepConclusion": "success"
+    },
+    "nativeSyncHostRegression": {
+      "executed": true,
+      "testCount": 45,
+      "passed": 44,
+      "errors": 1,
+      "failedAssertions": 0,
+      "result": "failure",
+      "failingTest": "test_windows_runner_is_blocked_before_any_sdk_go_or_network_action",
+      "scope": "Separate native-sync owner preserves the full error diagnosis and fixes its Windows platform simulation mock. This is a Linux Python host-test error before AVD execution."
+    },
+    "realHttps": {
+      "executed": false,
+      "stepConclusion": "skipped"
+    },
+    "webdav": {
+      "executed": false,
+      "stepConclusion": "skipped"
+    },
+    "debugBuild": {
+      "executed": false,
+      "stepConclusion": "skipped"
+    },
+    "upgradeFixtureBuild": {
+      "executed": false,
+      "stepConclusion": "skipped"
+    },
+    "nativeSyncFixtureBuild": {
+      "executed": false,
+      "stepConclusion": "skipped"
+    },
+    "nativeAcceptance": {
+      "aggregateJob": 111250130743,
+      "jobConclusion": "skipped",
+      "expectedApis": [
+        24,
+        33,
+        35,
+        36
+      ],
+      "matrixInstancesCreated": 0,
+      "runtimeExecuted": false,
+      "completedBusinessReports": 0,
+      "reason": "needs: verify did not succeed; no matrix AVD job was instantiated",
+      "perApi": [
+        {
+          "api": 24,
+          "status": "not_started_dependency_skip",
+          "fourPhaseEvidence": false,
+          "nativeFlagsEvaluated": false
+        },
+        {
+          "api": 33,
+          "status": "not_started_dependency_skip",
+          "fourPhaseEvidence": false,
+          "nativeFlagsEvaluated": false
+        },
+        {
+          "api": 35,
+          "status": "not_started_dependency_skip",
+          "fourPhaseEvidence": false,
+          "nativeFlagsEvaluated": false
+        },
+        {
+          "api": 36,
+          "status": "not_started_dependency_skip",
+          "fourPhaseEvidence": false,
+          "nativeFlagsEvaluated": false
+        }
+      ]
+    },
+    "nativeSync": {
+      "job": 111250130648,
+      "jobConclusion": "skipped",
+      "runtimeExecuted": false,
+      "scope": "Tracked independently by the native-sync owner."
+    },
+    "rawVerifyLog": {
+      "file": "ci-followup-682b818/android-verify-job.log",
+      "bytes": 201043,
+      "sha256": "822277c911f891b3ddcbb7919f05196c49550999af9dbc968e30020839d36e6f"
+    },
+    "exactSummaryLines": [
+      "2026-10-03T17:04:06.9897252Z Formatted 97 files (0 changed) in 0.45 seconds.",
+      "2026-10-03T17:04:17.5917627Z No issues found! (ran in 9.8s)",
+      "2026-10-03T17:05:57.1909676Z 🎉 265 tests passed, 3 skipped.",
+      "2026-10-03T17:05:57.4543346Z Ran 45 tests in 0.067s",
+      "2026-10-03T17:05:57.4543600Z FAILED (errors=1)"
+    ],
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1
+      },
+      {
+        "name": "Configure SDK paths",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2
+      },
+      {
+        "name": "Check out project",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3
+      },
+      {
+        "name": "Check out pinned Flutter 3.44.6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4
+      },
+      {
+        "name": "Verify Flutter release commit",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5
+      },
+      {
+        "name": "Use JDK 17",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6
+      },
+      {
+        "name": "Cache Flutter engine and pub packages",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7
+      },
+      {
+        "name": "Report SDK",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8
+      },
+      {
+        "name": "Resolve locked dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 9
+      },
+      {
+        "name": "Check Dart formatting",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 10
+      },
+      {
+        "name": "Analyze",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 11
+      },
+      {
+        "name": "Test",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 12
+      },
+      {
+        "name": "Test native sync runner isolation and protocol",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 13
+      },
+      {
+        "name": "Use Go for real encrypted sync interoperability",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 14
+      },
+      {
+        "name": "Real HTTPS sync, recovery and key rotation",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 15
+      },
+      {
+        "name": "Install pinned isolated WebDAV test service",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 16
+      },
+      {
+        "name": "Real TLS WebDAV recovery preview",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 17
+      },
+      {
+        "name": "Preserve real WebDAV acceptance evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 18
+      },
+      {
+        "name": "Build Android debug APK",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 19
+      },
+      {
+        "name": "Upload debug APK",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 20
+      },
+      {
+        "name": "Build isolated Android upgrade fixtures",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 21
+      },
+      {
+        "name": "Upload isolated upgrade fixtures",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 22
+      },
+      {
+        "name": "Build isolated native SyncScreen fixtures",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 23
+      },
+      {
+        "name": "Upload isolated native sync fixtures",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 24
+      },
+      {
+        "name": "Upload coverage",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 25
+      },
+      {
+        "name": "Post Cache Flutter engine and pub packages",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 47
+      },
+      {
+        "name": "Post Use JDK 17",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 48
+      },
+      {
+        "name": "Post Check out pinned Flutter 3.44.6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 49
+      },
+      {
+        "name": "Post Check out project",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 50
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 51
+      }
+    ],
+    "coverageArtifact": {
+      "id": 11279907966,
+      "name": "coverage-87c5886a237359bb171873fefbb89e4a9c023be1",
+      "size_in_bytes": 17508,
+      "url": "https://api.github.com/repos/HSolddog/haoxiguan/actions/artifacts/11279907966",
+      "archive_download_url": "https://api.github.com/repos/HSolddog/haoxiguan/actions/artifacts/11279907966/zip",
+      "expired": false,
+      "created_at": "2026-10-03T17:05:58Z",
+      "expires_at": "2026-10-17T17:05:57Z",
+      "updated_at": "2026-10-03T17:05:58Z",
+      "digest": "sha256:c3abc82a2d2ee7525910886a916bc3cd82a8778589c3be7fb749c12e859035ca",
+      "workflow_run": {
+        "id": 37139114335,
+        "repository_id": 1390973472,
+        "head_repository_id": 1390973472,
+        "head_branch": "codex/haoxiguan-design-completion-20261003",
+        "head_sha": "682b818e880fdc0694fbe683b1aad2403d3ea0e2"
+      }
+    },
+    "rawCoverageZip": {
+      "file": "ci-followup-682b818/coverage.zip",
+      "bytes": 17508,
+      "sha256": "c3abc82a2d2ee7525910886a916bc3cd82a8778589c3be7fb749c12e859035ca"
+    },
+    "coverageFiles": [
+      {
+        "file": "ci-followup-682b818/coverage/lcov.info",
+        "bytes": 62521,
+        "sha256": "4fa2ea0e74be3ef0dc51d99258cfae20a3a7e1a7f62a759db53b5b59bfc811dc"
+      }
+    ]
+  },
+  "sourceEvidence": {
+    "metadata": {
+      "file": "ci-followup-682b818/metadata-final.json",
+      "bytes": 12205,
+      "sha256": "a1ce06989504d14a0fd77c8fa72aada1b8ae07068914a3c338d072be005a0fa2"
+    },
+    "pinnedNativeDriver": {
+      "file": "ci-followup-682b818/source-driver-682b818.py",
+      "bytes": 36001,
+      "sha256": "79855647d28dbbed20e17bf92889db23172e30fa78dcd4e857bcf63ad777c898"
+    }
+  },
+  "independentServerStatusAsObserved": {
+    "run": 37139114326,
+    "sourceHead": "682b818e880fdc0694fbe683b1aad2403d3ea0e2",
+    "jobs": [
+      {
+        "job": 111249679807,
+        "name": "verify",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "job": 111250026702,
+        "name": "arm64-smoke",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "job": 111250026714,
+        "name": "capacity",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ],
+    "scope": "Read-only status at this observation. Server verification and ARM64 success do not clear the Android gate; capacity was still running. Detailed server evidence is owned separately."
+  },
+  "scope": "Source/PR merge have the same exact tree. Flutter 265 passed / 3 skipped, formatting and analysis executed successfully. The following separate 45-case native-sync host suite failed with one mock-related error; all HTTPS/WebDAV/APK build steps and native jobs were skipped. No G05/G09 native permission, restore, SDK/channel, schema3 or forced process-reopen result is claimed for this SHA. Historical 68d3507 failures and this verification failure remain separate from later runs."
+}

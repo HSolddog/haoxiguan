@@ -172,6 +172,101 @@ void main() {
     expect(server.files.keys.any((p) => p.endsWith('user.txt')), isTrue);
     expect(server.events.where((e) => e.startsWith('DELETE:')), isNotEmpty);
   });
+  test(
+    'prune requests identity ETags and preserves weak or replaced files',
+    () async {
+      final server = _Dav()..gzipMarkers = true;
+      final client = server.client();
+      addTearDown(client.close);
+      final uploaded = await client.upload(raw, password, vault, device);
+      final bytes = server.files['/dav/${uploaded.relativePath}.hgb']!;
+      RemoteBackup seed(String id, String owner, int hour) {
+        final item = RemoteBackup(
+          vault: vault,
+          device: owner,
+          id: id,
+          created: DateTime.utc(2026, 10, 3, hour),
+          digest: uploaded.digest,
+          size: uploaded.size,
+        );
+        server.files['/dav/${item.relativePath}.hgb'] = List<int>.from(bytes);
+        server.files['/dav/${item.relativePath}.complete.json'] = utf8.encode(
+          jsonEncode(item.toJson()),
+        );
+        return item;
+      }
+
+      final newest = seed(uploaded.id, device, 11);
+      final old = seed('33333333-3333-4333-8333-333333333331', device, 10);
+      final weak = seed('33333333-3333-4333-8333-333333333332', device, 10);
+      final replaced = seed('33333333-3333-4333-8333-333333333333', device, 10);
+      final foreign = seed(
+        '33333333-3333-4333-8333-333333333334',
+        '44444444-4444-4444-8444-444444444444',
+        10,
+      );
+      final markerPath = '/dav/${old.relativePath}.complete.json';
+      final markerTag = '"${sha256.convert(server.files[markerPath]!)}"';
+      final dataTag = '"${sha256.convert(bytes)}"';
+      // Model the decoded body and altered ETag exposed by an HTTP client when
+      // Apache compresses a marker. Conditional methods compare the stored tag.
+      final compressed = await server.handle(
+        http.Request('GET', Uri.parse('https://server$markerPath'))
+          ..headers['Authorization'] =
+              'Basic ${base64Encode(utf8.encode('user:secret'))}',
+      );
+      expect(compressed.headers['content-encoding'], 'gzip');
+      expect(
+        compressed.headers['etag'],
+        '${markerTag.substring(0, markerTag.length - 1)}-gzip"',
+      );
+      final identity = await client.request(
+        'GET',
+        '${old.relativePath}.complete.json',
+        headers: {'Accept-Encoding': 'gzip'},
+        allowed: {200},
+      );
+      expect(identity.headers['etag'], markerTag);
+      expect(identity.headers.containsKey('content-encoding'), isFalse);
+      server.weakEtags.add('/dav/${weak.relativePath}.complete.json');
+      final replacedMarker = '/dav/${replaced.relativePath}.complete.json';
+      server.replaceBeforeDeletePath = replacedMarker;
+
+      await client.prune([old, weak, replaced, foreign], newest, password);
+
+      expect(server.files.containsKey(markerPath), isFalse);
+      expect(server.files.containsKey('/dav/${old.relativePath}.hgb'), isFalse);
+      final deletes = server.requests
+          .where((request) => request.method == 'DELETE')
+          .toList();
+      expect(deletes.map((request) => request.url.path), [
+        markerPath,
+        '/dav/${old.relativePath}.hgb',
+        replacedMarker,
+      ]);
+      expect(deletes[0].headers['if-match'], markerTag);
+      expect(deletes[1].headers['if-match'], dataTag);
+      expect(server.preconditionFailures, 1);
+      expect(server.compressedMarkerReads, 1);
+      expect(
+        server.files[replacedMarker],
+        utf8.encode('another writer replaced'),
+      );
+      for (final retained in [newest, weak, replaced, foreign]) {
+        expect(server.files['/dav/${retained.relativePath}.hgb'], bytes);
+        expect(
+          server.files.containsKey(
+            '/dav/${retained.relativePath}.complete.json',
+          ),
+          isTrue,
+        );
+      }
+      expect(
+        jsonDecode(await client.restore(newest, password)),
+        jsonDecode(raw),
+      );
+    },
+  );
   test('配置保存中断不会替换有效指针，密钥读取失败不自动删除', () async {
     final secrets = _Secrets();
     final store = BackupSettingsStore(secrets);
@@ -247,7 +342,13 @@ class _Secrets implements SecretStore {
 class _Dav {
   final files = <String, List<int>>{}, directories = <String>{'/dav/'};
   final events = <String>[];
+  final requests = <http.Request>[];
+  final weakEtags = <String>{};
   bool corruptRead = false;
+  bool gzipMarkers = false;
+  String? replaceBeforeDeletePath;
+  int compressedMarkerReads = 0;
+  int preconditionFailures = 0;
   WebDavClient client() => WebDavClient(
     'https://server/dav/',
     'user',
@@ -257,6 +358,7 @@ class _Dav {
   Future<http.Response> handle(http.Request r) async {
     final path = r.url.path;
     events.add('${r.method}:$path');
+    requests.add(r);
     expect(
       r.headers['Authorization'] ?? r.headers['authorization'],
       'Basic ${base64Encode(utf8.encode('user:secret'))}',
@@ -286,18 +388,36 @@ class _Dav {
       case 'GET':
         final bytes = files[path];
         if (bytes == null) return http.Response('', 404);
+        final tag = '"${sha256.convert(bytes)}"';
+        final compressed =
+            gzipMarkers &&
+            path.endsWith('.complete.json') &&
+            r.headers['accept-encoding'] != 'identity';
+        if (compressed) compressedMarkerReads++;
         return http.Response.bytes(
           corruptRead && path.endsWith('.hgb') ? [1, 2, 3] : bytes,
           200,
-          headers: {'etag': '"${sha256.convert(bytes)}"'},
+          headers: {
+            'etag': weakEtags.contains(path)
+                ? 'W/$tag'
+                : compressed
+                ? '${tag.substring(0, tag.length - 1)}-gzip"'
+                : tag,
+            if (compressed) 'content-encoding': 'gzip',
+          },
         );
       case 'DELETE':
+        if (path == replaceBeforeDeletePath) {
+          files[path] = utf8.encode('another writer replaced');
+        }
         final bytes = files[path];
         if (bytes == null) return http.Response('', 404);
-        expect(
-          r.headers['If-Match'] ?? r.headers['if-match'],
-          '"${sha256.convert(bytes)}"',
-        );
+        final match = r.headers['if-match'];
+        expect(match, isNotNull);
+        if (match != '"${sha256.convert(bytes)}"') {
+          preconditionFailures++;
+          return http.Response('', 412);
+        }
         files.remove(path);
         return http.Response('', 204);
       default:

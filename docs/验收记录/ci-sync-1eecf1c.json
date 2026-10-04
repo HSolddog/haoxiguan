@@ -1,0 +1,24 @@
+{
+  "observedAtUtc": "2026-10-03T09:03:00Z",
+  "repository": "HSolddog/haoxiguan",
+  "sourceCommit": "1eecf1c3c4aa897c640ac951ddd336470dacc9b7",
+  "prMergeCommit": "3d6afc84117aae0b595f23e543c1213457fc7f53",
+  "runId": 37110939911,
+  "jobId": 111168617501,
+  "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37110939911/job/111168617501",
+  "verifyJobConclusion": "success",
+  "ordinaryTests": {"passed": 155, "skipped": 3},
+  "nativeJobs": {"24": "failure: adb am start returned error: closed", "35": "success", "36": "success"},
+  "overallAndroidWorkflowConclusion": "failure",
+  "realHttpsTests": 2,
+  "logExcerpt": [
+    "2026-10-03T08:52:12.3242162Z ##[group]✅ real HTTPS Go relay: encrypted recovery, two devices, conflict, revoke and remote deletion",
+    "2026-10-03T08:52:13.4848093Z ##[group]✅ two independent HTTPS services: verified backup restore and fresh pairing migration",
+    "2026-10-03T08:52:13.5087967Z 🎉 2 tests passed."
+  ],
+  "limitations": [
+    "此提交早于后续无障碍、分类同步与来源设备修改；最终提交需独立回归。",
+    "Linux集成成功不解释或否定Windows Defender隔离事件。",
+    "真实WebDAV与手机长期验收没有在此运行中执行。"
+  ]
+}

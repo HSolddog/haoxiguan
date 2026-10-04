@@ -1,0 +1,102 @@
+{
+  "publication": "Public summary of synthetic test validation. Full logs and workstation metadata remain local; no user habit data, credentials, local paths, process IDs or device identifiers are included.",
+  "fullLocalEvidenceSha256": "3e199a64883faccfdaaf1e7edb7b13be74e314cbb267db1dc987cdaa8ea2572b",
+  "fullLocalEvidenceBytes": 21154,
+  "observedAtUtc": "2026-10-03T21:37:27.3458233Z",
+  "delegatedBaselineCommit": "5c7c425628fd16fa5838a0558ed885a1650de962",
+  "observedHeadAtEvidence": "31ba3125397eb48044e3c583959845eb21ddf067",
+  "scope": "Record editor and reminder settings card route lifetime. This proof expands the initially delegated record-editor scope to the parent-authorized reminder-card follow-up.",
+  "codeSha256": "623fd88468d7945babdeca5c3d5e5677a9c9a364ae71b108688deb3c117c4270",
+  "codeSha256Definition": "SHA256 of the UTF-8 sourceFiles ordered repositoryRelativePath + TAB + per-file SHA256 + LF manifest.",
+  "sourceFiles": [
+    {
+      "repositoryRelativePath": "lib/ui/record_editor.dart",
+      "bytes": 8584,
+      "sha256": "bea77e09e6d487b405c89346c3f2f64e1eee630415cd80489003bc71b6070373"
+    },
+    {
+      "repositoryRelativePath": "test/record_editor_route_race_test.dart",
+      "bytes": 10893,
+      "sha256": "996677a7181d57b83a8212fb2c1665700b656e611de21e972815159f753aa23c"
+    },
+    {
+      "repositoryRelativePath": "lib/ui/reminder_settings_card.dart",
+      "bytes": 5867,
+      "sha256": "e05b6bd2f6474c0117b8a49d3d572aa9e6abafea7f59d1beca59350a7a979050"
+    },
+    {
+      "repositoryRelativePath": "test/reminder_route_lifetime_test.dart",
+      "bytes": 10319,
+      "sha256": "b0389310a1a39a0be9112b6a9f4daa1d9153e6f91d55e58bf645aefd693ce57a"
+    }
+  ],
+  "designBasis": [
+    {
+      "repositoryRelativePath": "docs/本地数据完整性.md",
+      "lines": [
+        29,
+        33,
+        38,
+        40,
+        46,
+        90
+      ],
+      "requirements": [
+        "L01: UI confirmation follows business commit.",
+        "L05 and L-T04: failure/retry remains possible and a repeated callback must not duplicate one action.",
+        "L10: reminder side effects do not roll back or duplicate committed facts.",
+        "L12: deletion follows explicit user confirmation."
+      ]
+    },
+    {
+      "repositoryRelativePath": "docs/交互设计.md",
+      "lines": [
+        91,
+        92
+      ],
+      "requirements": [
+        "Retain draft inputs on failed persistence and confirm records only after successful persistence."
+      ]
+    }
+  ],
+  "verification": {
+    "finalRelated": {
+      "exitCode": 0,
+      "passed": 31,
+      "groups": {
+        "entrySaveAndRecordDraft": 11,
+        "existingPermissionChannelRecoveryStatus": 20
+      },
+      "sourceFilesMatchFinalBytes": true
+    },
+    "uniqueTestsPassed": 49,
+    "uniqueTestsDefinition": "8 record route cases + 10 reminder lifetime cases + 31 distinct related cases. The 11 related record tests were run more than once and are counted once.",
+    "analyze": {
+      "exitCode": 0,
+      "result": "No issues found",
+      "durationSeconds": 1.5
+    },
+    "format": {
+      "exitCode": 0,
+      "changed": 0
+    },
+    "diffCheck": {
+      "exitCode": 0
+    }
+  },
+  "limitations": [
+    "The two new UI route suites use the actual HabitController with MemoryHabitRepository and synthetic platform probes/gated persistence. They do not prove Android device behavior or disk SQLite race behavior.",
+    "The unchanged 20-case permission/channel/recovery/status related suite passed; its existing channel initialization test includes on-disk SQLite commit/reopen coverage, which is separate from the new UI route simulations.",
+    "The parent owns full-suite/native integration and publication/commit decisions. This agent released Flutter/Dart after all final commands completed and did not use Go, AVD, Docker, real servers, secrets, installation, publication, commit or push."
+  ],
+  "counterfactualSummary": {
+    "recordBehaviorFailures": 8,
+    "reminderBehaviorFailures": 6,
+    "reminderControlsPassed": 4,
+    "newRecordPassed": 8,
+    "newReminderPassed": 10,
+    "distinctRelatedPassed": 31,
+    "totalDistinctPassed": 49,
+    "controlsUseSyntheticFacts": true
+  }
+}

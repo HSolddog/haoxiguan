@@ -1,0 +1,216 @@
+{
+  "sourceLocal": "c176047f953834d746decf713f6460dcc5e93091",
+  "apk": "tools/artifacts/haoxiguan-product-debug-c176047.apk",
+  "apkSha256": "52a7d0009ba8a464952a4a8a46904646619cda3e75cc0bc897f60b051e354ba0",
+  "buildType": "debug",
+  "zipalign": {
+    "arguments": [
+      "-c",
+      "-P",
+      "16",
+      "-v",
+      "4"
+    ],
+    "exitCode": 0,
+    "logSha256": "d1018467ba2b7ab8df2103e4483065fa978069c4e43dd6192df4b5eb35dc10cc"
+  },
+  "nativeLibraries": [
+    {
+      "entry": "lib/arm64-v8a/libVkLayer_khronos_validation.so",
+      "sha256": "ae445f7e74d402e3a367adb230b1edd9841899fcb3310166e5cc96a09ad37a3f",
+      "exitCode": 0,
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "4be591f7c7ef904b4c663f30356278fb8e7e5654204540e2d0c069d27854a434"
+    },
+    {
+      "entry": "lib/arm64-v8a/libdartjni.so",
+      "sha256": "4b5b1141178486f14eaf8bc7617c036b8c284ff26fd077ca607937534041e4a3",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "947a5793644e12c9526c5cbbbc83a54b8f076a08f131bd15642dbf3c282cf904"
+    },
+    {
+      "entry": "lib/arm64-v8a/libdatastore_shared_counter.so",
+      "sha256": "d3e48717c9aa147e0ab21063ba0e8e0211cabf8bf40b222640829519edbf58e1",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "49fab7c226f9e9d5b100a19062b1a15a2c5e63762860005d8d2ef18daa40e7be"
+    },
+    {
+      "entry": "lib/arm64-v8a/libflutter.so",
+      "sha256": "f5489f4cc38fbde832ff85cf3e02d1ad856e5399d1d9814268866e5f2cd9fea8",
+      "exitCode": 0,
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "36af8389a412b4a62369d315c9fe987675b8c3efddf6b9e9485c79f8e40638df"
+    },
+    {
+      "entry": "lib/arm64-v8a/libsodium.so",
+      "sha256": "e22fb48f03b9e5b91d05fc64a87366755eaa83878575333364e35aee2b4753d1",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "7ba2313219785b4f9ecae5298a2421bf7016e62895b8d811e9a5925466ca6f87"
+    },
+    {
+      "entry": "lib/arm64-v8a/libsqlite3.so",
+      "sha256": "081df67ee9ab852daea6a0679427e90fc89a0245d06f93dafe2309875c609c5c",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "2d6983cf464008943008bb3f688d9859841422d3c289cb8d11add28a1ec98b30"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libdartjni.so",
+      "sha256": "c515ac985dbb3124dcd41263b3d81a05df8c9b44f7e00e6fa89c79efa39382f5",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "5950c65349f2983fe9d88d47154a962ac24299a8fb67abfc1dde19afdc8d653a"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libdatastore_shared_counter.so",
+      "sha256": "716c5d8d2cac8ca0edf65da8f139c7886b726ac79d542a14edeb94994ba6d3dc",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "4738c903128f26846d217001fe40d4800f82311fa711260c8b9fbf79204f3e11"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libflutter.so",
+      "sha256": "741c002e3921fb826867f581e5143c36c83ac472108d44c4e2fe1961a1557729",
+      "exitCode": 0,
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "d61cad2305d5d209b4b19754e1889f385687f95ac3f32ffc5e6cf412f2bc4668"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libsodium.so",
+      "sha256": "3d8e3d1dad53a99a4044f260dcd4c55c2ef36aa092bce6d385ee080da5931acb",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "fa920f4f7e3af567d9802934c31dbf52da94f5886bbfcb597ebf6e5c84b65071"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libsqlite3.so",
+      "sha256": "5f331b44ef2549f1e3fa2153ad22d60d85c5a43766e4690a29cc49a0652db772",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "d5811567f79a5bcc7816ba0630a268c4aa00c8768dec4dd0073fdf9f07074541"
+    },
+    {
+      "entry": "lib/x86_64/libdartjni.so",
+      "sha256": "5d8ff1f5e40098a7ee96441e128430e2e6f70949bc1930cb36826926f8fdf1ce",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "bd5cb25558cab21426a12f751aeec1c90fa1a8f46c089b25077d6b48c8cb47b6"
+    },
+    {
+      "entry": "lib/x86_64/libdatastore_shared_counter.so",
+      "sha256": "fb6c9208988c49ae94943bc3236fa763ba584722e044fa4ea9a12d2941027105",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "45bc631cde48128643bfa25fd6afa3e9940f9ffaa913073c74a302b04d24d640"
+    },
+    {
+      "entry": "lib/x86_64/libflutter.so",
+      "sha256": "f6bf3a4c928f7345b8f73785b9a344dab757c436ecfad211d199e2cf71068a30",
+      "exitCode": 0,
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "d28126030647ed20e2e949295fd463539248d5998cb7c044757cb1d3cde455d7"
+    },
+    {
+      "entry": "lib/x86_64/libsodium.so",
+      "sha256": "b7b7377d42ed5ebd9c88b3ec665b138ae05c1633c57fd7372e50661e5f2eab28",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "b26e0c3b252a77dfb7392fad2696b78e44f963876a5bdb34b2f042a56745c66f"
+    },
+    {
+      "entry": "lib/x86_64/libsqlite3.so",
+      "sha256": "c773c3a25e4c11a450cc700ac95d665c3a1ae75ad426a204fc9b7a7a69b0e191",
+      "exitCode": 0,
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "allAtLeast16KiB": true,
+      "logSha256": "a6cf600457a6c37a632605a8e3d08b2c9d94ed7267bf4c405de4342b59ecb57e"
+    }
+  ],
+  "limits": [
+    "Static inspection of this debug APK only; no release APK or device with 16 KB pages was tested."
+  ],
+  "passed": true
+}

@@ -1,0 +1,150 @@
+{
+  "kind": "public_synthetic_verify_ci_summary",
+  "syntheticCI": {
+    "syntheticDataOnly": true,
+    "execution": "Real CI tests and dedicated HTTPS/TLS WebDAV integration fixtures; no real user data."
+  },
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "637f3fea26986658fb35b4205db4828ce1fcfa55",
+  "mergeCommit": "cec9302b5bfce4ab8b3a98a2f6d0c8b40e0a14c8",
+  "rootTree": "684b8daba98283c51c18c2f220d13b6d1fba51dd",
+  "headAndMergeTreesEqual": true,
+  "run": {
+    "id": 37152885796,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796",
+    "attempt": 1
+  },
+  "job": {
+    "id": 111290207808,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/job/111290207808",
+    "status": "completed",
+    "conclusion": "success",
+    "allActualStepsSucceeded": true
+  },
+  "jobLogSha256": "647e3584e22b62b78811da666bedc0e9e1481b8468dd2eafa5d9e7487c134a34",
+  "results": {
+    "format": {
+      "result": "success",
+      "files": 113,
+      "changed": 0
+    },
+    "analyze": {
+      "result": "success",
+      "seconds": 12.2
+    },
+    "flutter": {
+      "passed": 350,
+      "skipped": 3,
+      "failed": 0,
+      "result": "success"
+    },
+    "nativeSyncHostTests": {
+      "passed": 62,
+      "skipped": 0,
+      "failed": 0,
+      "result": "success"
+    },
+    "jsonSchemaContracts": {
+      "passed": 25,
+      "failed": 0,
+      "result": "success",
+      "schemas": 8,
+      "positive": 69,
+      "negative": 119
+    },
+    "dedicatedHttps": {
+      "passed": 2,
+      "failed": 0,
+      "result": "success"
+    },
+    "dedicatedTlsWebdav": {
+      "passed": 1,
+      "failed": 0,
+      "result": "success"
+    }
+  },
+  "apkBuilds": [
+    {
+      "role": "product-debug",
+      "result": "success",
+      "artifactId": 11284483464
+    },
+    {
+      "role": "upgrade-schema-2",
+      "result": "success",
+      "artifactId": 11284657921
+    },
+    {
+      "role": "upgrade-schema-3",
+      "result": "success",
+      "artifactId": 11284657921
+    },
+    {
+      "role": "native-sync-a",
+      "result": "success",
+      "artifactId": 11284892487
+    },
+    {
+      "role": "native-sync-b",
+      "result": "success",
+      "artifactId": 11284892487
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "coverage",
+      "id": 11284987344,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/artifacts/11284987344",
+      "archiveBytes": 18327,
+      "archiveSha256": "edf765252caf0a31f778f43d3663626a8a11f06cd2dd90c115294133c249d7fd",
+      "archiveDownloadedAndDigestVerified": true
+    },
+    {
+      "role": "native-sync-fixtures",
+      "id": 11284892487,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/artifacts/11284892487",
+      "archiveBytes": 108775331,
+      "archiveSha256": "518a8fd8b0d4649af2d8d640eaefb34dec914f9b27b51ea962bef4f280e58aee",
+      "archiveDownloadedAndDigestVerified": false
+    },
+    {
+      "role": "webdav-integration",
+      "id": 11284682166,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/artifacts/11284682166",
+      "archiveBytes": 861,
+      "archiveSha256": "18fc300ea39cb24426f481b95f6491eb3239ee5fd78f55dce1e6c57dcc401340",
+      "archiveDownloadedAndDigestVerified": true
+    },
+    {
+      "role": "upgrade-fixtures",
+      "id": 11284657921,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/artifacts/11284657921",
+      "archiveBytes": 106209499,
+      "archiveSha256": "bd10f58639a7a0d34c39ed552027fb3bfc8828313d382542c8059976e338c6cf",
+      "archiveDownloadedAndDigestVerified": false
+    },
+    {
+      "role": "product-debug",
+      "id": 11284483464,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885796/artifacts/11284483464",
+      "archiveBytes": 89351218,
+      "archiveSha256": "5afbf0a7bdda420fd0c53d36ef7d8a2f39e533fbd72312a3411ef56c6a2a71a0",
+      "archiveDownloadedAndDigestVerified": false
+    }
+  ],
+  "coverage": {
+    "artifactId": 11284987344,
+    "lcovLinesFound": 6692,
+    "lcovLinesHit": 5682,
+    "lcovLinePercent": 84.91
+  },
+  "boundaries": [
+    "Verify job passed; this summary does not assert the overall Android workflow conclusion or any API24/33/35/36 native acceptance/sync runtime result.",
+    "Three ordinary Flutter-suite skips are two HTTPS cases and one WebDAV case; all passed in dedicated integration steps.",
+    "Five APK builds/uploads passed. Hashes here identify GitHub artifact ZIPs, matched to upload logs. Large APK ZIPs were not downloaded; individual APK bytes, signatures and device runtime are not independently verified by this record.",
+    "Coverage reports observed line coverage only; test success is limited to the pinned source and synthetic CI cases."
+  ],
+  "status": "verify_passed",
+  "sourceIndexSha256": "30c16db8478ca05a418e41a9baa8c240d9fc7a8c7b89d4aa66a1aba1d9ab6985",
+  "retention": "Full original index, detailed logs and downloaded reports remain local; excluded from this public summary."
+}

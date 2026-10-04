@@ -1,0 +1,78 @@
+{
+  "kind": "Host-only strict isolated report probe correction; not included in actual Android8d source",
+  "testExecutionBaseCommit": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "baseTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "originatingSourceHead": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+  "originatingRun": 37148462733,
+  "includedInCurrentAndroidSource": false,
+  "actualCIIndex": "docs/验收记录/ci-8d28b98.json",
+  "frozenDeltaFiles": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\run_android_acceptance.py",
+      "bytes": 48192,
+      "sha256": "3b2721704b6952866435982c36d6aa6126ebc851b2be200af06a7bd179456c9a"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\test_android_acceptance.py",
+      "bytes": 52194,
+      "sha256": "e629be110237d74505d568c9be7d9c8d8df449335eb4c17a975f8c76bb8d6156"
+    }
+  ],
+  "exactDelta": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\preflight-source.patch",
+    "bytes": 20111,
+    "sha256": "989176533ba95a4571a28ee74ce9f114cc9d1ff84654674681f4e5ff3c3a9582"
+  },
+  "command": {
+    "command": "python -m unittest tools/test_android_acceptance.py -q",
+    "exitCode": 0,
+    "tests": 61,
+    "skipped": 0,
+    "log": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\preflight-python-complete.log",
+      "bytes": 102,
+      "sha256": "88ce7f79557d19f539ac45cd8ceff80108a0455f4e6f33bb5a8dc69fa5420a8f"
+    }
+  },
+  "reportEnvelopeDependency": "The new strict predecessor package field is emitted by the separately validated terminal-report patch; see host-native-terminal-report-20261003.json.",
+  "implemented": [
+    "One read-only adb shell -T run-as request emits an exact package/path ABSENT or EXISTS sentinel; file/directory/symlink/permission/unknown stdout/stderr/ADB failures are rejected.",
+    "Fresh files directory absence is valid. Existing reports decode as one strict UTF8 JSON object without duplicate keys, NaN/Infinity or exponent overflow.",
+    "Reopen requires the actual retained passed predecessor with strict package/build/phase/runId/schema types/nonce/owner/common business flags and complete schema3 flags; failed, unfinished, malformed or unrelated input never receives another nonce.",
+    "Probe stdout/stderr/metadata including timeout partial output are retained before evaluation. A timeout/read failure does not replay the one nonce publication or am start.",
+    "The existing four real launch phases and their nonce/previous chain are unchanged; OS Settings Back does not invoke prepare_launch."
+  ],
+  "newHostRegressions": [
+    "Actual exec-out-shaped code0+cat error text is rejected as unknown, and its exact bytes are preserved by the probe wrapper.",
+    "Exact ABSENT/EXISTS, wrong identity/path/status, unknown stdout/stderr, host failure, duplicate/nested JSON keys, nonfinite numbers, bad schema/types/terminal errors and missing predecessor are covered.",
+    "Portable Git sh actually exercises temporary filesystem absent files/empty directory/bad files type/report directory/existing JSON. Linux additionally exercises symlink cases; that conditional branch was not executed on Windows.",
+    "Three legal reopen predecessor transitions and initial absence still publish a nonce exactly once. Failed original input and timeout partial bytes are preserved without publication/retry."
+  ],
+  "retainedEarlierIterationLogs": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\preflight-python-initial.log",
+      "bytes": 102,
+      "sha256": "dd57c853a90234b0f3ae24b35c84ccb33d421b0f420089a6a4473a5a2be50cd7"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\preflight-python-expanded.log",
+      "bytes": 1112,
+      "sha256": "9c6c5dd4cfbbc718e4489f9b2053af16f4117000b0b56ab3e7d24eecdbb465d7"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\preflight-python-corrected.log",
+      "bytes": 1373,
+      "sha256": "807bc5b40ee998b1a59252068b0eb18ab611acf64cd78c8218a0b53405a52615"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\preflight-python-frozen.log",
+      "bytes": 102,
+      "sha256": "482dd759ec5e6c1c5bf1e40f4b77ce80af09a1d15e4505c117b2e7ee6a94ee1c"
+    }
+  ],
+  "boundaries": [
+    "These are host protocol and temporary filesystem checks, not a new AVD execution.",
+    "The original source8d cat stdout/stderr is unavailable; the fix addresses a proven general protocol flaw without fabricating its exact historical input.",
+    "The Windows portable sh path was added only to that test child process environment; no global SDK, system environment, security or ACL configuration was changed."
+  ]
+}

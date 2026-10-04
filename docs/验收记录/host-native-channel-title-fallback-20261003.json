@@ -1,0 +1,87 @@
+{
+  "publication": "Public summary of synthetic test validation. Full logs and workstation metadata remain local; no user habit data, credentials, local paths, process IDs or device identifiers are included.",
+  "fullLocalEvidenceSha256": "53e4475017ec6916128415522758efa24c0a949e1b9319356e279a6d68a18fbc",
+  "fullLocalEvidenceBytes": 6554,
+  "kind": "channel-toolbar-title-fallback-host-increment",
+  "officialSources": [
+    {
+      "url": "Local-only detail retained in the full private evidence index.",
+      "lineNumbering": "one-based",
+      "lines": [
+        65
+      ],
+      "fact": "Channel page sets Activity title from its exact channel name."
+    },
+    {
+      "url": "Local-only detail retained in the full private evidence index.",
+      "lineNumbering": "one-based",
+      "lines": [
+        107,
+        111,
+        127,
+        132,
+        195,
+        199
+      ],
+      "fact": "Settings uses the collapsing toolbar layout, obtains action_bar as Toolbar, and also passes the Activity title to CollapsingToolbarLayout."
+    },
+    {
+      "url": "Local-only detail retained in the full private evidence index.",
+      "lineNumbering": "one-based",
+      "lines": [
+        28,
+        29,
+        35,
+        36,
+        43
+      ],
+      "fact": "Exact collapsing_toolbar contains the action_bar framework Toolbar as a direct child."
+    },
+    {
+      "url": "Local-only detail retained in the full private evidence index.",
+      "lineNumbering": "one-based",
+      "lines": [
+        719,
+        723,
+        733,
+        734,
+        740,
+        741
+      ],
+      "fact": "Toolbar creates a TextView for its title, adds it as a direct system child and sets its text; no title child resource ID is assigned here. Toolbar does not override getAccessibilityClassName."
+    },
+    {
+      "url": "Local-only detail retained in the full private evidence index.",
+      "lineNumbering": "one-based",
+      "lines": [
+        3556,
+        3557
+      ],
+      "fact": "Inherited accessibility class name is android.view.ViewGroup."
+    }
+  ],
+  "missingObservation": "Original API35 initial channel hierarchy was overwritten when UI returned to the fixture. No claim that actual API35 collapsing_toolbar own attributes were empty, or that new fallback has passed on an Android35 device.",
+  "change": "Only if the sole exact Settings collapsing_toolbar has both own text and own content-desc empty, inspect its sole direct exact action_bar child. Require Settings package, class android.widget.Toolbar or android.view.ViewGroup, and exactly one nonempty direct android.widget.TextView title, Settings package, exact text and no conflicting description. Child content-desc alone never establishes a title. Any existing container own title remains authoritative; it cannot be overridden by a child.",
+  "verification": {
+    "sources": [
+      {
+        "repositoryPath": "tools/run_android_acceptance.py",
+        "sha256": "543d3bca7a78eaff6438599f80cafd88a447be5c7b5f54164d349ea5e92080b5",
+        "previous64Sha256": "ecb278bd2ad33df29217095b5c04209942c2e5fd85a8a1a967814dd40a6f46ca"
+      },
+      {
+        "repositoryPath": "tools/test_android_acceptance.py",
+        "sha256": "ff50624c52a93c1f4cd6b20ff4935eae0c36f682d4259c37554847d2132ee9a8",
+        "previous64Sha256": "bac6c4ec31dd8a010061a593e978714aba99560552ef544e98f389ec6cd4baff"
+      }
+    ],
+    "python": {
+      "sha256": "079d884e54413f115c0a306fe6484e5c846dfe34bb535725bf9e122e3923553f",
+      "tests": 65,
+      "newTests": 1,
+      "exitCode": 0
+    },
+    "newTestScope": "Synthetic title-child representation derived from pinned AOSP Android15 layout/code and actual Android36 accessibility class. Two positive class cases, each one tap despite repeated stale tree and no premature verification/ack. Fifteen negative cases: wrong toolbar id/package/class, nested or duplicate toolbar, wrong title package/class/text, description-only, nested/outside/duplicate title, conflicting description, nonempty wrong own title, duplicate collapsing container. These are host synthetic cases, not captured Android35 UI."
+  },
+  "limits": "No change to switches, ack, APK/package verification or API24 rules; no Flutter/Go/device/AVD operations. Official upstream Material1.11.0 setTitle/content-description behavior was inspected as supplemental context but is not asserted as the pinned AOSP35 compiled dependency and is not needed for this fallback."
+}

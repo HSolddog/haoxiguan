@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "scope": "Synthetic reminder settings/resume ordering regression.",
+  "historicalBaselineCommit": "6032171b0d23c1ee7a6d8fd03ccc7836d6ef4ce8",
+  "summary": "Retain an early resume signal until the settings result succeeds, then check and rebuild once. Failed or disposed attempts do not rebuild.",
+  "sourceFiles": [
+    {
+      "repositoryRelativePath": "lib/ui/reminder_settings_card.dart",
+      "bytes": 6308,
+      "sha256": "d4d8dc41362b36f4e11ca3e178e29796bd794b07e9f58ff5cedeec8f4e8a4c0d"
+    },
+    {
+      "repositoryRelativePath": "test/reminder_route_lifetime_test.dart",
+      "bytes": 17842,
+      "sha256": "a26edce439ae22a4b82c7dc27a8539cb3f371b056fa9db0d5a58820d36a668ed"
+    }
+  ],
+  "codeSha256": "6e80c538225c7729c3905181e449d9a56a785eba74e939feb5c426a62deba61a",
+  "counterfactual": {
+    "oldProductSha256": "e05b6bd2f6474c0117b8a49d3d572aa9e6abafea7f59d1beca59350a7a979050",
+    "compiled": true,
+    "passed": 14,
+    "realAssertionFailures": 3,
+    "conclusion": "Two early-resume cases missed diagnosis/rebuild; a duplicate-resume case performed a premature diagnosis read."
+  },
+  "verification": {
+    "targetPassed": 17,
+    "relatedPassed": 26,
+    "analyze": "No issues found",
+    "formatChangedFiles": 0,
+    "diffCheckPassed": true,
+    "controls": "Future-first and resume-first, current and covered routes, repeated resumes, failed opens and disposed pages preserve synthetic facts on controller reload."
+  },
+  "fullLocalProofSha256": "678abdaf67f9a7e5664b77bde41aba675f3e757db4373d2af4de9e243128d451",
+  "deviceReproductionClaim": false
+}

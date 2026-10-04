@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException, TlsException;
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -134,7 +136,10 @@ class WebDavClient {
     for (var attempt = 0; attempt < 3; attempt++) {
       final request = http.Request(method, _uri(relative))
         ..followRedirects = false
-        ..headers.addAll({'Authorization': _authorization, ...headers});
+        ..headers.addAll({'Authorization': _authorization, ...headers})
+        // Compression can change an ETag used by a later conditional write or
+        // delete. Request the stored representation and preserve its exact tag.
+        ..headers['Accept-Encoding'] = 'identity';
       if (body != null) request.bodyBytes = body;
       DavResponse result;
       try {
@@ -160,6 +165,12 @@ class WebDavClient {
         })().timeout(const Duration(seconds: 45));
       } on TimeoutException {
         throw const DavFailure('连接超时，本机记录不受影响');
+      } on TlsException {
+        throw const DavFailure('HTTPS 证书或安全连接验证失败，请检查服务器证书及主机信任设置。本机记录不受影响。');
+      } on SocketException {
+        throw const DavFailure('无法连接 WebDAV 服务器，请检查网络。本机记录不受影响。');
+      } on http.ClientException {
+        throw const DavFailure('WebDAV 连接未完成，请检查网络后重试。本机记录不受影响。');
       }
       if ((result.status == 429 || result.status >= 500) && attempt < 2) {
         await Future<void>.delayed(Duration(seconds: 1 << attempt));
@@ -184,6 +195,79 @@ class WebDavClient {
     final result = await request('MKCOL', relative, allowed: {201, 405});
     if (result.status == 405) {
       await children(relative); // Existing path must be a readable collection.
+    }
+  }
+
+  /// Tests this device's directory with a new, non-business file. Conditional
+  /// writes/deletes and exact read-back avoid touching existing or changed files.
+  Future<void> verifyAccess(String vault, String device) async {
+    requireUuid(vault);
+    requireUuid(device);
+    for (final directory in [
+      'haoxiguan/',
+      'haoxiguan/$vault/',
+      'haoxiguan/$vault/$device/',
+    ]) {
+      await _ensureDirectory(directory);
+    }
+    final path = 'haoxiguan/$vault/$device/access-${const Uuid().v4()}.probe';
+    final random = Random.secure();
+    final bytes = Uint8List.fromList(
+      List.generate(32, (_) => random.nextInt(256)),
+    );
+    var mayRemain = false;
+    try {
+      // A lost response can still leave this inert probe on the server.
+      mayRemain = true;
+      final written = await request(
+        'PUT',
+        path,
+        body: bytes,
+        headers: {
+          'If-None-Match': '*',
+          'Content-Type': 'application/octet-stream',
+        },
+        allowed: {201, 204, 412},
+      );
+      if (written.status == 412) {
+        mayRemain = false;
+        throw const DavFailure('测试文件名已存在，未覆盖或删除，请重试');
+      }
+      final read = await request('GET', path, maxBytes: 1024, allowed: {200});
+      final tag = read.headers['etag'];
+      var sameBytes = read.bytes.length == bytes.length;
+      for (var i = 0; sameBytes && i < bytes.length; i++) {
+        sameBytes = read.bytes[i] == bytes[i];
+      }
+      if (!sameBytes || sha256.convert(read.bytes) != sha256.convert(bytes)) {
+        throw const DavFailure('测试文件读回内容不一致，未删除远端文件');
+      }
+      if (tag == null ||
+          !RegExp(r'^"[\x21\x23-\x7e\x80-\xff]*"$').hasMatch(tag)) {
+        throw const DavFailure('服务器未提供有效的强 ETag，无法安全验证删除权限');
+      }
+      await request(
+        'DELETE',
+        path,
+        headers: {'If-Match': tag},
+        allowed: {200, 204},
+      );
+      final removed = await request(
+        'GET',
+        path,
+        maxBytes: 1024,
+        allowed: {200, 404},
+      );
+      if (removed.status != 404) {
+        throw const DavFailure('服务器报告删除成功，但测试文件仍存在');
+      }
+      mayRemain = false;
+    } on DavFailure catch (e) {
+      if (!mayRemain) rethrow;
+      throw DavFailure(
+        '${e.message}\n验证未通过，本次配置未保存。目录内可能残留不含习惯数据的 access-*.probe 测试文件，可手动清理后重试。',
+        status: e.status,
+      );
     }
   }
 

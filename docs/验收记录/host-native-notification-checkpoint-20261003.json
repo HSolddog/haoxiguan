@@ -1,0 +1,189 @@
+{
+  "kind": "host protocol and real SQLite checkpoint evidence; Android runtime continuation still pending",
+  "originatingAndroidFailure": {
+    "sourceHead": "bcad47285acfa8a7da9d474ddd28ce704b5a61fe",
+    "runId": 37139950979,
+    "index": "docs/验收记录/ci-bcad472.json",
+    "cause": "API33/35/36 PermissionHelper kills the isolated fixture after actual app notification revocation; old main replayed with a new runId"
+  },
+  "repositoryHeadAtArchivingOnly": "2e7942ff46adb2446fc6e7b7331ccf9eca5af039",
+  "frozenAcceptanceSourceFiles": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\android_acceptance.dart",
+      "bytes": 51544,
+      "sha256": "17f980d713998e0c80d978703d9f4f39b31293970a9bd5d6b5bffc952a879f3c"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\run_android_acceptance.py",
+      "bytes": 39690,
+      "sha256": "738f5bfac8b0ee71b4b6b7c1e7a66e0178a5bd099811f759b2c2404d326e47c5"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\test_android_acceptance.py",
+      "bytes": 36846,
+      "sha256": "c5b6b0bbf8d11757d332ca2c03ccd7fda9cdcfd50c0314e52ff640ca3fef1738"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\test\\android_acceptance_checkpoint_test.dart",
+      "bytes": 12582,
+      "sha256": "1b7e248949dacddd63a2a14bc34b0bb27e74df91c8d043c39504b6840e89272d"
+    }
+  ],
+  "commands": [
+    {
+      "command": "flutter test --no-pub test/android_acceptance_protocol_test.dart test/android_acceptance_restore_sqlite_test.dart test/android_acceptance_checkpoint_test.dart",
+      "exitCode": 0,
+      "passed": 10,
+      "groups": {
+        "protocol": 3,
+        "realRestoreSQLite": 3,
+        "checkpoint": 4
+      },
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-flutter-target-frozen.log",
+        "bytes": 8324,
+        "sha256": "0b7b2a98780371f86f0eb4d276e4537f49fe590a8361ae5efe49a82ac72def3b"
+      },
+      "subsequentSourceChange": "only required curly braces around existing if; final scoped analysis and root whole-tree regression follow"
+    },
+    {
+      "command": "python tools/test_android_acceptance.py",
+      "exitCode": 0,
+      "passed": 47,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-python-frozen.log",
+        "bytes": 151,
+        "sha256": "84b8f477eae6707e3d16e3e61441c26df668a6a1a39bb7bc50d7f16b15e8fe41"
+      }
+    },
+    {
+      "command": "flutter analyze --no-pub tools/android_acceptance.dart test/android_acceptance_protocol_test.dart test/android_acceptance_restore_sqlite_test.dart test/android_acceptance_checkpoint_test.dart",
+      "exitCode": 0,
+      "result": "No issues found",
+      "seconds": 9.3,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-analyze-complete.log",
+        "bytes": 98,
+        "sha256": "9abbf0a6a7f0f69a3eb550a5e46bd284e617319c11524e19765f49828895847f"
+      }
+    }
+  ],
+  "realSQLiteRawEvidence": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-host-frozen\\cancel-7879f3d2\\evidence.json",
+      "bytes": 17997,
+      "sha256": "4a3dc5feedfa081842c4f6e8d4ff701818b447659488819697e7fa58b66052a8",
+      "case": "cancel",
+      "boundary": "actual stored snapshot and every table unchanged after shared preview cancellation"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-host-frozen\\checkpoint-sqlite-280d31c2\\evidence.json",
+      "bytes": 85311,
+      "sha256": "c788c90a186bc767eea6424b6bd37bf611321426462a7ec3fe10f43e801feeca",
+      "case": "checkpoint-sqlite",
+      "closeReopenScenarios": [
+        {
+          "stage": "awaitingNotificationDeny",
+          "runId": "123456",
+          "originPid": 101,
+          "originalDeadlineMs": 1791071940000,
+          "schema": 3,
+          "sqlTableRows": {
+            "app_state": 1,
+            "daily_notes": 0,
+            "habits": 1,
+            "legacy_sources": 0,
+            "local_changes": 5,
+            "plans": 1,
+            "protections": 0,
+            "records": 0,
+            "sqlite_sequence": 1,
+            "sync_protections": 0,
+            "sync_state": 0
+          },
+          "expectedDatabaseCanonicalObjectSha256": "95a73657e81e4ef333f44fd6fdf5fc71d7f99d8e6bc56494da9ae338abb6a1f8",
+          "actualDatabaseCanonicalObjectSha256": "95a73657e81e4ef333f44fd6fdf5fc71d7f99d8e6bc56494da9ae338abb6a1f8",
+          "strictDatabaseDifferencePaths": [],
+          "completeModelUnchanged": true
+        },
+        {
+          "stage": "awaitingNotificationGrant",
+          "runId": "123456",
+          "originPid": 102,
+          "originalDeadlineMs": 1791071940000,
+          "schema": 3,
+          "sqlTableRows": {
+            "app_state": 1,
+            "daily_notes": 0,
+            "habits": 2,
+            "legacy_sources": 0,
+            "local_changes": 7,
+            "plans": 2,
+            "protections": 0,
+            "records": 0,
+            "sqlite_sequence": 1,
+            "sync_protections": 0,
+            "sync_state": 0
+          },
+          "expectedDatabaseCanonicalObjectSha256": "3e9b67f4d8b0f66ff83848a9c9ec337b8d298ddcefdc20c01d4a6fd63cba35eb",
+          "actualDatabaseCanonicalObjectSha256": "3e9b67f4d8b0f66ff83848a9c9ec337b8d298ddcefdc20c01d4a6fd63cba35eb",
+          "strictDatabaseDifferencePaths": [],
+          "completeModelUnchanged": true
+        }
+      ],
+      "interveningActualCommitRejected": true,
+      "interveningDatabaseCanonicalObjectSha256": "3e9b67f4d8b0f66ff83848a9c9ec337b8d298ddcefdc20c01d4a6fd63cba35eb",
+      "interveningCommitIsGrantExpectedDatabase": true
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-host-frozen\\confirm-reopen-c360a6b4\\evidence.json",
+      "bytes": 50500,
+      "sha256": "42fa4d700099cc36df8bedb495cc0d9361c86408c99d46ae14a20d96259da07d",
+      "case": "confirm-reopen",
+      "boundary": "real restore protects actual pre-restore SQL snapshot and complete confirmed model survives reopen"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-host-frozen\\reminder-storage-e7dfb8c1\\evidence.json",
+      "bytes": 93486,
+      "sha256": "5fbfcd2331b0171f51f0915008fdc381aaed2ff635951e9d49d83f2afe3df158",
+      "case": "reminder-storage",
+      "boundary": "complete model facts survive fresh native SQLite read; storage remains unchanged"
+    }
+  ],
+  "historicalLogsRetained": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-flutter-target-first.log",
+      "bytes": 8432,
+      "sha256": "91a5888c37874d4ae94479f8ed7983a3c214f910377c5f400b8a83a5051353fe"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-analyze.log",
+      "bytes": 425,
+      "sha256": "06b53010a298b3e89497beaa0ff11fe237e93af888fcb3f6b26bdef419f22d79"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-flutter-target-final.log",
+      "bytes": 8320,
+      "sha256": "d44802e846c743090a0d2cf61c50c2c7f561b84347fcf3a905b29a2a94aa4682"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-bcad472\\checkpoint-analyze-frozen.log",
+      "bytes": 280,
+      "sha256": "601be006d05f5efc42160e2fcc3f30f434eee8324d758b15eed5b7e07f4a69fd"
+    }
+  ],
+  "implementationBoundary": [
+    "isolated package/build10002/schema3 only; four Settings waiting stages",
+    "durable flushed checkpoint before stage report and production Settings navigation",
+    "same logical runId; original absolute deadline; no reopening Settings or replaying initial notification scheduling / committed habit",
+    "actual schema3, retained upgrade baseline, Keystore and native crypto rechecked on resume",
+    "strict complete SQL observations including sqlite_sequence; full model compares separately",
+    "missing/corrupt/stale/terminal/ambiguous-write continuation refuses fresh replay and preserves first rejected report",
+    "driver binds first fresh logical identity, archives pre-mutation report/checkpoint, rejects drift before UI mutation"
+  ],
+  "notEstablishedByHostTests": [
+    "actual permission-driven Android OS kill continuation",
+    "API24/33/35/36 complete four-phase success on checkpoint source",
+    "real notification/channel diagnosis and WorkManager completion on checkpoint source"
+  ]
+}

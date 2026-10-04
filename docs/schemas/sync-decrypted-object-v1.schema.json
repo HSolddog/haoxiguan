@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/sync-decrypted-object-v1.schema.json",
+  "title": "Haoxiguan authenticated sync object plaintext v1",
+  "description": "Actual AEAD plaintext: logicalId and payload. Generic crypto vectors may use other logicalId strings; apply $defs/entity for current h/r/p/n business entities.",
+  "type": "object",
+  "required": [
+    "logicalId",
+    "payload"
+  ],
+  "properties": {
+    "logicalId": {
+      "type": "string"
+    },
+    "payload": {}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "habit": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "emoji",
+        "colorValue",
+        "weekdays",
+        "createdAt",
+        "recordType",
+        "unit",
+        "scale",
+        "dailyTarget"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/id"
+        },
+        "title": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/title"
+        },
+        "emoji": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/emoji"
+        },
+        "colorValue": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/colorValue"
+        },
+        "weekdays": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/weekdays"
+        },
+        "createdAt": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/createdAt"
+        },
+        "reminderTime": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/reminderTime"
+        },
+        "exemptions": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/exemptions"
+        },
+        "pausedAt": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/pausedAt"
+        },
+        "archived": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/archived"
+        },
+        "category": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/category"
+        },
+        "effortEnabled": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/effortEnabled"
+        },
+        "rewardPoints": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/rewardPoints"
+        },
+        "penaltyPoints": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/penaltyPoints"
+        },
+        "targetCount": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/targetCount"
+        },
+        "rewardPeriod": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/rewardPeriod"
+        },
+        "wishEnabled": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/wishEnabled"
+        },
+        "wishTitle": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/wishTitle"
+        },
+        "wishTarget": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/wishTarget"
+        },
+        "scheduleType": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/scheduleType"
+        },
+        "scheduleCount": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/scheduleCount"
+        },
+        "recordType": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/recordType"
+        },
+        "unit": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/unit"
+        },
+        "scale": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/scale"
+        },
+        "dailyTarget": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/dailyTarget"
+        },
+        "archivedAt": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/archivedAt"
+        },
+        "deletedAt": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/deletedAt"
+        },
+        "legacyRewardBalance": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/legacyRewardBalance"
+        },
+        "categoryId": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/categoryId"
+        },
+        "sortKey": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/sortKey"
+        },
+        "categoryInfo": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/habit/properties/categoryInfo"
+        }
+      },
+      "additionalProperties": true,
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "completions"
+            ]
+          },
+          {
+            "required": [
+              "entries"
+            ]
+          },
+          {
+            "required": [
+              "notes"
+            ]
+          },
+          {
+            "required": [
+              "plans"
+            ]
+          }
+        ]
+      },
+      "description": "Canonical h/ payload retains flattened Habit/category extensions but removes four independent entry/plan/note/completion collections. Export-compatible title bounds apply; incoming limits remain runtime."
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "habitId",
+        "data"
+      ],
+      "properties": {
+        "habitId": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/id"
+        },
+        "data": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/record"
+        }
+      },
+      "additionalProperties": false
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "habitId",
+        "data"
+      ],
+      "properties": {
+        "habitId": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/id"
+        },
+        "data": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/plan"
+        }
+      },
+      "additionalProperties": false
+    },
+    "note": {
+      "type": "object",
+      "required": [
+        "habitId",
+        "date",
+        "text"
+      ],
+      "properties": {
+        "habitId": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/id"
+        },
+        "date": {
+          "$ref": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json#/$defs/date"
+        },
+        "text": {
+          "type": "string",
+          "description": "Canonical exporter preserves existing local text; incoming 2000 UTF-16-unit policy is enforced by SyncEngine."
+        }
+      },
+      "additionalProperties": false
+    },
+    "entity": {
+      "allOf": [
+        {
+          "$ref": "#"
+        }
+      ],
+      "properties": {
+        "logicalId": {
+          "type": "string",
+          "minLength": 3
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "logicalId": {
+              "pattern": "^h/"
+            },
+            "payload": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/habit"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "logicalId": {
+              "pattern": "^r/"
+            },
+            "payload": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/record"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "logicalId": {
+              "pattern": "^p/"
+            },
+            "payload": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/plan"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "logicalId": {
+              "pattern": "^n/"
+            },
+            "payload": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/note"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Current business entity contract. Null is a deletion candidate. Logical/parent ID equality, deterministic note IDs, deletion context and graph invariants require runtime agreement."
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "vault",
+        "epoch",
+        "entityId",
+        "baseRevision",
+        "deleted"
+      ],
+      "properties": {
+        "vault": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "epoch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entityId": {
+          "type": "string",
+          "minLength": 43,
+          "maxLength": 43,
+          "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$"
+        },
+        "baseRevision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deleted": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Inputs to SyncObjectContext.aad. Exact UTF-8 JSON-array encoding, HMAC ID derivation and agreement with the HTTP operation remain runtime/vector checks."
+    }
+  }
+}

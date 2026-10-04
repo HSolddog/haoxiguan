@@ -1,0 +1,125 @@
+{
+  "recordedUtc": "2026-10-03T17:42:38.0004457Z",
+  "baseCommit": "61bd1cca205c2d7130ef3e1c48040fe4db9c226f",
+  "baseTree": "98ac2b7a3acd3cbbbdb0ca9cea1aa2cba8c9d446",
+  "frozenDesignCommit": "2454e7259b8c0609b8516e85c00d79a96c57e9d4",
+  "requirement": "docs/数据与同步规范.md:160: publish JSON Schema, migration fixtures, encryption vectors and matching-data statistics expectations",
+  "scope": "Four current A logical snapshot/business backup structural export contracts, format7/backup1. This record does not mark all C sync protocol JSON Schema complete.",
+  "contractFileSha256": {
+    "docs/schemas/backup-decrypted-v1.schema.json": "9d1107bad0659b50783316e3b3b2f713be1da20683c06d1756f2e8050ad61638",
+    "docs/schemas/backup-encrypted-v1.schema.json": "bc22caac6eb78869b60109a0778d33e4d15aa27664a38989236a3f7d180aa02b",
+    "docs/schemas/backup-plaintext-v1.schema.json": "dbf0bdca72fbcaf020995fbe4e703f409b227b2d951c26318aca4a8dbaf9598b",
+    "docs/schemas/examples/backup-decrypted-v1.json": "015df1e4501330d22b61afa7ad78f8e7141b639d58ba3df64ef48aa621ec6def",
+    "docs/schemas/examples/backup-encrypted-v1.json": "2c2b2bbe0912ee949c5e7a40213de6c26d9ccf973be9fd220448c24d7d053072",
+    "docs/schemas/examples/backup-plaintext-v1.json": "63b06cb9e95f844ad17ee43aae0feaede6150bb0f3d7fb81b5feb238e931d87a",
+    "docs/schemas/examples/logical-snapshot-v7.json": "6eb1f0163219e5263fe7de0f49e16fec199ee6b005b0a276d5f7a5914357059e",
+    "docs/schemas/logical-snapshot-v7.schema.json": "96193e3cbb77eb1d509b7b44313000edc8b5edeb2bdfe215394056f128873df5",
+    "docs/schemas/README.md": "bc56dba0a65da6a22b81ad9a9bb9dcb326a6861915fa0da8726d2d8f72bc388b",
+    "tools/generate_schema_examples_test.dart": "641650490a1dbcb079d64e16fa21256c0bbb885f623f623e62a11eca36e6aed0",
+    "tools/json-schema-test-requirements.txt": "4cd8b58c4bec8599e7c5fef9d1119485e92e50ab917944d2f1b529418da28af3",
+    "tools/test_json_schemas.py": "a738486701594b1fe59022bea392d6292523fbac59d9ff9e18c6e841d0544e49"
+  },
+  "contractFileGitBlob": {
+    "docs/schemas/backup-decrypted-v1.schema.json": "8650d4dc9a90df453cd788db08297902351ee6be",
+    "docs/schemas/backup-encrypted-v1.schema.json": "03783c25d0eee04b6db8268e382a965ec954b17b",
+    "docs/schemas/backup-plaintext-v1.schema.json": "0d828a2e2e4ee9bf58471f6197e9959f596af7a1",
+    "docs/schemas/examples/backup-decrypted-v1.json": "5e0077dd2c67fee063fbaf9ab617ce0ab0b56b8a",
+    "docs/schemas/examples/backup-encrypted-v1.json": "5f4a5b483c5d747ed6a85839ebd45905e0c572f7",
+    "docs/schemas/examples/backup-plaintext-v1.json": "c5d5f0bc2f5d531eeec714222dbd55245db76e66",
+    "docs/schemas/examples/logical-snapshot-v7.json": "061563f8a137d95cbf2776eeaba2c4bd767a10c1",
+    "docs/schemas/logical-snapshot-v7.schema.json": "af1d0fd78a7015a58236c1ce0be0ebcd15a14dc5",
+    "docs/schemas/README.md": "8b92baf36a83d701366fdb418e839dffebefeae6",
+    "tools/generate_schema_examples_test.dart": "544ca17e6e6b5e086852f043c11576e06507a067",
+    "tools/json-schema-test-requirements.txt": "504ec7c0ffa7606bbac86f92101f40d0eaa65417",
+    "tools/test_json_schemas.py": "519b989b8d041cf08058d56fd3f453274db4c7c2"
+  },
+  "runtimeSourcesObservedAtRecording": {
+    "lib/data/snapshot_codec.dart": {
+      "workingFileSha256": "30f90213589d940c21a134357241a8bb54942b798f9656b85e88cd83401c1a19",
+      "workingFileGitBlob": "84203ce89f0031e7127c920661b72f31cbb42968",
+      "headGitBlob": "57b7a46471bf750c23d0cf165e475e79ca8d68c7"
+    },
+    "lib/state/habit_controller.dart": {
+      "workingFileSha256": "d9f3a83bd1c4353e6e5fe9348e599e3a261d62474c0a91a3c37e80ec94affe75",
+      "workingFileGitBlob": "683acccd23909615e9172a301c756c2e51278851",
+      "headGitBlob": "b4b2c3f05331d6142d5589b362109b1c2bba8f8c"
+    },
+    "lib/ui/data_screen.dart": {
+      "workingFileSha256": "cfba7bb44089e47d932ad751dfa452885b124815ba9dd86ac2d27b117aa51f18",
+      "workingFileGitBlob": "5d247bc452a96091db50b3283eb0cd6f35c5b605",
+      "headGitBlob": "5d247bc452a96091db50b3283eb0cd6f35c5b605"
+    },
+    "lib/services/backup_codec.dart": {
+      "workingFileSha256": "fcb46dcfc4e0b4bede06bac5ffebfb0f82abb3c50b10fdd22cd44e5e8e434d2f",
+      "workingFileGitBlob": "d95a18ea1e774a007fadd2e57596583e1f66ce3b",
+      "headGitBlob": "d95a18ea1e774a007fadd2e57596583e1f66ce3b"
+    },
+    "lib/models/habit.dart": {
+      "workingFileSha256": "4c074590427d9b08c45b9efbf037a9cb8279f35b75feb3768d7ab535efeae673",
+      "workingFileGitBlob": "04f7fc4704994dd041b670702888053196c237ab",
+      "headGitBlob": "04f7fc4704994dd041b670702888053196c237ab"
+    },
+    "lib/models/record_entry.dart": {
+      "workingFileSha256": "a0cc03f2ec3a2e75f75be63fa122973fde0aba426812604b238c416def85687f",
+      "workingFileGitBlob": "466b65d4164f6674dacf6c70d76a2df691cfc97d",
+      "headGitBlob": "466b65d4164f6674dacf6c70d76a2df691cfc97d"
+    },
+    "lib/models/category.dart": {
+      "workingFileSha256": "79144e2edf2cc36244355376b35f6581ce06440bc84aae56385332580e4af8be",
+      "workingFileGitBlob": "e04b3e14105ac3b2df08c32ca2f798cfbaa4b5d1",
+      "headGitBlob": "e04b3e14105ac3b2df08c32ca2f798cfbaa4b5d1"
+    },
+    "lib/models/plan.dart": {
+      "workingFileSha256": "4dc4f2e3500921695627134bf2cbc560ea039305a861ecaece7c26b658b19a01",
+      "workingFileGitBlob": "3614eaad1912c4e3d7894d8a907b2e44c6eec1d4",
+      "headGitBlob": "3614eaad1912c4e3d7894d8a907b2e44c6eec1d4"
+    }
+  },
+  "sourceBoundary": "Runtime source hashes are observed at recording, with parallel uncommitted external-import policy work. They are not retroactive hashes of every runtime file at the earlier example-generation instant; the generator, examples and validation inputs are bound above.",
+  "generation": {
+    "environmentSetup": ". ..\\tools\\toolchain\\environment.ps1",
+    "command": "flutter test --no-pub tools/generate_schema_examples_test.dart --reporter expanded",
+    "flutter": "3.44.6",
+    "dart": "3.12.2",
+    "exitCode": 0,
+    "passed": 1,
+    "log": "../schema-examples-generation.log",
+    "logSha256": "fb954d88f38be6b2a2cdab332a1b185d1c1e658861aa004af83b1b991663d2bc",
+    "path": "Real HabitController export, real DataScreen plaintext buttons with host file/status substitutes, real BackupCodec AEAD encrypt/decrypt and native libsodium decrypted payload",
+    "syntheticOnly": true,
+    "golden": false
+  },
+  "validation": {
+    "command": "python tools/test_json_schemas.py",
+    "requirements": "tools/json-schema-test-requirements.txt",
+    "localInterpreter": "../tools/schema-venv/Scripts/python.exe",
+    "python": "3.14.4",
+    "validator": "jsonschema==4.25.1",
+    "formatDependency": "rfc3339-validator==0.1.4",
+    "offlineRefRegistry": true,
+    "exitCode": 0,
+    "testMethods": 13,
+    "schemas": 4,
+    "positiveCases": 16,
+    "negativeCases": 46,
+    "log": "../schema-contract-validation.log",
+    "logSha256": "e6b42efd37bade31fd6824f342bcd4a4271162f3df931f3554b33b7f838e495f"
+  },
+  "independentReview": {
+    "agent": "schema_review",
+    "command": "task-local schema-venv python.exe -B tools/test_json_schemas.py",
+    "exitCode": 0,
+    "testMethods": 13,
+    "positiveCases": 16,
+    "negativeCases": 46,
+    "result": "Source review and independent Python execution passed; no remaining blockers for these four contracts",
+    "changedFiles": false
+  },
+  "limits": [
+    "Structure contracts do not prove cryptographic authentication, exact decoded byte/file limits, global uniqueness or cross-field business validity.",
+    "JSON Schema integer and string maxLength differ from Dart lexical integer and UTF-16 code-unit checks.",
+    "Examples exercise host substitutions for file save/status, not Android SAF or SQLite/Keystore/native acceptance.",
+    "Legacy format1-6 migration, full runtime compatibility and external-input80/2000 policy still require their existing runtime tests.",
+    "Native CI and all remaining protocol contracts must be reported independently."
+  ]
+}

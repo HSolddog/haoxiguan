@@ -1,0 +1,418 @@
+{
+  "observedAtUtc": "2026-10-03T19:51:12.485826+00:00",
+  "repository": "HSolddog/haoxiguan",
+  "sourceCommit": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+  "localEquivalentCommit": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "checkoutMergeCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+  "sourceTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "localTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "mergeTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "sourceEqualsLocalEqualsMergeTree": true,
+  "androidRun": {
+    "id": 37148462733,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733",
+    "attempt": 1,
+    "event": "pull_request",
+    "statusAtMetadataRead": "in_progress",
+    "conclusionAtMetadataRead": null
+  },
+  "verifyJob": {
+    "id": 111277143376,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462733/job/111277143376",
+    "status": "completed",
+    "conclusion": "success",
+    "startedAtUtc": "2026-10-03T19:35:51Z",
+    "completedAtUtc": "2026-10-03T19:47:44Z",
+    "allActualStepsSucceeded": true,
+    "actualSteps": [
+      {
+        "number": 10,
+        "name": "Check Dart formatting",
+        "conclusion": "success"
+      },
+      {
+        "number": 11,
+        "name": "Analyze",
+        "conclusion": "success"
+      },
+      {
+        "number": 12,
+        "name": "Test",
+        "conclusion": "success"
+      },
+      {
+        "number": 13,
+        "name": "Test native sync runner isolation and protocol",
+        "conclusion": "success"
+      },
+      {
+        "number": 14,
+        "name": "Validate published JSON schemas",
+        "conclusion": "success"
+      },
+      {
+        "number": 15,
+        "name": "Use Go for real encrypted sync interoperability",
+        "conclusion": "success"
+      },
+      {
+        "number": 16,
+        "name": "Real HTTPS sync, recovery and key rotation",
+        "conclusion": "success"
+      },
+      {
+        "number": 17,
+        "name": "Install pinned isolated WebDAV test service",
+        "conclusion": "success"
+      },
+      {
+        "number": 18,
+        "name": "Real TLS WebDAV recovery preview",
+        "conclusion": "success"
+      },
+      {
+        "number": 19,
+        "name": "Preserve real WebDAV acceptance evidence",
+        "conclusion": "success"
+      },
+      {
+        "number": 20,
+        "name": "Build Android debug APK",
+        "conclusion": "success"
+      },
+      {
+        "number": 21,
+        "name": "Upload debug APK",
+        "conclusion": "success"
+      },
+      {
+        "number": 22,
+        "name": "Build isolated Android upgrade fixtures",
+        "conclusion": "success"
+      },
+      {
+        "number": 23,
+        "name": "Upload isolated upgrade fixtures",
+        "conclusion": "success"
+      },
+      {
+        "number": 24,
+        "name": "Build isolated native SyncScreen fixtures",
+        "conclusion": "success"
+      },
+      {
+        "number": 25,
+        "name": "Upload isolated native sync fixtures",
+        "conclusion": "success"
+      },
+      {
+        "number": 26,
+        "name": "Upload coverage",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "format": {
+    "result": "success",
+    "files": 108,
+    "changed": 0,
+    "seconds": 0.62,
+    "logLine": 500
+  },
+  "analyze": {
+    "result": "success",
+    "seconds": 12.2,
+    "logLine": 545
+  },
+  "fullFlutter": {
+    "passed": 310,
+    "skipped": 3,
+    "failed": 0,
+    "result": "success",
+    "logLine": 1725,
+    "skipScope": "The two HTTPS cases and one WebDAV case are skipped in the ordinary suite and actually pass in dedicated integration steps 16 and 18."
+  },
+  "nativeSyncPythonHost": {
+    "methods": 62,
+    "passed": 62,
+    "skipped": 0,
+    "failed": 0,
+    "seconds": 0.165,
+    "result": "success",
+    "logLine": 1799
+  },
+  "jsonSchemaContracts": {
+    "methods": 25,
+    "passed": 25,
+    "skipped": 0,
+    "failed": 0,
+    "seconds": 0.285,
+    "result": "success",
+    "schemas": 8,
+    "positive": 69,
+    "negative": 119,
+    "backup": {
+      "negative": 46,
+      "positive": 16,
+      "schemas": 4
+    },
+    "sync": {
+      "entityExamples": 21,
+      "negative": 73,
+      "positive": 53,
+      "schemas": 4
+    },
+    "pinnedSourceMethodCounts": {
+      "JsonSchemaContractTests": 13,
+      "SyncJsonSchemaContractTests": 12
+    },
+    "logLine": 1870,
+    "backupCasesLogLine": 1873,
+    "syncCasesLogLine": 1874
+  },
+  "realHttps": {
+    "passed": 2,
+    "failed": 0,
+    "result": "success",
+    "logLine": 2028,
+    "step": 16
+  },
+  "realTlsWebdav": {
+    "passed": 1,
+    "failed": 0,
+    "result": "success",
+    "step": 18,
+    "sourceCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+    "artifactId": 11282119244,
+    "logLine": 2087,
+    "rawResults": {
+      "path": "ci-followup-8d28b98/verify/webdav/results.json",
+      "bytes": 453,
+      "sha256": "6e2fed01bba68e2f3db932bd9a7d71aefdfc93c1ee6bb4218f18c7b64ada4ed0"
+    }
+  },
+  "apkBuilds": [
+    {
+      "role": "product-debug",
+      "file": "build/app/outputs/flutter-apk/app-debug.apk",
+      "fixtureBuildNumber": null,
+      "result": "success",
+      "buildStep": 20,
+      "uploadStep": 21,
+      "builtAtUtc": "2026-10-03T19:45:45.4416584Z",
+      "successLogLine": 2194,
+      "artifactId": 11283515189
+    },
+    {
+      "role": "upgrade-schema-2",
+      "file": "build/acceptance/acceptance-10001.apk",
+      "fixtureBuildNumber": 10001,
+      "result": "success",
+      "buildStep": 22,
+      "uploadStep": 23,
+      "builtAtUtc": "2026-10-03T19:46:17.1271623Z",
+      "successLogLine": 2255,
+      "artifactId": 11283099491
+    },
+    {
+      "role": "upgrade-schema-3",
+      "file": "build/acceptance/acceptance-10002.apk",
+      "fixtureBuildNumber": 10002,
+      "result": "success",
+      "buildStep": 22,
+      "uploadStep": 23,
+      "builtAtUtc": "2026-10-03T19:46:39.4561068Z",
+      "successLogLine": 2266,
+      "artifactId": 11283099491
+    },
+    {
+      "role": "native-sync-a",
+      "file": "build/sync-acceptance/sync-acceptance-a.apk",
+      "fixtureBuildNumber": 11001,
+      "result": "success",
+      "buildStep": 24,
+      "uploadStep": 25,
+      "builtAtUtc": "2026-10-03T19:47:09.3774584Z",
+      "successLogLine": 2329,
+      "artifactId": 11282438811
+    },
+    {
+      "role": "native-sync-b",
+      "file": "build/sync-acceptance/sync-acceptance-b.apk",
+      "fixtureBuildNumber": 11002,
+      "result": "success",
+      "buildStep": 24,
+      "uploadStep": 25,
+      "builtAtUtc": "2026-10-03T19:47:33.0759350Z",
+      "successLogLine": 2340,
+      "artifactId": 11282438811
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 11283515189,
+      "name": "haoxiguan-debug-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "bytes": 89333407,
+      "sha256": "fee90a914a6a65c28a5805c04be039937a80331a1f64178c2faa74f2a24260a1",
+      "createdAtUtc": "2026-10-03T19:45:51Z",
+      "expiresAtUtc": "2026-10-17T19:45:45Z",
+      "sourceHead": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+      "checkoutCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "uploadSuccessLogLine": 2233,
+      "uploadDigestLogLine": 2230,
+      "localDigestVerified": false,
+      "rawZip": null
+    },
+    {
+      "id": 11283099491,
+      "name": "android-acceptance-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "bytes": 106200235,
+      "sha256": "77ab0403e2fb059819c86bedf60b1f47904deacbf51d953743309e55a08cfc55",
+      "createdAtUtc": "2026-10-03T19:46:45Z",
+      "expiresAtUtc": "2026-10-17T19:46:39Z",
+      "sourceHead": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+      "checkoutCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "uploadSuccessLogLine": 2307,
+      "uploadDigestLogLine": 2304,
+      "localDigestVerified": false,
+      "rawZip": null
+    },
+    {
+      "id": 11282438811,
+      "name": "android-sync-acceptance-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "bytes": 108771934,
+      "sha256": "2cf5e93d17e08623b237923d9c5bed15c8b60603129819066e4ec10345d5e27d",
+      "createdAtUtc": "2026-10-03T19:47:39Z",
+      "expiresAtUtc": "2026-10-17T19:47:33Z",
+      "sourceHead": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+      "checkoutCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "uploadSuccessLogLine": 2381,
+      "uploadDigestLogLine": 2378,
+      "localDigestVerified": false,
+      "rawZip": null
+    },
+    {
+      "id": 11282154262,
+      "name": "coverage-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "bytes": 17892,
+      "sha256": "84ca3a0cf8a1581739728b2f269bdaada85bb8b62ff56315f264cefb21a386d9",
+      "createdAtUtc": "2026-10-03T19:47:40Z",
+      "expiresAtUtc": "2026-10-17T19:47:39Z",
+      "sourceHead": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+      "checkoutCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "uploadSuccessLogLine": 2411,
+      "uploadDigestLogLine": 2408,
+      "localDigestVerified": true,
+      "rawZip": {
+        "path": "ci-followup-8d28b98/verify/coverage.zip",
+        "bytes": 17892,
+        "sha256": "84ca3a0cf8a1581739728b2f269bdaada85bb8b62ff56315f264cefb21a386d9"
+      }
+    },
+    {
+      "id": 11282119244,
+      "name": "webdav-integration-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "bytes": 859,
+      "sha256": "9f010d9c82b149b2d385f2212dae5e3fe7928e438f04ddbd738e94d7c10f560c",
+      "createdAtUtc": "2026-10-03T19:39:52Z",
+      "expiresAtUtc": "2026-10-17T19:39:52Z",
+      "sourceHead": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+      "checkoutCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "uploadSuccessLogLine": 2116,
+      "uploadDigestLogLine": 2113,
+      "localDigestVerified": true,
+      "rawZip": {
+        "path": "ci-followup-8d28b98/verify/webdav.zip",
+        "bytes": 859,
+        "sha256": "9f010d9c82b149b2d385f2212dae5e3fe7928e438f04ddbd738e94d7c10f560c"
+      }
+    }
+  ],
+  "coverage": {
+    "artifactId": 11282154262,
+    "lcovLinesFound": 6581,
+    "lcovLinesHit": 5364,
+    "lcovLinePercent": 81.51,
+    "rawLcov": {
+      "path": "ci-followup-8d28b98/verify/coverage/lcov.info",
+      "bytes": 63283,
+      "sha256": "3735f2c44488cfe2e787b94ce35178a41fb4d014584b50fe2caaf52ae5832362"
+    }
+  },
+  "apkEvidenceScope": "Five APK builds and uploads succeeded in the completed workflow. Artifact digests are ZIP digests from GitHub and are matched to upload logs. The large APK archives were not downloaded, so individual APK byte hashes and signatures were not independently verified.",
+  "nativeRuntimeScope": "This record covers verify only. It claims no API24/33/35/36 native-acceptance or native-sync runtime pass; those jobs are owned and reviewed separately. This source includes compatible restore, notification channel registration and nonce safeguards, and the picker snapshot retry repair. Native matrix and native-sync runtime results are reviewed separately.",
+  "rawEvidence": {
+    "verifyLog": {
+      "path": "ci-followup-8d28b98/verify/android-verify-job.log",
+      "bytes": 266609,
+      "sha256": "e5d5cb378803b36340a1222d80e9a73fcdd0502a94f21f4f89f127b3cbb5622d"
+    },
+    "runMetadata": {
+      "path": "ci-followup-8d28b98/verify/run-metadata.json",
+      "bytes": 12828,
+      "sha256": "b5855687cf6d4a7863921b9f8bb19068351989f91740ab40f95e9e702874bb9c"
+    },
+    "jobsMetadata": {
+      "path": "ci-followup-8d28b98/verify/rawjobs-metadata.json",
+      "bytes": 18650,
+      "sha256": "ec5e98772b8251e42bc662c7414fec56b92863e0141f9b84d54ef94e1514e369"
+    },
+    "stepsMetadata": {
+      "path": "ci-followup-8d28b98/verify/steps-metadata.json",
+      "bytes": 4415,
+      "sha256": "ef8c41fb34e2645d3931629b64c0911a8a4fd930e482c12ab9216ac929cbcb91"
+    },
+    "artifactsMetadata": {
+      "path": "ci-followup-8d28b98/verify/artifacts-metadata.json",
+      "bytes": 7880,
+      "sha256": "24266c2bb268a73f0a1a5898017c98fe8c261fc2d1f675fe16cddb0ef9c72587"
+    },
+    "sourceCommitMetadata": {
+      "path": "ci-followup-8d28b98/verify/source-metadata.json",
+      "bytes": 1364,
+      "sha256": "7790f63c40579b38d8921a2e8b083008b07f3cbaf7f9de7b0b126f418dec9497"
+    },
+    "mergeCommitMetadata": {
+      "path": "ci-followup-8d28b98/verify/merge-metadata.json",
+      "bytes": 2608,
+      "sha256": "7cffeaa8d915d4e6452e1b0f1ecacf90a5ff7d2c2335bcaf1fde29a7a9e11811"
+    },
+    "localTreeProof": {
+      "path": "ci-followup-8d28b98/verify/local-tree-proof.json",
+      "bytes": 214,
+      "sha256": "2c9341a1df81960971dd6c11fe41f33e8a1909e4a1b7d2c3962c86b12baa778a"
+    },
+    "decodedLogProof": {
+      "path": "ci-followup-8d28b98/verify/decoded-log-proof.json",
+      "bytes": 187,
+      "sha256": "db0fb2ca34e522e287e52c987c4dcfc060652bb5cf6a412767deb7ef6c5ca601"
+    },
+    "pinnedUpgradeBuilder": {
+      "path": "ci-followup-8d28b98/verify/pinned-build-android-acceptance.py",
+      "bytes": 2189,
+      "sha256": "0c6af736afb6dbefa865331c1b75d4366ffb2c1366640d48b9a5fb21b5cbc1d1"
+    },
+    "pinnedSyncBuilder": {
+      "path": "ci-followup-8d28b98/verify/pinned-build-android-sync-acceptance.py",
+      "bytes": 4017,
+      "sha256": "bb4fe9a58f930f94e61a3d30da63b3252349f794fec7f4898201d278eada800d"
+    },
+    "pinnedSchemaValidator": {
+      "path": "ci-followup-8d28b98/verify/pinned-schema-validator.py",
+      "bytes": 25836,
+      "sha256": "abf0307fa970f36d63439ce6765221527484c001b1d3e47d378477fb137fc03c"
+    },
+    "pinnedWorkflow": {
+      "path": "ci-followup-8d28b98/verify/pinned-workflow-android.yml",
+      "bytes": 7797,
+      "sha256": "64490a62d9f39b3759e7d93e8c8b5f8178f948364b86bb79726908b21f3b916e"
+    },
+    "independentIndexer": {
+      "path": "ci-followup-8d28b98/verify/index-verify-evidence.py",
+      "bytes": 15751,
+      "sha256": "dd067e9b248d4c872f95a31b7a25c7e00d0c729f3a31cafcfb84b670e0df8076"
+    }
+  },
+  "rawLogEncoding": "Original decoded MCP log content saved as UTF8 with its leading BOM and LF line endings.",
+  "status": "verify_passed"
+}

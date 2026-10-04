@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import 'plan.dart';
+import 'category.dart';
 import 'record_entry.dart';
 
 class Habit {
@@ -149,6 +150,13 @@ class Habit {
   final int scheduleCount;
   // Preserve fields from supported legacy documents that this UI does not edit.
   final Map<String, Object?> extensions;
+  String? get categoryId => extensions['categoryId'] as String?;
+  int? get sortKey => extensions['sortKey'] as int?;
+  HabitCategory? get categoryInfo => extensions['categoryInfo'] is Map
+      ? HabitCategory.fromJson(
+          (extensions['categoryInfo'] as Map).cast<String, Object?>(),
+        )
+      : null;
 
   bool get isPaused => pausedAt != null;
 
@@ -229,6 +237,8 @@ class Habit {
   String? noteOn(DateTime date) => notes[dateKey(date)];
 
   Habit copyWith({
+    Map<String, Object?>? extensions,
+    DateTime? createdAt,
     String? title,
     String? emoji,
     int? colorValue,
@@ -270,7 +280,7 @@ class Habit {
       emoji: emoji ?? this.emoji,
       colorValue: colorValue ?? this.colorValue,
       weekdays: weekdays ?? this.weekdays,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
       reminderTime: clearReminder ? null : reminderTime ?? this.reminderTime,
       completions: completions ?? const {},
       entries: completions != null ? null : entries ?? this.entries,
@@ -297,7 +307,7 @@ class Habit {
       wishTarget: wishTarget ?? this.wishTarget,
       scheduleType: scheduleType ?? this.scheduleType,
       scheduleCount: scheduleCount ?? this.scheduleCount,
-      extensions: extensions,
+      extensions: extensions ?? this.extensions,
     );
   }
 

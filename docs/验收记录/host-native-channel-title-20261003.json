@@ -1,0 +1,43 @@
+{
+  "publication": "Public summary of synthetic test validation. Full logs and workstation metadata remain local; no user habit data, credentials, local paths, process IDs or device identifiers are included.",
+  "fullLocalEvidenceSha256": "8815546f4c976101deb1f653444c883759c155a48fc9f26ea6d2c4dad99ea672",
+  "fullLocalEvidenceBytes": 4786,
+  "kind": "host-regression-from-actual-api36-xml",
+  "cause": "Exact Settings collapsing_toolbar text is empty; content-desc is 习惯提醒. Previous text-only predicate returns before switch lookup.",
+  "change": "Channel title accepts text or content-desc only on one exact com.android.settings collapsing_toolbar; conflicting title fields and duplicate containers reject. API24 title predicate, isolated APK checks, preference-scoped unique switch, tap-once/readback/Back/app-package/unique-ack unchanged.",
+  "sources": [
+    {
+      "repositoryPath": "tools/run_android_acceptance.py",
+      "sha256": "ecb278bd2ad33df29217095b5c04209942c2e5fd85a8a1a967814dd40a6f46ca"
+    },
+    {
+      "repositoryPath": "tools/test_android_acceptance.py",
+      "sha256": "bac6c4ec31dd8a010061a593e978714aba99560552ef544e98f389ec6cd4baff"
+    },
+    {
+      "repositoryPath": "tools/fixtures/native-settings-api36-channel.xml",
+      "sha256": "27f88d5a21ac4d6881bf6f80c1ab903083899fd5968212d723b0a449010fbb3c"
+    }
+  ],
+  "verification": {
+    "python": {
+      "sha256": "764e61e2f583f4743517ac4df8ca768a390c3b6da9cefb891592532bb540c3fd",
+      "tests": 64,
+      "newTests": 3,
+      "exitCode": 0
+    },
+    "counterfactual": {
+      "sha256": "5f140d8a24ffae4063002027d14e23bddf7f0c14504d46e38f88578abe8079ac",
+      "exitCode": 1,
+      "assertionFailures": 1,
+      "description": "Previous text-only title predicate substituted in memory; actual captured XML produces zero input actions instead of the required first tap."
+    }
+  },
+  "coverage": [
+    "captured channel disable and enable; exactly one tap despite stale tree; target checked state observed before Back; foreign app cannot ack; isolated app receives one exact runId/stage/API ack",
+    "wrong title package/container/title; arbitrary matching description; conflicting text/description; duplicate exact container including another title all receive no tap/ack/event",
+    "duplicate switch; disabled switch; missing or unknown checked state fail without tap/ack/event"
+  ],
+  "limitations": "Host XML regression only. The original CI remains timed out with running channel-disable checkpoint and no channel UI actions. No new Android run, real phone, Flutter, Go or AVD operation performed.",
+  "developmentHistory": "First 64-test run had two test-harness errors when asserting a nonexistent events file on rejected paths; assertions were corrected to require absence. That initial log was overwritten by the final run after an incorrect relative move. The final raw log and separate old-predicate assertion failure are retained; no claim that the first run passed."
+}

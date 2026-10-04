@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "kind": "host-native-sync-diagnostics",
+  "date": "2026-10-03",
+  "baseCommit": "973920da755fe4ce311968d95142eb9a13937ce9",
+  "sourceScope": "Frozen working-tree changes on the named base; hashes bind the exact three files tested.",
+  "sourceFiles": [
+    {
+      "path": "haoxiguan/tools/android_sync_acceptance.dart",
+      "sha256": "b585696ead03e81b8e59523cf8f1f68a301e8a2d3ea1b1e538e7fc52209edeb7"
+    },
+    {
+      "path": "haoxiguan/tools/native_sync/diagnostics.dart",
+      "sha256": "67248a92c8cdbe1fef8336dfb2df82829e93c32afc8bd247a78b462d7a772a3a"
+    },
+    {
+      "path": "haoxiguan/test/android_sync_acceptance_diagnostics_test.dart",
+      "sha256": "2c8476a5c53489e7fd8d9a556d4f8719acc959c598eff67e1a0f2e617eadf257"
+    }
+  ],
+  "validation": {
+    "tests": {
+      "command": "flutter test --no-pub test/android_sync_acceptance_diagnostics_test.dart test/android_sync_acceptance_protocol_test.dart test/android_sync_acceptance_facts_test.dart",
+      "passed": 13,
+      "exitCode": 0
+    },
+    "analyze": {
+      "command": "flutter analyze --no-pub tools/android_sync_acceptance.dart tools/native_sync/diagnostics.dart tools/native_sync/protocol.dart tools/native_sync/facts.dart test/android_sync_acceptance_diagnostics_test.dart test/android_sync_acceptance_protocol_test.dart test/android_sync_acceptance_facts_test.dart",
+      "items": 7,
+      "issues": 0,
+      "exitCode": 0
+    },
+    "format": {
+      "files": 3,
+      "exitCode": 0
+    },
+    "logs": [
+      {
+        "path": "native-sync-diagnostics-format.log",
+        "sha256": "83fc9c900d46561dd2264a062c9ad458dadbddbb55eedc62018033457410b959"
+      },
+      {
+        "path": "native-sync-diagnostics-target-tests.log",
+        "sha256": "53a2c0b19ae5840f0a530d7bc03939e87a7a04696988ed5b258ddd7b894713f3"
+      },
+      {
+        "path": "native-sync-diagnostics-analyze.log",
+        "sha256": "37e9845fa4905f11d0c658857fa647026b16337aa0dad2362c1afa557f9fa98e"
+      }
+    ]
+  },
+  "confirmedFixtureDefect": {
+    "code": "endpoint_canonical_slash_comparison",
+    "inputShape": "https://localhost:<port>",
+    "productionStoredShape": "https://localhost:<port>/",
+    "oldComparison": "saved.endpoint == config.endpoint",
+    "newComparison": "saved.endpoint == HttpSyncTransport.validateEndpoint(config.endpoint).toString()",
+    "scope": "Only compare the exact production canonical endpoint; scheme, host, port and root-path checks remain enforced.",
+    "relationToOldRun": "The defect necessarily fails the old enrollment assertion and matches the observed flags; the stripped original code prevents establishing that it was the unique first cause."
+  },
+  "oldActualEvidence": {
+    "runId": 37139950979,
+    "jobId": 111254150148,
+    "sourceCommit": "bcad47285acfa8a7da9d474ddd28ce704b5a61fe",
+    "reportPath": "native-sync-ci-37139950979-artifact/report-a.json",
+    "reportSha256": "7860b47803f3100e52b9b1c145e68c9e458f5c4ab70f8a8617a343ca9407e429",
+    "sdkInt": 35,
+    "stage": "failed",
+    "status": "failed",
+    "reportSequence": 2,
+    "sanitizedErrorCode": "fixtureFailed",
+    "originalErrorCodeAvailable": false,
+    "originalFrameworkTypeAvailable": false,
+    "realSyncScreen": true,
+    "productionStorage": true,
+    "realTlsTransportVerified": false,
+    "tlsBoundary": "Enrollment may already have succeeded over TLS; the verified flag was assigned after the failing comparison. The old sanitized report cannot establish that no TLS request occurred.",
+    "originalArtifactModified": false
+  },
+  "diagnostics": {
+    "fields": [
+      "failureCode",
+      "lastStage",
+      "lastAction",
+      "frameworkFailure"
+    ],
+    "failureCodeCount": 80,
+    "publicActionCount": 58,
+    "firstFrameworkContextFrozen": true,
+    "barrierAndSafSequencePinned": true,
+    "rawErrorStackUiOrCredentialValuesIncluded": false
+  },
+  "remainingValidation": {
+    "newAndroidAcceptanceRequired": true,
+    "newAndroidAcceptancePassed": false,
+    "localApkBuildForThisChangePerformed": false,
+    "scope": "Host tests compiled the fixture entrypoint. CI must build the exact next commit and execute the Android 35 two-package, real TLS and SAF workflow."
+  },
+  "pythonDriverValidation": {
+    "tests": 50,
+    "exitCode": 0,
+    "command": "python -m unittest discover -s tools -p test_android_sync_acceptance.py -v",
+    "files": [
+      {
+        "path": "tools/run_android_sync_acceptance.py",
+        "sha256": "f4171d48e1e082bc130b87591d040647811bffa7259cfb1b25c0e7d2cbc448fe"
+      },
+      {
+        "path": "tools/test_android_sync_acceptance.py",
+        "sha256": "2e8748a67faa6b13e959ca65949fc5d8eda54ca60b2a0cb8ddfc54d588d2e82b"
+      }
+    ],
+    "logs": [
+      {
+        "path": "../native-sync-runner-diagnostics-tests.log",
+        "sha256": "b5e212b30acdb683a44278529f49683e21be59391f58dfefc626cffaf65134b9"
+      },
+      {
+        "path": "../native-sync-runner-diagnostics-checks.log",
+        "sha256": "6ba70c71f4e22f0db1f5f239f576ca7fec7fca7b03b8c16b54ebcea573506d55"
+      }
+    ]
+  }
+}

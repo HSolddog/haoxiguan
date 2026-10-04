@@ -1,0 +1,151 @@
+{
+  "observedAtUtc": "2026-10-03T19:10:51.4362760Z",
+  "baseCommit": "4a873fd077a231598dcc02fa7a8687bef1c0a930",
+  "worktreeContainsUncommittedSourceUnderTest": true,
+  "codeSha256": "68965cbe7d58bb466ee464e0bc81a1738bbfa756bb012a59137272e312c7a12a",
+  "codeSha256Definition": "SHA256 of UTF-8 ordered repositoryRelativePath + TAB + per-file SHA256 + LF manifest for sourceFiles below",
+  "sourceFiles": [
+    {
+      "repositoryRelativePath": "lib/services/reminder_service.dart",
+      "bytes": 13559,
+      "sha256": "c3b6cc73f71ed84a1cce1356b2ee9b6827f4f0a1f7291bc574eacbecebd81c8a"
+    },
+    {
+      "repositoryRelativePath": "lib/services/reminder_access.dart",
+      "bytes": 3424,
+      "sha256": "9653df7b83133ca66a8b10f8de16212ebea380ab587d508d33542f212164d4cd"
+    },
+    {
+      "repositoryRelativePath": "test/reminder_access_test.dart",
+      "bytes": 6842,
+      "sha256": "18ceaa6b4073425d8ec17b8fbabd6f83d5319e69adc748f8695a067a8bed745d"
+    },
+    {
+      "repositoryRelativePath": "test/reminder_channel_initialization_test.dart",
+      "bytes": 12466,
+      "sha256": "7b8fada33d6f9f2dd25f5eb31e7059351bf4184a27a2ad7bb515c7a48d1b6b14"
+    }
+  ],
+  "finding": "Official plugin 22.0.1 zonedSchedule installs an alarm and saves pending notification data; channel creation occurs in createNotification when delivery/show runs. Product initialization previously did not explicitly register habit_reminders.",
+  "fix": {
+    "repositoryRelativePath": "lib/services/reminder_service.dart",
+    "lines": "105-119",
+    "behavior": "Register the existing habit_reminders channel after plugin initialization, before launch handling and access diagnostics.",
+    "channelId": "habit_reminders",
+    "name": "习惯提醒",
+    "description": "在设定的时间提醒你完成习惯",
+    "originalImportance": 4,
+    "originalSound": true,
+    "originalVibration": true,
+    "existingChannelPolicy": "Same ID and original values; no deletion or replacement; Android retains user importance, sound and vibration choices.",
+    "permissionPolicy": "Initialization does not request notification permission.",
+    "failurePolicy": "Registration failure makes readAccess unavailable; failed initialization can retry. Scheduler errors remain separate from committed habit facts."
+  },
+  "primarySources": [
+    {
+      "taskRootRelativePath": "tools/toolchain/cache/pub/hosted/pub.dev/flutter_local_notifications-22.0.1/android/src/main/java/com/dexterous/flutterlocalnotifications/FlutterLocalNotificationsPlugin.java",
+      "sha256": "5a820f8dfa3857f37728615a10e2688c152716699c3eddecb85e11edc88c86b8",
+      "locations": [
+        {
+          "lines": "1657-1666",
+          "behavior": "zonedSchedule calls zonedScheduleNotification."
+        },
+        {
+          "lines": "589-611",
+          "behavior": "setupAlarm plus saveScheduledNotification; no channel creation."
+        },
+        {
+          "lines": "264-270",
+          "behavior": "createNotification checks channel creation and calls setupNotificationChannel."
+        },
+        {
+          "lines": "1208-1262",
+          "behavior": "setupNotificationChannel delegates to NotificationManager.createNotificationChannel on API >=26."
+        },
+        {
+          "lines": "1296-1297",
+          "behavior": "showNotification calls createNotification."
+        },
+        {
+          "lines": "2085-2090",
+          "behavior": "Explicit createNotificationChannel calls setupNotificationChannel."
+        }
+      ]
+    },
+    {
+      "taskRootRelativePath": "tools/toolchain/cache/pub/hosted/pub.dev/flutter_local_notifications-22.0.1/android/src/main/java/com/dexterous/flutterlocalnotifications/ScheduledNotificationReceiver.java",
+      "sha256": "e2037fb296aa0900a1eef65111a78b2331b3c65cddb276b3c54f78c152e3814c",
+      "lines": "61-62",
+      "behavior": "ScheduledNotificationReceiver calls showNotification at alarm delivery, then schedules the next notification."
+    },
+    {
+      "url": "https://developer.android.com/develop/ui/compose/notifications/channels",
+      "accessedAtUtc": "2026-10-03T19:10:51.4411674Z",
+      "locations": "Recreate original channel values; user controls channel behavior; read channel settings.",
+      "behavior": "Original-value recreation is safe at startup; only the user changes existing notification behaviors."
+    },
+    {
+      "url": "https://developer.android.com/reference/android/app/NotificationManager#createNotificationChannel(android.app.NotificationChannel)",
+      "accessedAtUtc": "2026-10-03T19:10:51.4412004Z",
+      "locations": "createNotificationChannel",
+      "behavior": "Existing importance can only decrease when the user has not altered channel settings; other existing behavioral fields are ignored."
+    }
+  ],
+  "verification": {
+    "format": {
+      "command": "dart format lib/services/reminder_service.dart lib/services/reminder_access.dart test/reminder_access_test.dart test/reminder_channel_initialization_test.dart",
+      "exitCode": 0,
+      "result": "4 files formatted, 2 changed"
+    },
+    "targetedTests": {
+      "command": "flutter test --no-pub test/reminder_channel_initialization_test.dart test/reminder_access_test.dart test/reminder_recovery_test.dart test/reminder_status_test.dart --reporter expanded",
+      "exitCode": 0,
+      "passed": 20,
+      "newTests": 7,
+      "result": "All tests passed",
+      "newBehaviors": [
+        "First access registers a settings channel before any notification is delivered.",
+        "Scheduled notification channel properties match the registered original properties.",
+        "A new service instance preserves user-disabled importance and sound/vibration choices; scheduling remains blocked.",
+        "A new service instance preserves user-low importance and sound/vibration choices while reminders can schedule.",
+        "Channel registration leaves app permission denied and makes no implicit permission request.",
+        "Registration failure reports unavailable; a later initialization retries successfully.",
+        "Actual disk SQLite facts survive channel registration failure, controller/repository close and reopen; habit, reminder time, completion, note and serialized snapshot are retained; registration recovery rebuilds reminders without changing stored facts."
+      ]
+    },
+    "analyze": {
+      "command": "flutter analyze --no-pub",
+      "exitCode": 0,
+      "result": "No issues found",
+      "durationSeconds": 11.9
+    },
+    "diffCheck": {
+      "command": "git diff --check -- lib/services/reminder_service.dart lib/services/reminder_access.dart test/reminder_access_test.dart test/reminder_channel_initialization_test.dart",
+      "exitCode": 0
+    }
+  },
+  "logs": [
+    {
+      "taskRootRelativePath": "reminder-channel-format.log",
+      "bytes": 152,
+      "sha256": "e122dfcff74fb92be93b3ee8d7e92fbb52a32e43166d1175a8bc45d8815d90b0"
+    },
+    {
+      "taskRootRelativePath": "reminder-channel-targeted-tests.log",
+      "bytes": 3660,
+      "sha256": "a635ad8399ce67917957c907be2aa8752b8492622c8ee858e6c1e365a22995cd"
+    },
+    {
+      "taskRootRelativePath": "reminder-channel-analyze.log",
+      "bytes": 99,
+      "sha256": "64cc3d5379fb4c160684d418b0f5b51181c9e2ca92434fe5868da4a5589edb0c"
+    }
+  ],
+  "limitations": [
+    "Android notification transport uses the actual Flutter plugin serializer/parser against a MethodChannel native model. Host tests do not execute Android NotificationManager or the native system-settings UI.",
+    "Existing-channel preservation is grounded in Android official API behavior; device-side validation remains with the follow-up Android acceptance run.",
+    "No claim is made about the earlier API36 raw channel array or importance solely from source inspection.",
+    "No Go, AVD, Docker, app installation, publication, real server or secret access was performed.",
+    "Full test suite and debug build are coordinated by the parent task."
+  ]
+}

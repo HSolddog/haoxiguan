@@ -1,0 +1,122 @@
+{
+  "scope": "Synthetic isolated CI emulator acceptance only; no user devices or production data. Raw artifacts remain private; this publication contains only results, official links and digests.",
+  "sourceHeadSha": "94a1dda9177cc54dffe8579a1bad1a6bbea80a8b",
+  "mergeSha": "f9509f875fc2c70fcdaca15c0f1d27815803b556",
+  "gitTreeSha": "11022f82b42d429d7983bb34a212e440b6a74bfc",
+  "workflowRunId": 37157654649,
+  "workflowUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37157654649",
+  "verify": {
+    "jobId": 111304321216,
+    "conclusion": "success",
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37157654649/job/111304321216"
+  },
+  "nativeNotificationUpgradeMatrix": [
+    {
+      "apiLevel": 24,
+      "jobId": 111305822593,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37157654649/job/111305822593",
+      "conclusion": "failure",
+      "completedPhases": 2,
+      "requiredPhases": 4,
+      "completedSchema2Phases": [
+        "create",
+        "reopen"
+      ],
+      "failureBuild": "10002",
+      "failurePhase": "reopen",
+      "failureStage": "awaitingRestoreCancel",
+      "firstError": "TimeoutException after 0:02:00.000000: Future not completed",
+      "capturedHierarchyHasFlutterVirtualNodes": false,
+      "restoreTapCount": 0,
+      "nativeEngineRecreationEvidenceVerifiedInAllThreeLogicalRuns": true,
+      "artifact": {
+        "id": 11285699457,
+        "bytes": 217846,
+        "sha256": "91bad8d334f2fe4febe03b754faf65f4dcf6604d3841e4565bca4e691223d771",
+        "lastReportSha256": "d1cd3fcb91020e3783385067c6b5b5508160914ac931f66429f2a7a45c2d0fb2"
+      }
+    },
+    {
+      "apiLevel": 33,
+      "jobId": 111305822632,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37157654649/job/111305822632",
+      "conclusion": "failure",
+      "completedPhases": 2,
+      "requiredPhases": 4,
+      "completedSchema2Phases": [
+        "create",
+        "reopen"
+      ],
+      "failureBuild": "10002",
+      "failurePhase": "reopen",
+      "failureStage": "awaitingRestoreCancel",
+      "firstError": "TimeoutException after 0:02:00.000000: Future not completed",
+      "capturedHierarchyHasFlutterVirtualNodes": false,
+      "restoreTapCount": 0,
+      "nativeEngineRecreationEvidenceVerifiedInAllThreeLogicalRuns": true,
+      "artifact": {
+        "id": 11286975174,
+        "bytes": 231745,
+        "sha256": "58b6fee42a8bef8b70c4e499d862947ac240dde6d1e8ac38859b244c04720ea9",
+        "lastReportSha256": "7e69018aea62278eea22199db8fb4e96ccfea92f7f057eea084b74fb2f8b0032"
+      }
+    },
+    {
+      "apiLevel": 35,
+      "jobId": 111305822647,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37157654649/job/111305822647",
+      "conclusion": "failure",
+      "completedPhases": 2,
+      "requiredPhases": 4,
+      "completedSchema2Phases": [
+        "create",
+        "reopen"
+      ],
+      "failureBuild": "10002",
+      "failurePhase": "reopen",
+      "failureStage": "awaitingRestoreCancel",
+      "firstError": "TimeoutException after 0:02:00.000000: Future not completed",
+      "capturedHierarchyHasFlutterVirtualNodes": false,
+      "restoreTapCount": 0,
+      "nativeEngineRecreationEvidenceVerifiedInAllThreeLogicalRuns": true,
+      "artifact": {
+        "id": 11287190208,
+        "bytes": 235149,
+        "sha256": "de6e5f626f7f34f7238afa087032840ec24b815667c7a9e7381169765c8655d4",
+        "lastReportSha256": "75e3cae882000e67d0c7c1a8cee6d2efc2e660515cb4e92b78e18530351175a9"
+      }
+    },
+    {
+      "apiLevel": 36,
+      "jobId": 111305822630,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37157654649/job/111305822630",
+      "conclusion": "failure",
+      "completedPhases": 2,
+      "requiredPhases": 4,
+      "completedSchema2Phases": [
+        "create",
+        "reopen"
+      ],
+      "failureBuild": "10002",
+      "failurePhase": "reopen",
+      "failureStage": "awaitingRestoreCancel",
+      "firstError": "TimeoutException after 0:02:00.000000: Future not completed",
+      "capturedHierarchyHasFlutterVirtualNodes": false,
+      "restoreTapCount": 0,
+      "nativeEngineRecreationEvidenceVerifiedInAllThreeLogicalRuns": true,
+      "artifact": {
+        "id": 11286576475,
+        "bytes": 235547,
+        "sha256": "47971771b39f4f1f4b70d6e9d0a6a6c8d083aa1ec38128a4a854f3a1281be2be",
+        "lastReportSha256": "0503157b2a292c3145c476b7fa21fadbe9904c7c65d81667e288f40258d34e8b"
+      }
+    }
+  ],
+  "observedFirstFailure": "All four APIs completed the two schema2 phases, then schema3 reopen timed out awaiting restore cancellation. The captured accessibility hierarchy exposed no Flutter virtual nodes and the driver issued no restore tap.",
+  "mechanismBoundary": "Pinned Flutter source supports a retained framework tree sending deltas to a newly empty Android AccessibilityBridge. No bridge-node instrumentation was captured in this run, so the precise semantic cache mechanism remains a source-grounded diagnosis pending the next native run.",
+  "unverified": [
+    "Schema3 restore cancellation/protection/confirmation/reopen did not complete.",
+    "Notification denial, same-logical-run kill continuation, channel controls, WorkManager and the fourth phase were not reached in this matrix.",
+    "The later semantics rebind patch was not part of this source or run."
+  ]
+}

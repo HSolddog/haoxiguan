@@ -1,0 +1,141 @@
+{
+  "kind": "public_synthetic_verify_ci_summary",
+  "syntheticCI": {
+    "syntheticDataOnly": true,
+    "execution": "Real CI tests and dedicated HTTPS/TLS WebDAV integration fixtures; no real user data."
+  },
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "beb2b2470276ff790166c08246f7ebe50c770841",
+  "mergeCommit": "c6af042afaa9fa697396e6b33fd5a3cc6e76c1b0",
+  "rootTree": "2a43a713dc6d59386bd6ceb1e77cee0324f97521",
+  "headAndMergeTreesEqual": true,
+  "run": {
+    "id": 37165327894,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894",
+    "attempt": 1
+  },
+  "job": {
+    "id": 111326942203,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/job/111326942203",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "jobLogSha256": "f0567be257e65fd27381c92ddf3eb5a2cdca7a9b05a9a8aaab8c826844dca455",
+  "results": {
+    "format": {
+      "files": 124,
+      "changed": 0,
+      "result": "success"
+    },
+    "analyze": {
+      "seconds": 8.3,
+      "issues": 0,
+      "result": "success"
+    },
+    "flutter": {
+      "passed": 492,
+      "skipped": 3,
+      "failed": 0
+    },
+    "nativeSyncHostTests": {
+      "passed": 62,
+      "failed": 0
+    },
+    "nativeAcceptanceHostTests": {
+      "passed": 76,
+      "failed": 0,
+      "driverTests": 72,
+      "builderTests": 4
+    },
+    "jsonSchemaContracts": {
+      "passed": 25,
+      "failed": 0,
+      "schemas": 8,
+      "positive": 69,
+      "negative": 119
+    },
+    "dedicatedHttps": {
+      "passed": 2,
+      "failed": 0
+    },
+    "dedicatedTlsWebdav": {
+      "passed": 1,
+      "failed": 0,
+      "untrustedCertificateRejectedAndClassified": true,
+      "credentialAndEndpointRedacted": true,
+      "isolatedWriteReadConditionalDeleteProbePassed": true
+    }
+  },
+  "fixtureKotlinCompilation": {
+    "result": "success",
+    "upgradeApksBuilt": 2,
+    "upgradeBuildSeconds": [
+      20.8,
+      15.2
+    ],
+    "engineHostTemplateSha256": "af25b2e542e3d6ebca48b5bbc9a84c69458093c2a10853d64e86077b4356834f",
+    "builderSha256": "a10f9868e3ad35bb26471753d2504d2e8f5c8411771e7938b3d2e64cbc1ae99b"
+  },
+  "apkBuilds": {
+    "productDebug": 1,
+    "upgradeFixtures": 2,
+    "nativeSyncFixtures": 2,
+    "builtAndUploaded": 5
+  },
+  "artifacts": [
+    {
+      "role": "upgrade-fixtures",
+      "id": 11289656609,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11289656609",
+      "archiveBytes": 106244332,
+      "archiveSha256": "0d8291596ada51b432da4decf5a6ff69bd01a5efcc5bcccc6ff51a3f66f0219b",
+      "archiveDownloadedAndDigestVerified": false
+    },
+    {
+      "role": "product-debug",
+      "id": 11289502494,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11289502494",
+      "archiveBytes": 89357005,
+      "archiveSha256": "417ff39298b64255ce965b53862961fc71fa239e711d15fff2c7d6fb43646074",
+      "archiveDownloadedAndDigestVerified": false
+    },
+    {
+      "role": "webdav-integration",
+      "id": 11289127956,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11289127956",
+      "archiveBytes": 1035,
+      "archiveSha256": "8e8d9e502cd8cc86b8656e4caf171372359ae3642ecf70808b2344aa2b4e14df",
+      "archiveDownloadedAndDigestVerified": true
+    },
+    {
+      "role": "native-sync-fixtures",
+      "id": 11288713848,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11288713848",
+      "archiveBytes": 108795218,
+      "archiveSha256": "1fb6ecb53f615eff6d8a42f352f165a74327548d94ffa054dcfd646acc5dc067",
+      "archiveDownloadedAndDigestVerified": false
+    },
+    {
+      "role": "coverage",
+      "id": 11288614265,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11288614265",
+      "archiveBytes": 19349,
+      "archiveSha256": "f7f73637097ba0d19f77d5b16badc431e94e1d2e24d8d8cd04b9f5925f171dec",
+      "archiveDownloadedAndDigestVerified": true
+    }
+  ],
+  "coverage": {
+    "lcovLinesFound": 6944,
+    "lcovLinesHit": 6194,
+    "lcovLinePercent": 89.2
+  },
+  "boundaries": [
+    "Verify job passed; this summary does not assert the overall Android workflow conclusion or any API24/33/35/36 native acceptance/sync runtime result.",
+    "Three ordinary Flutter-suite skips are two HTTPS cases and one WebDAV case; all passed in dedicated integration steps.",
+    "Hashes identify artifact ZIPs and match upload logs. Large APK ZIPs were not downloaded; individual APK bytes/signatures/device runtime are not independently verified by this record.",
+    "Fixture Kotlin compilation passed on the pinned source. Engine lifecycle behavior still requires separate actual native runtime evidence. Coverage reports observed line coverage only."
+  ],
+  "status": "verify_passed",
+  "sourceIndexSha256": "4786cfe0f59dee26a8897999c7b900353941b43ebab3097084c4d25f8591dbeb",
+  "retention": "Full original metadata, logs and downloaded reports remain local; excluded from this public summary."
+}

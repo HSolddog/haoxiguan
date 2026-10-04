@@ -1,0 +1,239 @@
+{
+  "observedAtUtc": "2026-10-03T10:14:17.687093+00:00",
+  "headCommit": "fe87942bc3510f53d5be22c13f8aff2bda3a4bfe",
+  "pullRequestMergeCommit": "7d90e9f5fb454b2c6be0b810383199dbdd7d5cb7",
+  "android": {
+    "run": 37114512927,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37114512927",
+    "verifyJob": 111178632007,
+    "status": "completed_with_api24_failure",
+    "format": "success",
+    "analyze": "success",
+    "normalTests": {
+      "step": "success",
+      "passed": 236,
+      "skipped": 3,
+      "failed": 0
+    },
+    "realHttps": {
+      "step": "success",
+      "testCount": 2
+    },
+    "build": "success",
+    "nativeApi24": {
+      "job": 111180276597,
+      "status": "failure",
+      "artifactId": 11270934453,
+      "artifactSha256": "cb3633a28c2c555d7e116ff86b17a496e8deadb1cc9bfebe43cbba8f33e119e1",
+      "completedPhases": [
+        {
+          "build": "10001",
+          "runId": "1791021856703810",
+          "status": "passed",
+          "phase": "create",
+          "schema": 2
+        },
+        {
+          "build": "10001",
+          "runId": "1791021861680800",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 2
+        },
+        {
+          "build": "10002",
+          "runId": "1791021871967508",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 3
+        }
+      ],
+      "allCompletedPhasesVerified": {
+        "nativeCrypto": true,
+        "keystore": true,
+        "backupConfigured": false,
+        "syncConfigured": false
+      },
+      "verifiedSchema3Checks": [
+        "safExportReadback",
+        "safOpenDecrypt",
+        "safSizeLimit",
+        "nativeReminderScheduling",
+        "workManagerRenewal",
+        "periodicTasksRegistered"
+      ],
+      "failure": {
+        "type": "TimeoutError",
+        "message": "force-stop did not reach a stable Android framework with the package marked stopped",
+        "emulatorExit": null,
+        "cause": "Driver incorrectly required the package stopped flag to remain true; Android 7 restarted a new SystemJobService process after killing the original process.",
+        "rawEvidence": [
+          "10-03 10:05:17.112  1619  2177 I ActivityManager: Force stopping com.haoxiguan.haoxiguan.acceptance appid=10062 user=0: from pid 3515",
+          "10-03 10:05:17.112  1619  2177 I ActivityManager: Killing 2976:com.haoxiguan.haoxiguan.acceptance/u0a62 (adj 0): stop com.haoxiguan.haoxiguan.acceptance",
+          "10-03 10:05:17.135  1619  1619 I ActivityManager: Start proc 3525:com.haoxiguan.haoxiguan.acceptance/u0a62 for service com.haoxiguan.haoxiguan.acceptance/androidx.work.impl.background.systemjob.SystemJobService"
+        ],
+        "pendingPhase": "10002 force-stop then reopen with a new runId and all native assertions; not executed in this failed run."
+      },
+      "driverCorrection": {
+        "status": "implemented_pending_new_native_run",
+        "hostTestsPassed": 21,
+        "observes": "All pre-force-stop app PIDs have disappeared in two consecutive healthy boot/activity/process-list reads. A newly started background PID is permitted.",
+        "preserved": "One force-stop, one am start, fresh runId, schema and all six native upgrade assertions.",
+        "readFailureBehavior": "A nonzero exit, malformed/empty process table, or timeout never counts as disappearance.",
+        "android7Parser": "Recognizes the exact legacy toolbox header and validates its extra, unlabelled one-letter state before NAME. Missing/invalid state is a read failure. Modern default NAME uses its header index; truncated CMD is rejected.",
+        "parserSources": [
+          "https://android.googlesource.com/platform/system/core/+/android-7.0.0_r1/toolbox/ps.c",
+          "https://android.googlesource.com/platform/external/toybox/+/android-15.0.0_r1/toys/posix/ps.c"
+        ]
+      },
+      "bothSchema3RunsVerified": false,
+      "bothSchema3RunsRequired": true
+    },
+    "nativeApi35": {
+      "job": 111180276600,
+      "status": "success",
+      "artifactId": 11270649868,
+      "artifactSha256": "4262a40a409eb1a34c2cba5dd61f08031ba999839c53bdec41834cd22acc33e6",
+      "completedPhases": [
+        {
+          "build": "10001",
+          "runId": "1791021860676550",
+          "status": "passed",
+          "phase": "create",
+          "schema": 2
+        },
+        {
+          "build": "10001",
+          "runId": "1791021865592171",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 2
+        },
+        {
+          "build": "10002",
+          "runId": "1791021871346132",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 3
+        },
+        {
+          "build": "10002",
+          "runId": "1791021904199312",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 3
+        }
+      ],
+      "allCompletedPhasesVerified": {
+        "nativeCrypto": true,
+        "keystore": true,
+        "backupConfigured": false,
+        "syncConfigured": false
+      },
+      "verifiedSchema3Checks": [
+        "safExportReadback",
+        "safOpenDecrypt",
+        "safSizeLimit",
+        "nativeReminderScheduling",
+        "workManagerRenewal",
+        "periodicTasksRegistered"
+      ],
+      "bothSchema3RunsVerified": true,
+      "bothSchema3RunsRequired": true
+    },
+    "nativeApi36": {
+      "job": 111180276592,
+      "status": "success",
+      "artifactId": 11270823072,
+      "artifactSha256": "be5424e0ae42009dfbb9c3c941e2f06419b4799cf5cdcd6a22a1559a952879c1",
+      "completedPhases": [
+        {
+          "build": "10001",
+          "runId": "1791021876835885",
+          "status": "passed",
+          "phase": "create",
+          "schema": 2
+        },
+        {
+          "build": "10001",
+          "runId": "1791021883736186",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 2
+        },
+        {
+          "build": "10002",
+          "runId": "1791021889226030",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 3
+        },
+        {
+          "build": "10002",
+          "runId": "1791021917791725",
+          "status": "passed",
+          "phase": "reopen",
+          "schema": 3
+        }
+      ],
+      "allCompletedPhasesVerified": {
+        "nativeCrypto": true,
+        "keystore": true,
+        "backupConfigured": false,
+        "syncConfigured": false
+      },
+      "verifiedSchema3Checks": [
+        "safExportReadback",
+        "safOpenDecrypt",
+        "safSizeLimit",
+        "nativeReminderScheduling",
+        "workManagerRenewal",
+        "periodicTasksRegistered"
+      ],
+      "bothSchema3RunsVerified": true,
+      "bothSchema3RunsRequired": true
+    },
+    "upgradeFixtureBuild": "success",
+    "debugArtifact": {
+      "id": 11271372908,
+      "name": "haoxiguan-debug-7d90e9f5fb454b2c6be0b810383199dbdd7d5cb7",
+      "sha256": "sha256:c31dcc47133c7e93f1b8ebc28d6c7ee36a9da9ca9054d2a6e6705e0bfd331e3b",
+      "sizeInBytes": 89324542
+    },
+    "verifyConclusion": "success",
+    "rawEvidence": [
+      "2026-10-03T09:55:27.3682499Z 🎉 236 tests passed, 3 skipped.",
+      "2026-10-03T09:56:06.4467127Z ##[group]✅ real HTTPS Go relay: encrypted recovery, two devices, conflict, revoke and remote deletion",
+      "2026-10-03T09:56:07.2422515Z ##[group]✅ two independent HTTPS services: verified backup restore and fresh pairing migration",
+      "2026-10-03T09:56:07.2654851Z 🎉 2 tests passed.",
+      "2026-10-03T09:56:23.9020297Z 00:01 +1: All tests passed!",
+      "2026-10-03T10:02:00.4501306Z ✓ Built build/app/outputs/flutter-apk/app-debug.apk",
+      "2026-10-03T10:02:32.0224919Z ✓ Built build/app/outputs/flutter-apk/app-debug.apk",
+      "2026-10-03T10:02:54.2902793Z ✓ Built build/app/outputs/flutter-apk/app-debug.apk"
+    ],
+    "upgradeFixtureArtifact": {
+      "id": 11271263644,
+      "name": "android-acceptance-7d90e9f5fb454b2c6be0b810383199dbdd7d5cb7",
+      "sha256": "sha256:929d3309360d523047148890395ed1826b3a8e5aa97850eb600c7028cc66d15f",
+      "sizeInBytes": 106071553
+    }
+  },
+  "webdav": {
+    "artifactId": 11271297922,
+    "artifactSha256": "30631548ca1f1c5f0c482234b1584f7617e96447c8c2ab3733550768abf26d91",
+    "sourceCommit": "7d90e9f5fb454b2c6be0b810383199dbdd7d5cb7",
+    "service": {
+      "WsgiDAV": "4.3.3",
+      "cheroot": "11.1.2"
+    },
+    "testFile": "test/webdav_integration_test.dart",
+    "testExecuted": true,
+    "result": "passed",
+    "exitCode": 0,
+    "testCount": 1,
+    "testLogEvidence": "00:01 +1: All tests passed!",
+    "startedAtUtc": "2026-10-03T09:56:13.058163+00:00",
+    "finishedAtUtc": "2026-10-03T09:56:23.905308+00:00"
+  },
+  "scope": "Verify, real HTTPS, WebDAV and native API 35/36 passed on the stated commits. API 24 completed only 3 of 4 phases and failed the driver readiness check; its final reopen remains pending a corrected native run. Host regression tests do not close that gate."
+}

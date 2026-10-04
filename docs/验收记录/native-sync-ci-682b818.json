@@ -1,0 +1,46 @@
+{
+  "sourceSha": "682b818e880fdc0694fbe683b1aad2403d3ea0e2",
+  "localSourceSha": "4df604c6d87f47452e8b05bd2277c41d907037c0",
+  "sourceTree": "b8e07549d33c4fc9565034a8b57db41cc8115532",
+  "mergeSha": "87c5886a237359bb171873fefbb89e4a9c023be1",
+  "mergeTree": "b8e07549d33c4fc9565034a8b57db41cc8115532",
+  "mergeParents": [
+    "8e390aa8bc1bf438e6f6a6c7cdf7ee10d773776a",
+    "682b818e880fdc0694fbe683b1aad2403d3ea0e2"
+  ],
+  "runId": 37139114335,
+  "runUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37139114335",
+  "jobName": "native-sync",
+  "status": "skipped",
+  "jobId": 111250130648,
+  "artifacts": [],
+  "conclusion": "skipped",
+  "dependencyFailure": {
+    "jobId": 111249679960,
+    "jobName": "verify",
+    "steps": [
+      "Test native sync runner isolation and protocol"
+    ],
+    "exitCode": 1,
+    "testsRun": 45,
+    "testsPassed": 44,
+    "errors": 1,
+    "errorTest": "test_windows_runner_is_blocked_before_any_sdk_go_or_network_action",
+    "errorCode": "AttributeError_shutil_winapi_NeedCurrentDirectoryForExePath",
+    "actualLog": "native-sync-ci-37139114335-host-failure.log",
+    "logSha256": "097246b1891acebf2d7deed1215b818a8aac8d764c7439a42d5a1b8251f8fdad"
+  },
+  "nativeExecution": false,
+  "nativePassed": false,
+  "nativeArtifactExists": false,
+  "localTestOnlyFix": {
+    "file": "tools/test_android_sync_acceptance.py",
+    "change": "mock shutil.which during simulated Windows platform guard test",
+    "productionRunnerChanged": false,
+    "testsRun": 45,
+    "testsPassed": 45,
+    "exitCode": 0,
+    "actualLog": "native-sync-runner-tests-fixed.log",
+    "logSha256": "c0a8cc6d6ca197e23d0557fea2859a515d5e8894e005d62506d15e67ccfd5e4d"
+  }
+}

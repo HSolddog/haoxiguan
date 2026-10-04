@@ -1,0 +1,11 @@
+{
+  "format": "haoxiguan-sync-recovery",
+  "version": 1,
+  "suite": "argon2id-xchacha20poly1305-v1",
+  "memoryKiB": 65536,
+  "iterations": 3,
+  "parallelism": 1,
+  "salt": "vdqunxIYX6YS4FwFovEWXQ==",
+  "nonce": "h/iGt14/nF0lsONiT6/kez305C1NgZpC",
+  "payload": "1V2Y7ZUoBezYSr77ddkFWgO+dHwwW6hbYGOEt//Y5kf1R2N84+xIza81kQgL12iQj3lZ9WkBoPeeNFprgzqhMmxBW8S6hogKMGxZMqy9a65n9AQ2MHBUNTKWZIIEZMBT+JUqgH771TGPir0gZMfBL8vS60RRSpkAel2A01sKrH5WM/N4LsN2KoLSffQqhLFk8mOCmKH4RZ/Cvumm8OayAszyhfrOk3Tkhswc0Yz/aU4A8j6Ovd+Z0jS82lyczCjw5adtrKVlDpUNhT2UbyIcb3uHckfTsKWBYcgyo0l0GljOLLfWhpnkte7bQOaBjB3iKwxeQs5Szx3GOnrax42HqSW3plu2XkQ7djuh50J/HHw82//B+/+8uy/1Lwk="
+}

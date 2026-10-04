@@ -1,0 +1,118 @@
+{
+  "kind": "host-save-inflight-first-frame-regression",
+  "taskDate": "2026-10-03",
+  "baseCommit": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "designClauses": [
+    "G04",
+    "I91",
+    "A16",
+    "G09"
+  ],
+  "scope": {
+    "productionFiles": [
+      "lib/ui/backup_restore_dialog.dart",
+      "lib/ui/data_screen.dart",
+      "lib/ui/webdav_screen.dart",
+      "lib/ui/sync_screen.dart"
+    ],
+    "newTestFile": "test/save_inflight_race_test.dart",
+    "behavior": "Read saving state synchronously at action entry and route exit, before the next widget frame.",
+    "sharedPrimitive": "UnsavedChangesGuard.requestLeave reads the live isSaving callback; its PopScope always intercepts user route pops.",
+    "syncRunInspection": "initState and independent top-level actions call _run; their bodies call _withEngine, _readStatus, or _confirm rather than nested _run actions."
+  },
+  "testedFileSha256": {
+    "lib/ui/backup_restore_dialog.dart": "4060410adc91623bf774f7c469d0126ae1bd1b6b4c93b2ac4af27ee87e3fd5d2",
+    "lib/ui/data_screen.dart": "88fb8650e2cdcfa54502ee99d9cd444db5580e404b22e4911fe3167bd58583fe",
+    "lib/ui/webdav_screen.dart": "da0774566c551f21f96319dd59a8a19087d8bed7a2c2d32640cf84c28ebe57d9",
+    "lib/ui/sync_screen.dart": "3bf74349e60bcb8ecccee3e3e5cfebae960419de70bbe43accfabde0dac3644d",
+    "test/save_inflight_race_test.dart": "31b5dd38191b65633711ff5fb3f0b1f28b06743974a3265f8940575c65f8d48f",
+    "lib/ui/unsaved_changes_guard.dart": "69c7f5ecffa83ed5cc7980f6a4c1d4fb43b940919dc3ded32791ad552e3d8f5c"
+  },
+  "validation": {
+    "targeted": {
+      "command": "flutter test --no-pub test/save_inflight_race_test.dart test/compatible_restore_test.dart test/data_restore_test.dart test/legacy_restore_dialog_test.dart test/data_backup_metadata_test.dart test/sync_ui_test.dart test/backup_codec_test.dart test/sync_recovery_test.dart test/external_import_limits_test.dart test/sync_import_limits_test.dart",
+      "workingDirectory": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan",
+      "exitCode": 0,
+      "passed": 56,
+      "failed": 0,
+      "newWidgetCases": 7,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\save-inflight-targeted.log",
+        "bytes": 10149,
+        "sha256": "bf11367adad8cd3ed0c0d59c2ee7069e8ff503aaeaaae3a27ca8a8e46f5c7e38"
+      },
+      "sourceSnapshot": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\save-inflight-tested-source.json",
+        "bytes": 728,
+        "sha256": "8f537f286d8e8f32908e2b1a67a2f50f5cdd0148cf577ef2c3c9294c9ff94da1"
+      }
+    },
+    "analyze": {
+      "command": "dart analyze lib/ui/backup_restore_dialog.dart lib/ui/data_screen.dart lib/ui/webdav_screen.dart lib/ui/sync_screen.dart test/save_inflight_race_test.dart",
+      "exitCode": 0,
+      "issues": 0,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\save-inflight-analyze.log",
+        "bytes": 145,
+        "sha256": "89dbc9f232294c8a653dc6ae1e8d8b144dee14c7b584998306d4051a8d38b1b7"
+      }
+    },
+    "format": {
+      "command": "dart format --output=none --set-exit-if-changed lib/ui/backup_restore_dialog.dart lib/ui/data_screen.dart lib/ui/webdav_screen.dart lib/ui/sync_screen.dart test/save_inflight_race_test.dart",
+      "exitCode": 0,
+      "checkedFiles": 5,
+      "changedFiles": 0,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\save-inflight-final-format.log",
+        "bytes": 48,
+        "sha256": "6dd4c5e6f4e74eb73f41050aa187ed4d0145eb8615c109f287eb9d7886893711"
+      }
+    }
+  },
+  "newScenarios": [
+    "Ordinary restore: Completer blocks repository.replace; without pumping after confirm, system pop, modal barrier, stale cancel and repeated confirm cannot close or submit again; release commits exactly one replacement and one original protection.",
+    "Compatible restore: same events plus the stale checkbox callback cannot revoke preservation while saving; one protection is retained and 1000-character title/2001-character note survive intact.",
+    "Encrypted backup password: stale outer menu opens one dialog; first-frame back/cancel/repeated continue start one native KDF and one file-save callback; only successful file save closes it.",
+    "WebDAV settings: deviceId first await is blocked; first-frame route pop/repeated save enter once; synthetic store failure retains all five input fields and writes no secrets.",
+    "Sync enrollment: a synthetic HttpClient blocks the first enroll openUrl; first-frame route pop/stale authorize enter once; failure retains endpoint/invite and writes no configuration.",
+    "Conflict merge: delayed onApply blocks first-frame route pop/stale cancel/duplicate apply; failure retains manual selection/text; deliberate retry assembles the selected snapshot and saves once with one protected original.",
+    "Sync recovery password: first-frame route pop/stale cancel/duplicate save start one native recovery-file KDF/encryption and verified file-save callback; cancelled file save retains both password fields; deliberate retry succeeds once."
+  ],
+  "counterfactual": {
+    "purpose": "Demonstrate that the unchanged before-pump assertion detects the original restore race.",
+    "workspace": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\race-old",
+    "variant": "Only BackupRestoreDialog comes from the stated Git baseline; supporting files are copied current files. The shared repository was never replaced.",
+    "oldSourceSha256": "5b91858c2a054069e9aa2e982f31a12a689ffb373ce917c9527c8a28533f6202",
+    "resolvedPackageSource": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\race-old\\lib\\ui\\backup_restore_dialog.dart",
+    "packageConfig": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\race-old\\.dart_tool\\package_config.json",
+      "bytes": 28602,
+      "sha256": "bdccac5e254aaaec539ee020a0f244dc0754ffa1a487d75755af949daa9e8bf1"
+    },
+    "testSha256": "ac1aea31387efdb3d841c7412dc4de924b955dd507a34977a77384c2b91cfaca",
+    "testVersion": "Same test assertions as the final test; precedes two brace-only lint fixes.",
+    "command": "flutter test --no-pub test/save_inflight_race_test.dart --plain-name 'ordinary restore blocks back, barrier, cancel and repeated confirm before rebuilding'",
+    "expectedExitCode": 1,
+    "actualExitCode": 1,
+    "expectedFailure": "Expected empty completion results while replace was blocked; actual [null] proves premature route exit.",
+    "log": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\save-inflight-counterfactual.log",
+      "bytes": 4760,
+      "sha256": "08bc9b06ae0e49c9a080d789dbe88b589b7ead72c79b0735e626e32b2691b41f"
+    },
+    "preparation": "The fresh temporary workspace initially lacked cached SQLite native assets. Existing local hook assets were copied offline before the actual counterfactual run; no shared sources or toolchain settings changed.",
+    "preparationLog": {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\save-inflight-counterfactual-preparation.log",
+      "bytes": 4581,
+      "sha256": "3ea30b74221dce75c89274225cca4519f1d69d4733313db07efd88b0650c3514"
+    }
+  },
+  "evidenceLimits": [
+    "This record covers host widget tests. It adds no Android/device or real external service claim.",
+    "The new merge widget case uses the real dialog, SyncEntities selection/assembly, HabitController and MemoryHabitRepository protection; it is not a new end-to-end SyncEngine/SQLite merge test.",
+    "WebDAV settings fail at the synthetic device store before networking; sync enrollment uses an injected synthetic HttpClient without sockets."
+  ],
+  "remainingVerification": [
+    "Root-owned repository-wide format/analyze/full regression after the other UI race patches are frozen."
+  ]
+}

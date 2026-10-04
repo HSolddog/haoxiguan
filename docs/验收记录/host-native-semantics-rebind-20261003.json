@@ -1,0 +1,80 @@
+{
+  "scope": "Synthetic fixture-only host semantics serialization and widget regressions. Production widgets use a gated MemoryHabitRepository in these new cases; no user/device data.",
+  "sourceCommit": "fb3bfc63e4913a92740bb5871b587aba006f7e5d",
+  "gitTreeSha": "f57a76c62dd952e770ae95f0584648c5b9bc2e45",
+  "sourceFiles": [
+    {
+      "repositoryPath": "tools/android_acceptance.dart",
+      "gitBlobSha256": "ced34bdb279896156332d34467ff31dfc4ebaa5bc770af5a1ddf0832d4ce335c",
+      "workingBytesSha256": "ced34bdb279896156332d34467ff31dfc4ebaa5bc770af5a1ddf0832d4ce335c"
+    },
+    {
+      "repositoryPath": "tools/acceptance_semantics.dart",
+      "gitBlobSha256": "e1517a1d0defad33ad5b014397974d320e7e74ce4456f76b1da81c04b6fc15f5",
+      "workingBytesSha256": "e1517a1d0defad33ad5b014397974d320e7e74ce4456f76b1da81c04b6fc15f5"
+    },
+    {
+      "repositoryPath": "tools/fixtures/acceptance_engine_host.kt.txt",
+      "gitBlobSha256": "c74bafdbf0b276f2daa66325e3efa169f75d8dbcc35dfd5ea0ae9bfed89aa485",
+      "workingBytesSha256": "c74bafdbf0b276f2daa66325e3efa169f75d8dbcc35dfd5ea0ae9bfed89aa485"
+    },
+    {
+      "repositoryPath": "tools/run_android_acceptance.py",
+      "gitBlobSha256": "96275261dea589b2edb423a56d5c4d9c5689418cccc7af238ec9032710331c13",
+      "workingBytesSha256": "b08ca5d41c9c5f7b9cef282452670a8f23f31e369717ba3f9433b139e439ab21"
+    },
+    {
+      "repositoryPath": "tools/test_android_acceptance.py",
+      "gitBlobSha256": "47ddb77765b8a2a2479fb967a74e427c3304816f6d04b741ebff66c944f87c4d",
+      "workingBytesSha256": "64c6dc9fe7815230ca2d4fedb8b1984749d469a3ff46def54e71ea2db1125dca"
+    },
+    {
+      "repositoryPath": "test/android_acceptance_semantics_test.dart",
+      "gitBlobSha256": "46c69e901b7f50a2e9b4eaa1ddc8328a7edfdc739feb9ff4326153303489d12d",
+      "workingBytesSha256": "64c7bd408c38c19bb4ff29b1127b8e1adafc27a3ed77fd25f27f8089ebbc9914"
+    }
+  ],
+  "problem": "After an isolated cached engine acquired a new Activity FlutterView, the native run reached restore preview but its captured Android hierarchy exposed no Flutter virtual nodes. Held framework semantics could continue sending deltas into a new empty Android accessibility bridge.",
+  "change": "Every newly displayed acceptance host notifies the retained Dart owner. It verifies current native identity, waits outside the frame, detaches and reattaches the existing semantics root to the same owner, then sends the complete existing tree. Node IDs, Navigator, widget State and business data are retained; no main or business operation is replayed. The narrowly annotated testing APIs are only used in tools, never product lib.",
+  "hostValidation": {
+    "dartPassed": 29,
+    "newSemanticsCases": 5,
+    "existingAcceptanceCases": 24,
+    "dartExitCode": 0,
+    "pythonPassed": 76,
+    "driverPythonCases": 72,
+    "builderPythonCases": 4,
+    "pythonExitCode": 0,
+    "limitedAnalyzeItems": 3,
+    "analyzeIssues": 0,
+    "analyzeSeconds": 9.1,
+    "analyzeExitCode": 0,
+    "formatFiles": 3,
+    "formatterChangedFiles": 0,
+    "formatExitCode": 0,
+    "diagnosticPayloadCorrectionAfterDartTargets": "Removed unsupported reportWritten/businessOpened claims from the semantics failure marker. Python was rerun after this correction; root full regression separately validates the exact final source."
+  },
+  "tests": [
+    {
+      "repositoryPath": "test/android_acceptance_semantics_test.dart",
+      "passed": 5,
+      "cases": [
+        "Actual framework delta omits root for a fresh synthetic receiver while a semantics handle remains active; complete resend restores exactly the existing serialized IDs.",
+        "Later host notifications refresh the same engine and Stateful owner, while repeated notification does not create a second owner.",
+        "Foreign engine and in-frame refresh fail closed without State mutation.",
+        "Real compatibility restore draft remains selected; unchanged repository/model and actual cancellation after refresh.",
+        "Real pending restore confirmation remains pending and performs exactly one replacement after release, with the protected prior snapshot."
+      ]
+    }
+  ],
+  "mergeBoundary": "Merged semantic children remain represented by their ancestor. Tests compare the old and newly serialized node-ID sets exactly; framework tree node count is not asserted to equal Android virtual-node count.",
+  "safety": "Unknown native identities or semantic binding failures stop host UI mutation and retain the first failure. Entry ownership, launch nonce, checkpoint SQL/model, native engine proof and all existing business flags remain required.",
+  "logDigests": {
+    "dartTargets": "ec8dfde6215a68ba19432f24a01c722d71f775e365052859cfaedfd48a1a1c79",
+    "analysis": "b8b96952a628f04d18d1ecaa52b677e6b15c7291969a95410e4874d9563df9e7",
+    "format": "254e53f413a3f798de560a701f8dcb56e80a33e022ffdbbd42d34f837f7abb94",
+    "python": "e90fd35879c5741974130fb1d15425c4455f052bdf770e15405dd9590f48fbda"
+  },
+  "nativeBoundary": "These host observations use real Flutter serialization plus a synthetic model of the pinned bridge root-pruning rule. They are not native acceptance. API24/33/35/36 still require actual accessibility XML, one-shot restore clicks, complete restore/notification checks and four phases in the next CI run.",
+  "review": "Independent read-only review found no remaining source blocker. Kotlin notification delivery and the native bridge behavior remain for subsequent CI."
+}

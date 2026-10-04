@@ -1,0 +1,50 @@
+{
+  "logicalId": "h/seed-reading",
+  "payload": {
+    "externalAppNote": "synthetic habit field",
+    "categoryId": "2c424eda-b821-50a1-8f0d-7f54e9f23125",
+    "sortKey": 0,
+    "categoryInfo": {
+      "id": "2c424eda-b821-50a1-8f0d-7f54e9f23125",
+      "name": "学习",
+      "sortKey": 1024,
+      "revision": 1
+    },
+    "id": "seed-reading",
+    "title": "阅读 20 分钟",
+    "emoji": "📖",
+    "colorValue": 4284448872,
+    "weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "createdAt": "2026-09-21T00:00:00.000Z",
+    "reminderTime": "21:30",
+    "exemptions": [],
+    "pausedAt": null,
+    "archived": false,
+    "category": "学习",
+    "effortEnabled": true,
+    "rewardPoints": 10,
+    "penaltyPoints": 5,
+    "targetCount": 3,
+    "rewardPeriod": "week",
+    "wishEnabled": true,
+    "wishTitle": "买一本期待已久的新书",
+    "wishTarget": 120,
+    "scheduleType": "daily",
+    "scheduleCount": 1,
+    "recordType": "boolean",
+    "unit": "次",
+    "scale": 1,
+    "dailyTarget": 1,
+    "archivedAt": null,
+    "deletedAt": null,
+    "legacyRewardBalance": 5
+  }
+}

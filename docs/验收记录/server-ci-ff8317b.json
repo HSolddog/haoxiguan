@@ -1,0 +1,111 @@
+{
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "ff8317ba1f1b79a561028f6462f27cee7ef33f46",
+  "pullRequestMergeCommit": "e33ec3badd6d848a1405551e2814d47439d55cfd",
+  "workflowRunId": 37116729859,
+  "workflowRunUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37116729859",
+  "jobs": [
+    {
+      "name": "verify",
+      "jobId": 111184877787,
+      "conclusion": "success"
+    },
+    {
+      "name": "arm64-smoke",
+      "jobId": 111185228718,
+      "conclusion": "success"
+    },
+    {
+      "name": "capacity",
+      "jobId": 111185228736,
+      "conclusion": "success"
+    }
+  ],
+  "sourceObjects": {
+    "headRootTree": "30d1afdb8b1f8541e22f2ae80c549e8e15542ada",
+    "server/": {
+      "gitType": "tree",
+      "sha1": "7dc1f34291c7b93cf157bffcf364207b8d3350d9"
+    },
+    "tools/server_https_capacity.py": {
+      "gitType": "blob",
+      "sha1": "c373a7aba08009e28f555a0c67e38111318a5ec0"
+    },
+    "tools/container_smoke.py": {
+      "gitType": "blob",
+      "sha1": "866e4894a887f7148d83a7dad5af6469752f3fc7"
+    },
+    "verification": "GitHub Git commit API reported the head root tree shown here. Local commit 2c86b2b42d17f4794e91d9dc332f96d8fba22f68 has that identical root tree; path objects were read from that exact local commit. CI executes the pull-request merge commit named above."
+  },
+  "reports": {
+    "capacity": {
+      "path": "server-https-capacity-ff8317b.json",
+      "rawJsonSha256": "da98e22bc184b56b55620d6bbb8a9ef913d5fb2f457cf9b0c305a8d4511a4676",
+      "rawJsonBytes": 39927,
+      "artifactId": 11271763551,
+      "artifactName": "server-https-capacity-e33ec3badd6d848a1405551e2814d47439d55cfd",
+      "artifactZipSha256": "526f814b939ee83f176a1b6069cf677154d7385aebdb6755224d5daaeada6462",
+      "artifactZipBytes": 4909,
+      "preservation": "Exact downloaded report.json bytes, without metadata edits. ZIP SHA256 matched the GitHub artifact digest; source and saved report SHA256 matched."
+    },
+    "arm64": {
+      "path": "server-arm64-ff8317b.json",
+      "savedJsonSha256": "358d92cc127024e986dafdd42148ae673fd8e871a10ee04a8dbffccbc8c4f3ec",
+      "source": "ARM64_SMOKE_REPORT line in job 111185228718 logs; original fields and exact raw JSON are preserved with CI metadata.",
+      "rawLogJsonSha256": "b363b0d94b2f6ac58c8dd82bedbbcff04d1ead5c969004216249db8be28de343"
+    }
+  },
+  "binaryArtifact": {
+    "id": 11271696956,
+    "name": "sync-server-e33ec3badd6d848a1405551e2814d47439d55cfd",
+    "zipSha256": "2633be98389b70a030c56e339d2f6d19d7cc0eaca70192e044b96369a391473e",
+    "sizeBytes": 18457711,
+    "validation": "Both dependent jobs downloaded this same-merge dual-architecture artifact and verified its SHA256SUMS before building the owned container."
+  },
+  "capacityObservations": {
+    "elapsedSeconds": 938.067,
+    "users": 20,
+    "devices": 60,
+    "initialObjects": 100000,
+    "ciphertextBytesPerObject": 1024,
+    "cpuLimit": 1,
+    "memoryLimitGiB": 1,
+    "architecture": "amd64",
+    "uid": "65532:65532",
+    "all60BootstrapHistoriesFullyVerified": true,
+    "recoveredHistoryFullyVerified": true,
+    "opIdReplayDidNotDuplicateChanges": true,
+    "restoredSnapshotHistoryFullyVerified": true,
+    "snapshotQuickCheck": "ok",
+    "objects": 100000,
+    "changes": 102200,
+    "operations": 102200,
+    "abruptRestartCount": 1,
+    "outstandingWorkersAtInterruption": 40,
+    "recoverySeconds": 0.263,
+    "consistentBackupSeconds": 1.432,
+    "resourceSampleCount": 193,
+    "maxSampledMemoryBytesIncludingPageCache": 503115776,
+    "idleMemoryBytesIncludingPageCache": 6766592,
+    "snapshotBytes": 457265152,
+    "initialDatabaseBytes": 451780608,
+    "initialWalBytes": 4556752,
+    "afterUpdateDatabaseBytes": 459304960,
+    "afterUpdateWalBytes": 4556752,
+    "http429Responses": 752,
+    "controlledFaultTransportErrors": 39,
+    "push100ObjectsSuccessfulAttemptP95Ms": 1547.126,
+    "push100ObjectsLogicalRequestIncludingRetriesP95Ms": 30038.159,
+    "bootstrapSuccessfulAttemptP95Ms": 578.826,
+    "bootstrapLogicalRequestIncludingRetriesP95Ms": 30422.357,
+    "bootstrapBucketScope": "1600 successful pages: initial 1500 plus 100 concurrent fault-phase pages; not an initial-only distribution."
+  },
+  "scope": [
+    "Capacity observations are from one synthetic amd64 CI run over an isolated internal Docker bridge, with real TLS certificate/hostname verification and unchanged service rate limits. No forwarded-IP spoofing or public port.",
+    "Latency values are observations; no new acceptance threshold or production performance promise is inferred. Logical latency includes bounded Retry-After waits.",
+    "Docker memory samples include page cache and are not exact peak RSS. Client work is outside the server CPU/memory cgroup.",
+    "Capacity restore is an isolated same-epoch consistent snapshot reopen, not production cross-machine RPO/RTO acceptance.",
+    "ARM64 job is a native aarch64 container lifecycle, persistence, credential revocation and consistent restore smoke test; it is not an ARM64 capacity benchmark.",
+    "Reports contain synthetic statistics and CI identifiers only. No real user data, tokens, credentials or private keys are included."
+  ]
+}

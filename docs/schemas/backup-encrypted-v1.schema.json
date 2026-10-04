@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/backup-encrypted-v1.schema.json",
+  "title": "Haoxiguan encrypted backup envelope v1",
+  "type": "object",
+  "required": [
+    "format",
+    "formatVersion",
+    "appVersion",
+    "encrypted",
+    "crypto",
+    "payload",
+    "payloadSha256"
+  ],
+  "properties": {
+    "format": {
+      "const": "haoxiguan-backup"
+    },
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "appVersion": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "encrypted": {
+      "const": true
+    },
+    "crypto": {
+      "type": "object",
+      "required": [
+        "suite",
+        "salt",
+        "kdfParams",
+        "nonce"
+      ],
+      "properties": {
+        "suite": {
+          "const": "argon2id-xchacha20poly1305-v1"
+        },
+        "salt": {
+          "type": "string",
+          "minLength": 24,
+          "maxLength": 24,
+          "pattern": "^[A-Za-z0-9+/]{21}[AQgw]==$",
+          "contentEncoding": "base64"
+        },
+        "nonce": {
+          "type": "string",
+          "minLength": 32,
+          "maxLength": 32,
+          "pattern": "^[A-Za-z0-9+/]{32}$",
+          "contentEncoding": "base64"
+        },
+        "kdfParams": {
+          "type": "object",
+          "required": [
+            "memoryKiB",
+            "iterations",
+            "parallelism"
+          ],
+          "properties": {
+            "memoryKiB": {
+              "type": "integer",
+              "const": 65536
+            },
+            "iterations": {
+              "type": "integer",
+              "const": 3
+            },
+            "parallelism": {
+              "type": "integer",
+              "const": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "payload": {
+      "type": "string",
+      "minLength": 24,
+      "maxLength": 50331672,
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/][AQgw]==|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=)?(?![\\s\\S])",
+      "contentEncoding": "base64",
+      "description": "Exact decoded 16..37748752-byte limit, SHA-256 and AEAD remain runtime checks; encoded length is only a coarse bound."
+    },
+    "payloadSha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

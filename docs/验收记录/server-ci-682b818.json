@@ -1,0 +1,160 @@
+{
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "682b818e880fdc0694fbe683b1aad2403d3ea0e2",
+  "pullRequestMergeCommit": "87c5886a237359bb171873fefbb89e4a9c023be1",
+  "headRootTree": "b8e07549d33c4fc9565034a8b57db41cc8115532",
+  "mergeRootTree": "b8e07549d33c4fc9565034a8b57db41cc8115532",
+  "localMatchingCommit": "4df604c6d87f47452e8b05bd2277c41d907037c0",
+  "sourceObjects": {
+    ".github/workflows/server.yml": {
+      "type": "blob",
+      "sha1": "7a36bc067e9c354751f6f950c9eeebb535f42a5c"
+    },
+    "server": {
+      "type": "tree",
+      "sha1": "7dc1f34291c7b93cf157bffcf364207b8d3350d9"
+    },
+    "tools/container_smoke.py": {
+      "type": "blob",
+      "sha1": "866e4894a887f7148d83a7dad5af6469752f3fc7"
+    },
+    "tools/server_https_capacity.py": {
+      "type": "blob",
+      "sha1": "c373a7aba08009e28f555a0c67e38111318a5ec0"
+    }
+  },
+  "workflowRunId": 37139114326,
+  "workflowRunUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37139114326",
+  "workflowRunAttempt": 1,
+  "workflowConclusion": "success",
+  "workflowCompletedAtUTC": "2026-10-03T17:22:06Z",
+  "jobs": [
+    {
+      "name": "verify",
+      "id": 111249679807,
+      "conclusion": "success",
+      "allStepsSucceeded": true,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37139114326/job/111249679807",
+      "decodedLogPath": "../server-evidence-682b818/server-verify-job.log",
+      "decodedLogSha256": "91cca10f40fab09d8ab05d0eaad6f910d4ad933116fbd36443aa25e462bd6c1c"
+    },
+    {
+      "name": "arm64-smoke",
+      "id": 111250026702,
+      "conclusion": "success",
+      "allStepsSucceeded": true,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37139114326/job/111250026702",
+      "decodedLogPath": "../server-evidence-682b818/server-arm64-job.log",
+      "decodedLogSha256": "374639e790a980177319c2c0f1283be0ecf45d678b6d5489ec1cf03f2cd4b9fd"
+    },
+    {
+      "name": "capacity",
+      "id": 111250026714,
+      "conclusion": "success",
+      "allStepsSucceeded": true,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37139114326/job/111250026714",
+      "decodedLogPath": "../server-evidence-682b818/server-capacity-job.log",
+      "decodedLogSha256": "c444f4b92d99fa60bdd7fa4af0e610160e814af159f973ca8b02e9f224231e9f"
+    }
+  ],
+  "artifacts": {
+    "binary": {
+      "id": 11279713090,
+      "name": "sync-server-87c5886a237359bb171873fefbb89e4a9c023be1",
+      "zipPath": "../server-evidence-682b818/sync-server-682b818.zip",
+      "zipBytes": 18457709,
+      "zipSha256": "6e269c454954d6167807064a82dbc42f29af98f10afda938ea4d0d90b6c20a34",
+      "githubDigestMatched": true,
+      "expiresAtUTC": "2026-10-17T17:05:21Z",
+      "manifestEntriesVerified": {
+        "THIRD_PARTY_NOTICES.txt": "a416c13a1bb1d669e9ebc00b781a374152403b106d80cac2645b9c7dfbad6c08",
+        "haoxiguan-server-linux-amd64": "5683c61f7aa4930ec7880b401da0cd9062e59fad97cd3cb1d987492aeb3302b8",
+        "haoxiguan-server-linux-arm64": "f60df03967491db658742c649e98c405fdd2519ced9a47aba103f87749155e3a"
+      },
+      "manifestSha256": "a505ee35c0d4ee0a0000822526161a5abe1148fedca1faee5d3e971c4defc983"
+    },
+    "capacity": {
+      "id": 11280102702,
+      "name": "server-https-capacity-87c5886a237359bb171873fefbb89e4a9c023be1",
+      "zipPath": "../server-evidence-682b818/server-capacity-682b818.zip",
+      "zipBytes": 4927,
+      "zipSha256": "2cd93146c2d006bdc05345af235defb520bcd8b277c6d10f63f039ed3218bfa2",
+      "githubDigestMatched": true,
+      "expiresAtUTC": "2026-10-17T17:22:01Z"
+    }
+  },
+  "rawReports": {
+    "capacity": {
+      "path": "../server-evidence-682b818/capacity/report.json",
+      "bytes": 40959,
+      "sha256": "4cab1b8775bcc63bf4d51c698bc9f1c29d95a28c7302aef1b85f063140393446",
+      "preservation": "Exact report.json bytes from the digest-verified artifact; no metadata edits."
+    },
+    "arm64": {
+      "path": "../server-evidence-682b818/arm64-smoke.raw.json",
+      "bytes": 479,
+      "sha256": "a4358279d42bea4db0cb4c97838ff27e5adaee688b65d60eb781dea96ef5fb38",
+      "preservation": "Exact ARM64_SMOKE_REPORT JSON substring from the preserved decoded job log.",
+      "reportedAtUTC": "2026-10-03T17:05:42.1292322Z"
+    },
+    "amd64Smoke": {
+      "path": "../server-evidence-682b818/binary/container-smoke.json",
+      "bytes": 303,
+      "sha256": "683b19e542078f967df916384afd57365b8c12fa86506c14b1b0f651125bec03",
+      "preservation": "Exact container-smoke.json bytes from the digest-verified server artifact."
+    }
+  },
+  "observations": {
+    "capacityStatus": "passed",
+    "architecture": "amd64",
+    "elapsedSeconds": 970.969,
+    "users": 20,
+    "devices": 60,
+    "initialObjects": 100000,
+    "ciphertextBytesPerObject": 1024,
+    "cpuLimit": 1,
+    "memoryLimitGiB": 1,
+    "uid": "65532:65532",
+    "tlsCertificateAndHostnameVerified": true,
+    "rateLimitsUnchanged": true,
+    "all60BootstrapHistoriesFullyVerified": true,
+    "recoveredHistoryFullyVerified": true,
+    "opIdReplayDidNotDuplicateChanges": true,
+    "restoredSnapshotHistoryFullyVerified": true,
+    "snapshotQuickCheck": "ok",
+    "snapshotCounts": {
+      "objects": 100000,
+      "changes": 102200,
+      "operations": 102200,
+      "users": 20,
+      "devices": 60
+    },
+    "abruptRestart": {
+      "signal": "SIGKILL",
+      "count": 1,
+      "outstandingWorkers": 40,
+      "recoverySeconds": 0.226,
+      "committedResponseDiscardedBeforeRestart": true
+    },
+    "consistentBackupSeconds": 3.072,
+    "http429Responses": 810,
+    "controlledFaultTransportErrors": 39,
+    "pushSuccessfulAttemptP95Ms": 671.712,
+    "pushLogicalRequestIncludingRetriesP95Ms": 30048.001,
+    "bootstrapSuccessfulAttemptP95Ms": 330.355,
+    "bootstrapLogicalRequestIncludingRetriesP95Ms": 30268.044,
+    "bootstrapSuccessfulPages": 1600,
+    "maxSampledMemoryBytesIncludingPageCache": 503607296,
+    "resourceSampleCount": 200,
+    "arm64LifecycleSmoke": "passed",
+    "amd64LifecycleSmoke": "passed"
+  },
+  "scope": [
+    "Thin repository index; complete original reports, decoded job logs and digest-verified ZIPs are preserved in taskroot outside Git. Paths here are relative to the repository root.",
+    "Source binding uses GitHub head/merge commit trees and the matching local tree. All three job logs record the same merge checkout; artifact run/head/name and report sourceCommit were independently checked.",
+    "One synthetic isolated amd64 HTTPS CI run; real certificate/hostname verification, unchanged service rate limits, no published ports or forwarded-IP spoofing. Client work is outside the server cgroup.",
+    "HTTP 429 and fault transport errors remain in the raw report. Logical latency includes retries. Bootstrap distribution includes initial pages and concurrent fault-phase pages. No new latency acceptance threshold or production capacity promise is inferred.",
+    "Memory samples include page cache and are not exact peak RSS. Recovery/backup timings are same-epoch isolated observations, not production cross-machine RPO/RTO acceptance.",
+    "Native aarch64 ARM64 result covers lifecycle, persistence, credential revocation and consistent restore smoke only; it is not an ARM64 capacity benchmark. No local Go, Flutter, Docker or downloaded binary was executed to collect this evidence."
+  ]
+}

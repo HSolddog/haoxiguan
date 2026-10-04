@@ -1,0 +1,126 @@
+{
+  "kind": "public_synthetic_server_ci_summary",
+  "syntheticCI": {
+    "syntheticDataOnly": true,
+    "execution": "Real server executable and certificate-verified HTTPS; isolated CI load and fault fixtures; no real user data."
+  },
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "beb2b2470276ff790166c08246f7ebe50c770841",
+  "mergeCommit": "c6af042afaa9fa697396e6b33fd5a3cc6e76c1b0",
+  "rootTree": "2a43a713dc6d59386bd6ceb1e77cee0324f97521",
+  "headAndMergeTreesEqual": true,
+  "serverSourcesAndHarnessObjectsUnchangedFrom93f089b": true,
+  "run": {
+    "id": 37165327869,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327869",
+    "attempt": 1,
+    "conclusion": "success"
+  },
+  "jobs": [
+    {
+      "name": "verify",
+      "id": 111326941909,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327869/job/111326941909",
+      "conclusion": "success",
+      "decodedLogSha256": "dc33a125ac2084e52ac89dd1116cd2156617f906bc68e6a3928674d505d1a078"
+    },
+    {
+      "name": "capacity",
+      "id": 111327266017,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327869/job/111327266017",
+      "conclusion": "success",
+      "decodedLogSha256": "fbd0d075938f546f29b75477c2e8fd4297dbf02dfc6be073b429d1989ea4b975"
+    },
+    {
+      "name": "arm64-smoke",
+      "id": 111327266058,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327869/job/111327266058",
+      "conclusion": "success",
+      "decodedLogSha256": "3d2a1d5ec1ece224a603ceb3b91da691393bdaf406e3365cf1e00bd5636117cd"
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "binary",
+      "id": 11289337328,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327869/artifacts/11289337328",
+      "archiveBytes": 18457711,
+      "archiveSha256": "3e56df957e3128d90a3220d4b2271b6c5812fb727e8e8466773a7d443b36a488",
+      "githubDigestMatched": true
+    },
+    {
+      "role": "capacity",
+      "id": 11288849162,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327869/artifacts/11288849162",
+      "archiveBytes": 4926,
+      "archiveSha256": "867ab19b7a0837b609b5329180feeed3734a369058a72702743676851d5fd9a8",
+      "githubDigestMatched": true
+    }
+  ],
+  "checks": {
+    "format": true,
+    "vetAndRaceTests": true,
+    "thirdPartyNoticesCurrent": true,
+    "staticLinuxAmd64": true,
+    "staticLinuxArm64": true,
+    "binaryManifestAndElfArchitectureVerified": true,
+    "capacityHarnessTestsPassed": 8
+  },
+  "capacity": {
+    "status": "passed",
+    "architecture": "amd64",
+    "elapsedSeconds": 939.198,
+    "cpuLimit": 1,
+    "memoryLimitGiB": 1,
+    "syntheticUsers": 20,
+    "syntheticDevices": 60,
+    "initialObjects": 100000,
+    "opaqueBytesPerObject": 1024,
+    "pushConcurrency": 20,
+    "bootstrapConcurrency": 60,
+    "pushBatchSize": 100,
+    "pullPageSize": 200,
+    "sampledMemoryBytesIncludingPageCache": 502472704,
+    "resourceSamples": 193,
+    "http429Responses": 744,
+    "transportErrorsTotal": 39,
+    "faultPhaseTransportErrors": 39,
+    "healthPhaseTransportErrors": 0,
+    "recoverySeconds": 0.279,
+    "backupSeconds": 1.405,
+    "backupReopenSeconds": 66.897
+  },
+  "latencyP95Ms": {
+    "push": {
+      "allAttempts": 1485.646,
+      "successfulAttempts": 1500.368,
+      "logicalRequestsIncludingRetries": 30038.225
+    },
+    "bootstrap": {
+      "allAttempts": 563.046,
+      "successfulAttempts": 598.602,
+      "logicalRequestsIncludingRetries": 30410.888
+    }
+  },
+  "integrity": {
+    "tlsCertificateAndHostnameVerified": true,
+    "rateLimitsUnchanged": true,
+    "all60BootstrapHistoriesFullyVerified": true,
+    "recoveredHistoryFullyVerified": true,
+    "opIdReplayDidNotDuplicateChanges": true,
+    "restoredSnapshotHistoryFullyVerified": true,
+    "snapshotQuickCheck": "ok"
+  },
+  "lifecycleSmoke": {
+    "amd64": "passed",
+    "arm64": "passed"
+  },
+  "boundaries": [
+    "Source objects equal 93f089b, but every execution result and metric here comes from this new run; no previous result is reused.",
+    "Synthetic opaque payloads exclude client encryption/decryption; one source IP and no WAN simulation. Client load is outside the server resource limit.",
+    "Memory is sampled container usage including page cache, not exact peak RSS. 744 rate-limit responses and all 39 transport errors remain counted; 39 are in fault phases and 0 in health. No latency acceptance threshold is inferred.",
+    "Capacity covers amd64 only; ARM64 covers lifecycle/persistence/backup/restore, not capacity. No production capacity or cross-machine/epoch RPO/RTO claim."
+  ],
+  "sourceIndexSha256": "cec05de573677f2da20abe5cdbf24596087738de61d23722600f9ff26cb04e1e",
+  "retention": "Full original index, reports, decoded logs and digest-verified archives remain local; excluded from this public summary."
+}

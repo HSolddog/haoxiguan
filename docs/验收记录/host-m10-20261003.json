@@ -1,0 +1,258 @@
+{
+  "observedAtUtc": "2026-10-03T12:29:11.888250+00:00",
+  "sourceLocalCommit": "c176047f953834d746decf713f6460dcc5e93091",
+  "sourceTree": "82dcdd0993358cfb91aebac07a6cba9819fc8612",
+  "sourceNote": "Full regression ran on these frozen source bytes immediately before creating the code-only local commit; no subsequent Dart or product changes before this record. Remote snapshot and native results recorded separately.",
+  "environment": {
+    "host": "Authorized isolated Windows task workspace",
+    "flutter": "3.44.6",
+    "dart": "3.12.2",
+    "concurrency": 1
+  },
+  "checks": [
+    {
+      "command": "dart format --output=none --set-exit-if-changed lib test tools",
+      "files": 97,
+      "changed": 0,
+      "exitCode": 0,
+      "log": "format-m10-final.log"
+    },
+    {
+      "command": "flutter analyze --no-pub",
+      "result": "No issues found",
+      "durationSeconds": 6.4,
+      "exitCode": 0,
+      "log": "analyze-m10-final.log"
+    },
+    {
+      "command": "flutter test --no-pub --concurrency=1 --reporter expanded",
+      "passed": 265,
+      "skipped": 3,
+      "failed": 0,
+      "durationSeconds": 118,
+      "sessionId": 12114,
+      "exitCode": 0,
+      "log": "full-regression-m10-final.log"
+    },
+    {
+      "scope": "Native sync protocol/facts targets",
+      "passed": 9,
+      "failed": 0,
+      "exitCode": 0,
+      "source": "Actual captured tool stdout preserved by fixture author",
+      "log": "native-sync-fixture-target-tests.log"
+    },
+    {
+      "scope": "Native sync Python driver/build invariants",
+      "passed": 45,
+      "failed": 0,
+      "exitCode": 0,
+      "source": "Actual captured tool stdout preserved by runner author",
+      "log": "native-sync-runner-tests.log"
+    }
+  ],
+  "orientationEvidence": "host-orientation-20261003.json",
+  "sourceFiles": [
+    {
+      "path": ".github/workflows/android.yml",
+      "sha256": "8e01812e630fd9a5e2fe3bc6c91eb1958c1403378902e35a73112d37de1b115f",
+      "gitBlob": "d294fa0b6c67b99229b5ae4165809356bb9f981e"
+    },
+    {
+      "path": "lib/ui/note_editor.dart",
+      "sha256": "8de437ec6b4e7c1533cb809bc8d80117d3df85b7ba2a3ff40c6258a68278f7cb",
+      "gitBlob": "6c34856dfc05f32fa8e185bb0234352490843258"
+    },
+    {
+      "path": "lib/ui/record_editor.dart",
+      "sha256": "5764bcb14c5b53c44cb6afccf6efb2f9b4c28965ceec1f8c736021d698af7e3e",
+      "gitBlob": "e36e6dfa0464e4227535e5cbb0369c194cf0c3ee"
+    },
+    {
+      "path": "test/android_sync_acceptance_facts_test.dart",
+      "sha256": "2b9c78625cdb7f3ba8a3d97642b792c4630d0804dff6b32ff2f9e460e63947c2",
+      "gitBlob": "f1ec409e71a228116b08c14a998b91a2cfd48175"
+    },
+    {
+      "path": "test/android_sync_acceptance_protocol_test.dart",
+      "sha256": "dbd8a4d1b7a857c397b99fcbc4583d52b830611ece17c4ff69f935f66add2a97",
+      "gitBlob": "a41442ebeab8995d33a00a4355c9ab8cac6a73b8"
+    },
+    {
+      "path": "test/orientation_display_flow_test.dart",
+      "sha256": "a7b4299cebc19500a507bda746046af5ae635b4d3ce63b38d52d9e64e89fcb6a",
+      "gitBlob": "51a2594d45ac12df49528288666f28eb6343aca4"
+    },
+    {
+      "path": "tools/android_sync_acceptance.dart",
+      "sha256": "e2384f3baf4fcf68b085c82f64778f71c8c9e346ac9f91c05c65f7c47cdd6635",
+      "gitBlob": "755d7b0c3d8cd90d3d688829ec20421591b7918c"
+    },
+    {
+      "path": "tools/build_android_sync_acceptance.py",
+      "sha256": "bb4fe9a58f930f94e61a3d30da63b3252349f794fec7f4898201d278eada800d",
+      "gitBlob": "8fb5bd69bc9039d1a9bf54066e7db975b039730f"
+    },
+    {
+      "path": "tools/native_sync/facts.dart",
+      "sha256": "0996a79469cb54c84ade4bd8b8660356e5fa7070f18205a5bee6e7dd1bb1b1fa",
+      "gitBlob": "7b0d4f4d3aa46022944a745c46737381ac351292"
+    },
+    {
+      "path": "tools/native_sync/protocol.dart",
+      "sha256": "f43c9ac6cd1d117e6802424dcc862d6f0b9bac8e4b2546f7c7ef6dcd9785617a",
+      "gitBlob": "64609e4e4f4b6bd634804a6055f902666fb9d87e"
+    },
+    {
+      "path": "tools/run_android_sync_acceptance.py",
+      "sha256": "52676e89f85c4eb8774862804b63fe14fc8aeb66cd0466ecdb9cb02ae063e9bc",
+      "gitBlob": "3b5e517e79f36061a338e87f6d274119994065da"
+    },
+    {
+      "path": "tools/test_android_sync_acceptance.py",
+      "sha256": "3a7cd64684ca9d9e7d9221049d57c88bcd5f749952da6a50f70a89d74b1f5d74",
+      "gitBlob": "10406aa93165e18befb1af6c29faee79977e2a62"
+    }
+  ],
+  "logs": [
+    {
+      "path": "format-m10-final.log",
+      "bytes": 49,
+      "sha256": "669e01d51654e2514ee3cb3f01c465a9c167040c81b74178073ecdda13c29824"
+    },
+    {
+      "path": "analyze-m10-final.log",
+      "bytes": 98,
+      "sha256": "5d2bdb14a02788c617f7a4bc6938b055b1df5d124a3f5cfee57b5cfffc6144a0"
+    },
+    {
+      "path": "full-regression-m10-final.log",
+      "bytes": 121770,
+      "sha256": "c016ea5e786350778462271dda96a2402acd9486c1491fc24fe46fc1a3a4fff8"
+    },
+    {
+      "path": "native-sync-fixture-target-tests.log",
+      "bytes": 2076,
+      "sha256": "5d1bb4e1d32dff34063e5fe2a364550ff715c2f59461361b9a2e376d798ddb79"
+    },
+    {
+      "path": "native-sync-fixture-analyze.log",
+      "bytes": 404,
+      "sha256": "2e0e736ca7ce85b7336b88ccbd4ef612d936db6996047b4567b845c55f9c70ca"
+    },
+    {
+      "path": "native-sync-runner-tests.log",
+      "bytes": 8668,
+      "sha256": "130dcdf74bc48ae473c5aa18e067301ccec97325ce44e9072bc098b709af66f0"
+    },
+    {
+      "path": "native-sync-runner-checks.log",
+      "bytes": 1374,
+      "sha256": "dd1494608dc096f27d612fc26d9f670f6beee027bc1c3528c604967250146ee0"
+    }
+  ],
+  "independentReview": {
+    "result": "No remaining deterministic source blocker found",
+    "scope": "Loopback TLS, native SyncScreen/default SQLite/Keystore, SAF stage machine, highWater wire decoding, run/launch/report sequence, process group cleanup, build restoration",
+    "limitation": "Read-only review and host tests do not prove emulator success."
+  },
+  "nativeStatus": "M10 API33 addition and API35 SyncScreen end-to-end not yet run; M9 68d3507 failures retained in its separate evidence.",
+  "skips": "Two real HTTPS tests and one real TLS WebDAV test require explicitly provisioned test services; not counted as passed in this host run.",
+  "release": "No install, merge, production deployment, APK release or long-term signing secret read.",
+  "productDebugBuild": {
+    "sourceLocalCommit": "c176047f953834d746decf713f6460dcc5e93091",
+    "command": "flutter build apk --debug --no-pub",
+    "sessionId": 46471,
+    "exitCode": 0,
+    "gradleSeconds": 163.8,
+    "productPathsMatchCommittedSourceAfterBuild": true,
+    "package": "com.haoxiguan.haoxiguan",
+    "versionCode": 6,
+    "versionName": "1.2.0",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "retainedArtifactPath": "../tools/artifacts/haoxiguan-product-debug-c176047.apk",
+    "bytes": 170822653,
+    "sha256": "52a7d0009ba8a464952a4a8a46904646619cda3e75cc0bc897f60b051e354ba0",
+    "signer": "Android Debug",
+    "certificateSha256": "94fed045b73b8dd9ecff083d990d3f312373e73866b225f0715c80eca2f9118a",
+    "signatureVerificationExitCode": 0,
+    "metadataReadExitCode": 0,
+    "installed": false,
+    "published": false,
+    "logs": [
+      {
+        "path": "android-debug-build-m10.log",
+        "bytes": 991,
+        "sha256": "889489d2916906c4bfd899c5b64e0c3ef05c23d5dfd3ceaf58cf01affd629040"
+      },
+      {
+        "path": "android-debug-signature-m10.log",
+        "bytes": 311,
+        "sha256": "c2ffeaee939c30430c5623d717e867e638e91f26d14c96e0c24379622db6948c"
+      },
+      {
+        "path": "android-debug-metadata-m10.log",
+        "bytes": 5239,
+        "sha256": "a8fb5741d048495166c45b17c0d3ee4bec10be3a249f2c4d4d23fe7981ad38c8"
+      }
+    ]
+  },
+  "nativeSyncBuild": {
+    "rawEvidence": "host-native-sync-build-20261003.json",
+    "rawEvidenceSha256": "13654eb7429abb50ecc15676f5eaa2f55b297339d265033e79753542dd78166a",
+    "durationSeconds": 281.92839679995086,
+    "sessionId": 1196,
+    "exitCode": 0,
+    "productRestoredByteForByte": true,
+    "productFileCount": 65,
+    "sourceLocalCommit": "c176047f953834d746decf713f6460dcc5e93091",
+    "apks": [
+      {
+        "role": "A",
+        "build": 11001,
+        "schema": 3,
+        "package": "com.haoxiguan.haoxiguan.syncacceptance.a",
+        "bytes": 80702247,
+        "sha256": "b6996faa7d4d34b5822645f9fb1bd80a2c5e3b6906b717c8f2b23cd1a5e3cc37",
+        "certificateSha256": "94fed045b73b8dd9ecff083d990d3f312373e73866b225f0715c80eca2f9118a",
+        "signatureVerificationExitCode": 0,
+        "metadataReadExitCode": 0,
+        "logs": [
+          {
+            "path": "android-sync-signature-a-m10.log",
+            "sha256": "c2ffeaee939c30430c5623d717e867e638e91f26d14c96e0c24379622db6948c"
+          },
+          {
+            "path": "android-sync-metadata-a-m10.log",
+            "sha256": "1280874226e6ec3b80ea6ed834459d9b24313d74d39fa5eb382aa06e202de11c"
+          }
+        ]
+      },
+      {
+        "role": "B",
+        "build": 11002,
+        "schema": 3,
+        "package": "com.haoxiguan.haoxiguan.syncacceptance.b",
+        "bytes": 80702247,
+        "sha256": "9e1c98763a9516eaa6703c93321b1aa6c407d14310ea575773aa9d08d80d5a7b",
+        "certificateSha256": "94fed045b73b8dd9ecff083d990d3f312373e73866b225f0715c80eca2f9118a",
+        "signatureVerificationExitCode": 0,
+        "metadataReadExitCode": 0,
+        "logs": [
+          {
+            "path": "android-sync-signature-b-m10.log",
+            "sha256": "c2ffeaee939c30430c5623d717e867e638e91f26d14c96e0c24379622db6948c"
+          },
+          {
+            "path": "android-sync-metadata-b-m10.log",
+            "sha256": "7f8894c765b6ec511d56a4e2b08a073308962ff4ef79dc049c66c5a27daf4d65"
+          }
+        ]
+      }
+    ],
+    "installed": false,
+    "published": false,
+    "scope": "Compile/signature/package evidence only; native SyncScreen flow still needs Linux API35 execution."
+  }
+}

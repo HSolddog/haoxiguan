@@ -1,0 +1,126 @@
+{
+  "recordedUtc": "2026-10-03T18:39:51.3419691Z",
+  "baseCommit": "1fe6d18ac325a41983e6f4a496a3eb9fcf0521a3",
+  "sourceState": "Formatted working-tree compatibility-restore changes, including final brace lint fix, before root integration.",
+  "testedFileSha256": {
+    "lib/data/snapshot_codec.dart": "06d5a343a472f8e9b03f4fde589f9a594bd2aefe29aabc40499da6b70794eba6",
+    "lib/services/backup_preview.dart": "60462e9a3ba98d815e9d0e90e3f5700431cc3dc9a61bbe3bbd2911685ddeacdf",
+    "lib/state/habit_controller.dart": "7af17ee01a105ddb492739bd24a0e6eceba05075e9adf67ef3f62783b2c4d67d",
+    "lib/ui/backup_restore_dialog.dart": "5b91858c2a054069e9aa2e982f31a12a689ffb373ce917c9527c8a28533f6202",
+    "lib/ui/data_screen.dart": "414c6b919907318215eebfbe6459e8f1dd850b6c25c5b04727bf16f76d5eabda",
+    "lib/ui/legacy_restore_dialog.dart": "d6593a415aa25d6d6c283659c9c3b7e35bb6bbc870cfd61444445856ea413e0c",
+    "lib/ui/webdav_screen.dart": "13eea97aac12151f3fe10f2857dee313e37133cf10edd3b24b9b2a8f0bf60eb3",
+    "test/external_import_limits_test.dart": "836a098e311891683388e77c08737a7fdc23d36fcaed70427aa3a337b7809668",
+    "test/compatible_restore_test.dart": "d306184737d992a6a6c93446f5900979a176d2ea3bf7e8eb6f40aa76e66a8d1a",
+    "lib/services/sync_engine.dart": "56089538a94f91022d8c677ca292295741a5dc2619bade110554eb0e22544303",
+    "lib/data/sqlite_habit_repository.dart": "340ab16a06e7e184143714c798a45878a9cef954352c271ec876dfd7fbcfc90b"
+  },
+  "changedProductionFiles": [
+    "lib/data/snapshot_codec.dart (comment only)",
+    "lib/services/backup_preview.dart",
+    "lib/state/habit_controller.dart",
+    "lib/ui/backup_restore_dialog.dart",
+    "lib/ui/data_screen.dart",
+    "lib/ui/legacy_restore_dialog.dart",
+    "lib/ui/webdav_screen.dart"
+  ],
+  "changedTests": [
+    "test/external_import_limits_test.dart (two paste cases now require explicit confirmation)",
+    "test/compatible_restore_test.dart (nine new cases)"
+  ],
+  "policy": {
+    "ordinaryImport": "SnapshotCodec.decodeImport and HabitController.importJson remain strict: nonblank title at most 80 UTF-16 code units, note at most 2000.",
+    "syncIncoming": "Authenticated incoming h/title and n/text continue to use the same strict validators before shadow/cursor persistence; no compatibility option.",
+    "backupRestore": "All existing file (JSON, plaintext envelope, encrypted HGB), pasted JSON and WebDAV restore entry points use BackupPreview.forRestore. Otherwise-valid compatible snapshots report oversized text counts and maximum lengths. The existing restore dialog defaults the preserve-history checkbox to false and disables confirmation until explicitly selected.",
+    "exceptionBoundary": "Only supported legacy text lengths are exempted during explicitly chosen restoreCompatibleBackup. Shared decode retains its title <=1000 and whole-file size/structure/date/ID/version rules; cryptographic authentication remains unchanged. No text is trimmed or truncated.",
+    "versionMetadata": "JSON version and manifest metadata are not automatic permission or proof of old content. A migrated version-7 snapshot may also contain legacy text.",
+    "transaction": "Ordinary import and compatible restore share _replaceImportedSnapshot and the existing replace transaction: protect original data, restore as a new local vault, preserve source vault, roll back on failure. Subsequent editing uses current text limits.",
+    "designReconciliation": "Ordinary input/import fulfills product-planning line 44; explicitly confirmed compatible restore preserves the independent-backup/full-restore promises in product F08, version-upgrade line 76 and data/sync lines 65/75."
+  },
+  "targetedValidation": {
+    "command": "flutter test --no-pub test/compatible_restore_test.dart test/external_import_limits_test.dart test/sync_import_limits_test.dart test/backup_codec_test.dart test/data_restore_test.dart test/legacy_restore_dialog_test.dart test/schema_upgrade_test.dart test/storage_integrity_test.dart test/sync_engine_test.dart",
+    "exitCode": 0,
+    "passed": 86,
+    "newCases": 9,
+    "terminalResult": "00:17 +86: All tests passed!",
+    "log": "../compatible-restore-final-targeted.log",
+    "logSha256": "c8e36acb064c3648a633e9384b9164a3784ba6313493e45e4a4677c7b32a6fcb",
+    "sourceSnapshot": "../compatible-restore-final-tested-source.json",
+    "sourceSnapshotSha256": "07853853813376f2e92908dca05871ef03a710d07f7400edb47180749cb8140e"
+  },
+  "analyzer": {
+    "command": "flutter analyze --no-pub lib/data/snapshot_codec.dart lib/services/backup_preview.dart lib/state/habit_controller.dart lib/ui/backup_restore_dialog.dart lib/ui/data_screen.dart lib/ui/legacy_restore_dialog.dart lib/ui/webdav_screen.dart test/external_import_limits_test.dart test/compatible_restore_test.dart",
+    "exitCode": 0,
+    "result": "No issues found! (ran in 1.5s)",
+    "log": "../compatible-restore-final-analyze.log",
+    "logSha256": "87b7b9fd56af40f4a43e3c79098ff104a91fa9ba1c4cc4ad6596501af27a96be"
+  },
+  "formatting": {
+    "initialResult": "Formatted 9 owned files (5 changed); additional SQL evidence helper formatted separately.",
+    "finalResult": "Final brace fix formatted; only owned source/test files were formatted.",
+    "log": "../compatible-restore-format.log",
+    "logSha256": "d3eee12b01a522b68291c91d45a0612ab087e4197c20e28b711255a4692a84b6",
+    "finalLog": "../compatible-restore-final-format.log",
+    "finalLogSha256": "56d314280a92aac617eeeacbfee28ae9d98c01fb997840fdb15f112fcf773615"
+  },
+  "realSqliteEvidence": {
+    "origin": "NativeDatabase real SQLite files, closed and reopened before querying stored habit/note rows, schema and five table counts. All fixtures are public synthetic data; no content is included in the report.",
+    "artifact": "../compatible-restore-final-sql-evidence.json",
+    "artifactSha256": "18490994e7ec18f9af3e89dab807c8eb2c0bdd4663d1194f4201fc424d683e42",
+    "fixtures": [
+      {
+        "sourceLogicalVersion": 5,
+        "reopenedSqliteSchemaVersion": 3,
+        "rowCounts": {
+          "habits": 3,
+          "records": 3,
+          "plans": 3,
+          "daily_notes": 1,
+          "protections": 1
+        },
+        "storedTitleChars": 1000,
+        "storedNoteChars": 2001,
+        "expectedCanonicalFactsSha256": "d7a48b74774e24cd46d7b8ee6b397fa65acd76a76773a3f526a41f8896e50b03",
+        "reopenedCanonicalFactsSha256": "d7a48b74774e24cd46d7b8ee6b397fa65acd76a76773a3f526a41f8896e50b03",
+        "originalSnapshotProtected": true,
+        "ordinaryImportRejectedBeforeReplacement": true
+      },
+      {
+        "sourceLogicalVersion": 7,
+        "reopenedSqliteSchemaVersion": 3,
+        "rowCounts": {
+          "habits": 3,
+          "records": 3,
+          "plans": 3,
+          "daily_notes": 1,
+          "protections": 1
+        },
+        "storedTitleChars": 1000,
+        "storedNoteChars": 2001,
+        "expectedCanonicalFactsSha256": "d7a48b74774e24cd46d7b8ee6b397fa65acd76a76773a3f526a41f8896e50b03",
+        "reopenedCanonicalFactsSha256": "d7a48b74774e24cd46d7b8ee6b397fa65acd76a76773a3f526a41f8896e50b03",
+        "originalSnapshotProtected": true,
+        "ordinaryImportRejectedBeforeReplacement": true
+      }
+    ]
+  },
+  "meaningfulScenarios": [
+    "Legacy logical version 5 and migrated version 7 restore title 1000 and note 2001 losslessly into a fresh SQLite installation, protect previous state, receive a new vault ID, and reopen with identical normalized facts.",
+    "Ordinary import remains rejected before replacement for those same snapshots; future version, title beyond the old 1000 limit, invalid calendar date, duplicate habit ID and wrong note type cannot bypass compatibility validation.",
+    "JSON, plaintext envelope and actual encrypted-file password dialog all show an unchecked option, prohibit submission before selection, preserve original data when cancelled and restore full facts after explicit selection.",
+    "Mocked WebDAV returns authenticated compatible bytes and the shared restore preview reports required confirmation; direct strict import rejects while explicitly selected compatible restore preserves every fact.",
+    "At 200% text scale the pasted full draft and compatibility choice survive protection failure; retry restores full text and protects original state.",
+    "Wrong password remains rejected; existing authenticated-backup, sync incoming limits, cursor/outbox protection, data restore, schema migration and storage-integrity regressions also pass."
+  ],
+  "historicalValidation": {
+    "firstTargetResult": "86 passed before a semantics-preserving brace lint fix; original log/source/SQL remain separate.",
+    "initialAnalyzeResult": "One curly_braces_in_flow_control_structures info corrected; final analyzer and final 86-case run are bound to final bytes.",
+    "firstTargetLog": "../compatible-restore-targeted.log",
+    "firstSourceSnapshot": "../compatible-restore-tested-source.json",
+    "initialAnalyzeLog": "../compatible-restore-analyze.log"
+  },
+  "remainingVerification": [
+    "Root-owned full regression and integration remain pending at recording time.",
+    "The new WebDAV compatibility fixture uses MockClient; no new real-service or Android device acceptance is claimed."
+  ]
+}

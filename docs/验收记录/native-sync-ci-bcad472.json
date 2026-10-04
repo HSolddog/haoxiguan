@@ -1,0 +1,77 @@
+{
+  "sourceSha": "bcad47285acfa8a7da9d474ddd28ce704b5a61fe",
+  "sourceTree": "98ac2b7a3acd3cbbbdb0ca9cea1aa2cba8c9d446",
+  "mergeSha": "627642cd9d058a47e806d2ddacf8bd3f92e8e979",
+  "mergeTree": "98ac2b7a3acd3cbbbdb0ca9cea1aa2cba8c9d446",
+  "mergeParents": [
+    "8e390aa8bc1bf438e6f6a6c7cdf7ee10d773776a",
+    "bcad47285acfa8a7da9d474ddd28ce704b5a61fe"
+  ],
+  "runId": 37139950979,
+  "runUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37139950979",
+  "jobName": "native-sync",
+  "jobId": 111254150148,
+  "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37139950979/job/111254150148",
+  "jobStartedAt": "2026-10-03T17:28:27Z",
+  "sdkInt": 35,
+  "status": "completed",
+  "conclusion": "failure",
+  "nativePassed": false,
+  "artifacts": [
+    {
+      "id": 11280073187,
+      "name": "android-native-sync-api-35-627642cd9d058a47e806d2ddacf8bd3f92e8e979",
+      "digest": "sha256:20bec88e8fcbd60fe042f910faf84a33a9ff241d563a7efc3f9b239124839c96",
+      "sizeInBytes": 2129,
+      "localArchive": "native-sync-37139950979.zip",
+      "localDigestVerified": true,
+      "extractedDirectory": "native-sync-ci-37139950979-artifact"
+    }
+  ],
+  "actualFailure": {
+    "role": "A",
+    "lastObservedRunningStage": "boot",
+    "failedReportSequence": 2,
+    "savedErrorCode": "fixtureFailed",
+    "specificErrorCodeLostByPriorSanitizer": true,
+    "passedFlags": [
+      "realSyncScreen",
+      "productionStorage"
+    ],
+    "evidenceEmpty": true,
+    "peerRole": "B",
+    "peerStage": "awaitingSourceUpload",
+    "sdkInt": 35,
+    "emulatorExited": false
+  },
+  "fixtureArtifacts": [
+    {
+      "id": 11280495913,
+      "name": "android-sync-acceptance-627642cd9d058a47e806d2ddacf8bd3f92e8e979",
+      "sizeInBytes": 108733695,
+      "digest": "sha256:a46d1eb625157ea5b1bd771ef6bcd7b807da50ea472938898339bdce4c4a7187"
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "path": "native-sync-ci-37139950979-job.log",
+      "sha256": "e250560d89d8f2b054d14787849d781c520753f59daa58f384c6fd1983cabd0f"
+    },
+    {
+      "path": "native-sync-ci-37139950979-artifact\\driver-events.jsonl",
+      "sha256": "a5e41f67c85ff4e01880816aaf03094dd4423ebda2ebfff934c9e21575603fa2"
+    },
+    {
+      "path": "native-sync-ci-37139950979-artifact\\failure.json",
+      "sha256": "f83e7f81966cd47009c8ee9f2d91a9eb48a5b996cb3c78fd4f948cbea38aa59b"
+    },
+    {
+      "path": "native-sync-ci-37139950979-artifact\\report-a.json",
+      "sha256": "7860b47803f3100e52b9b1c145e68c9e458f5c4ab70f8a8617a343ca9407e429"
+    },
+    {
+      "path": "native-sync-ci-37139950979-artifact\\report-b.json",
+      "sha256": "e4f5662bb22c1addd482afa32e5db23b4b20e25b481cbc3e218c3e4ddea0db7a"
+    }
+  ]
+}

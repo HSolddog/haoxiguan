@@ -1,0 +1,678 @@
+{
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+  "pullRequestMergeCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+  "headRootTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "mergeRootTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "workflowRunId": 37148462714,
+  "workflowRunUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462714",
+  "workflowRunAttempt": 1,
+  "workflowConclusion": "success",
+  "workflowCompletedAtUTC": "2026-10-03T19:54:07Z",
+  "jobs": [
+    {
+      "name": "verify",
+      "id": 111277143073,
+      "conclusion": "success",
+      "allStepsSucceeded": true,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462714/job/111277143073",
+      "startedAtUTC": "2026-10-03T19:35:50Z",
+      "completedAtUTC": "2026-10-03T19:37:54Z",
+      "runnerLabels": [
+        "ubuntu-24.04"
+      ],
+      "decodedLogPath": "../server-evidence-8d28b98/server-verify-job.log",
+      "decodedLogSha256": "1e9a540a193693a9fbaaa3815ab2d27a5194957166de19855c06b744a3e8778a"
+    },
+    {
+      "name": "arm64-smoke",
+      "id": 111277506113,
+      "conclusion": "success",
+      "allStepsSucceeded": true,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462714/job/111277506113",
+      "startedAtUTC": "2026-10-03T19:37:59Z",
+      "completedAtUTC": "2026-10-03T19:38:09Z",
+      "runnerLabels": [
+        "ubuntu-24.04-arm"
+      ],
+      "decodedLogPath": "../server-evidence-8d28b98/server-arm64-job.log",
+      "decodedLogSha256": "db842bf439e9e195ad2910a3fd290dfc9536b5bcc17360572c808b6f65595c19"
+    },
+    {
+      "name": "capacity",
+      "id": 111277506157,
+      "conclusion": "success",
+      "allStepsSucceeded": true,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37148462714/job/111277506157",
+      "startedAtUTC": "2026-10-03T19:37:58Z",
+      "completedAtUTC": "2026-10-03T19:54:07Z",
+      "runnerLabels": [
+        "ubuntu-24.04"
+      ],
+      "decodedLogPath": "../server-evidence-8d28b98/server-capacity-job.log",
+      "decodedLogSha256": "8c16121e6aec8b794819a79571281cd7bd957e7fdf5399298b7f9587fd0833e5"
+    }
+  ],
+  "artifacts": {
+    "binary": {
+      "id": 11282543006,
+      "name": "sync-server-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "zipPath": "../server-evidence-8d28b98/sync-server-8d28b98.zip",
+      "zipBytes": 18457710,
+      "zipSha256": "e670993942b57f4c6566addd53e7ad0f613f8c691b6f40ca2c5fcce3e3858f0d",
+      "githubDigest": "sha256:e670993942b57f4c6566addd53e7ad0f613f8c691b6f40ca2c5fcce3e3858f0d",
+      "githubDigestMatched": true,
+      "expiresAtUTC": "2026-10-17T19:37:50Z",
+      "manifestEntriesVerified": {
+        "THIRD_PARTY_NOTICES.txt": "a416c13a1bb1d669e9ebc00b781a374152403b106d80cac2645b9c7dfbad6c08",
+        "haoxiguan-server-linux-amd64": "fa907246947672064247aaf7ccdb40b1f161ccff32f7bc46554621aefbd35687",
+        "haoxiguan-server-linux-arm64": "01fa2ad3e3f89d810d72c43afc06db42ed68f49b04f34ad7a2f3662ee580aaf5"
+      },
+      "manifestSha256": "439cade449d632b66d5bf54c2398a3a298d14835b5b0f68eb8126a78ad8f31f7",
+      "binaryArchitectureVerified": {
+        "haoxiguan-server-linux-amd64": {
+          "elfClass": 64,
+          "endianness": "little",
+          "eMachine": 62
+        },
+        "haoxiguan-server-linux-arm64": {
+          "elfClass": 64,
+          "endianness": "little",
+          "eMachine": 183
+        }
+      }
+    },
+    "capacity": {
+      "id": 11284000046,
+      "name": "server-https-capacity-52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "zipPath": "../server-evidence-8d28b98/server-capacity-8d28b98.zip",
+      "zipBytes": 4969,
+      "zipSha256": "46d67857805669f2873d42748168553d7001ccae1e60370ba2dedd88f98955b9",
+      "githubDigest": "sha256:46d67857805669f2873d42748168553d7001ccae1e60370ba2dedd88f98955b9",
+      "githubDigestMatched": true,
+      "expiresAtUTC": "2026-10-17T19:54:03Z"
+    }
+  },
+  "rawReports": {
+    "capacity": {
+      "path": "../server-evidence-8d28b98/capacity/report.json",
+      "bytes": 39917,
+      "sha256": "6bb0182d4aa6b2942119c870df36c9da59ec84a1e1a5bc1f7a8d8f43a0505396",
+      "preservation": "Exact report.json bytes from digest-verified artifact; no metadata edits."
+    },
+    "arm64": {
+      "path": "../server-evidence-8d28b98/arm64-smoke.raw.json",
+      "bytes": 479,
+      "sha256": "da0c4538cab322332e45978991b068d45e0b588511c31a883746c7359bba3c92",
+      "preservation": "Exact ARM64_SMOKE_REPORT JSON substring from preserved decoded job log.",
+      "reportedAtUTC": "2026-10-03T19:38:07.9163113Z"
+    },
+    "amd64Smoke": {
+      "path": "../server-evidence-8d28b98/binary/container-smoke.json",
+      "bytes": 303,
+      "sha256": "4e1c31782c1b38af76075edccd415b8bc0f3927c548853a782a4485208a8ed5e",
+      "preservation": "Exact container-smoke.json bytes from digest-verified server artifact."
+    }
+  },
+  "observations": {
+    "capacityStatus": "passed",
+    "architecture": "amd64",
+    "elapsedSeconds": 938.072,
+    "users": 20,
+    "devicesPerUser": 3,
+    "initialObjectsTotal": 100000,
+    "ciphertextBytesPerObject": 1024,
+    "pushConcurrency": 20,
+    "bootstrapConcurrency": 60,
+    "pushBatchSize": 100,
+    "pullPageSize": 200,
+    "cpuLimit": 1,
+    "memoryLimitGiB": 1,
+    "operatingSystem": "linux",
+    "user": "65532:65532",
+    "devices": 60,
+    "tlsCertificateAndHostnameVerified": true,
+    "rateLimitsUnchanged": true,
+    "all60BootstrapHistoriesFullyVerified": true,
+    "recoveredHistoryFullyVerified": true,
+    "opIdReplayDidNotDuplicateChanges": true,
+    "restoredSnapshotHistoryFullyVerified": true,
+    "snapshotQuickCheck": "ok",
+    "snapshotCounts": {
+      "objects": 100000,
+      "changes": 102200,
+      "operations": 102200,
+      "users": 20,
+      "devices": 60
+    },
+    "abruptRestart": {
+      "signal": "SIGKILL",
+      "count": 1,
+      "outstandingWorkers": 40,
+      "recoverySeconds": 0.266,
+      "committedResponseDiscardedBeforeRestart": true
+    },
+    "consistentBackupSeconds": 2.908,
+    "consistentBackupReopenPhaseSeconds": 68.204,
+    "http429Responses": 747,
+    "controlledFaultTransportErrors": 39,
+    "allAttemptSamples": 4770,
+    "allSuccessfulAttemptSamples": 3984,
+    "allLogicalRequestSamplesIncludingRetries": 3984,
+    "httpPhaseSamplesAndDistributions": {
+      "health": {
+        "statuses": {
+          "200": 3
+        },
+        "attemptLatency": {
+          "samples": 3,
+          "p50Ms": 43.181,
+          "p95Ms": 43.181,
+          "maxMs": 45.042
+        },
+        "successfulAttemptLatency": {
+          "samples": 3,
+          "p50Ms": 43.181,
+          "p95Ms": 43.181,
+          "maxMs": 45.042
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 3,
+          "p50Ms": 43.206,
+          "p95Ms": 43.206,
+          "maxMs": 45.081
+        }
+      },
+      "enroll": {
+        "statuses": {
+          "201": 60,
+          "429": 144
+        },
+        "attemptLatency": {
+          "samples": 204,
+          "p50Ms": 43.984,
+          "p95Ms": 48.955,
+          "maxMs": 54.353
+        },
+        "successfulAttemptLatency": {
+          "samples": 60,
+          "p50Ms": 45.921,
+          "p95Ms": 50.281,
+          "maxMs": 54.353
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 60,
+          "p50Ms": 90175.043,
+          "p95Ms": 120224.629,
+          "maxMs": 120228.379
+        }
+      },
+      "push": {
+        "statuses": {
+          "200": 1000,
+          "429": 54
+        },
+        "attemptLatency": {
+          "samples": 1054,
+          "p50Ms": 498.197,
+          "p95Ms": 1380.343,
+          "maxMs": 3521.139
+        },
+        "successfulAttemptLatency": {
+          "samples": 1000,
+          "p50Ms": 527.05,
+          "p95Ms": 1395.071,
+          "maxMs": 3521.139
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 1000,
+          "p50Ms": 572.347,
+          "p95Ms": 30043.407,
+          "maxMs": 31756.513
+        }
+      },
+      "bootstrap": {
+        "statuses": {
+          "200": 1600,
+          "429": 374,
+          "transport_error": 20
+        },
+        "attemptLatency": {
+          "samples": 1994,
+          "p50Ms": 182.971,
+          "p95Ms": 527.297,
+          "maxMs": 1054.571
+        },
+        "successfulAttemptLatency": {
+          "samples": 1600,
+          "p50Ms": 218.916,
+          "p95Ms": 564.659,
+          "maxMs": 1054.571
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 1600,
+          "p50Ms": 300.04,
+          "p95Ms": 30405.496,
+          "maxMs": 31121.825
+        }
+      },
+      "refresh_before_fault": {
+        "statuses": {
+          "200": 40,
+          "429": 76
+        },
+        "attemptLatency": {
+          "samples": 116,
+          "p50Ms": 44.163,
+          "p95Ms": 56.644,
+          "maxMs": 62.068
+        },
+        "successfulAttemptLatency": {
+          "samples": 40,
+          "p50Ms": 45.196,
+          "p95Ms": 54.738,
+          "maxMs": 59.217
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 40,
+          "p50Ms": 60148.611,
+          "p95Ms": 120219.424,
+          "maxMs": 120225.748
+        }
+      },
+      "concurrent_update": {
+        "statuses": {
+          "200": 200,
+          "transport_error": 19,
+          "429": 19
+        },
+        "attemptLatency": {
+          "samples": 238,
+          "p50Ms": 92.091,
+          "p95Ms": 354.959,
+          "maxMs": 623.657
+        },
+        "successfulAttemptLatency": {
+          "samples": 200,
+          "p50Ms": 114.651,
+          "p95Ms": 363.87,
+          "maxMs": 623.657
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 200,
+          "p50Ms": 188.061,
+          "p95Ms": 30033.948,
+          "maxMs": 30269.176
+        }
+      },
+      "lost_response_replay": {
+        "statuses": {
+          "200": 1
+        },
+        "attemptLatency": {
+          "samples": 1,
+          "p50Ms": 3.758,
+          "p95Ms": 3.758,
+          "maxMs": 3.758
+        },
+        "successfulAttemptLatency": {
+          "samples": 1,
+          "p50Ms": 3.758,
+          "p95Ms": 3.758,
+          "maxMs": 3.758
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 1,
+          "p50Ms": 3.864,
+          "p95Ms": 3.864,
+          "maxMs": 3.864
+        }
+      },
+      "concurrent_delete": {
+        "statuses": {
+          "200": 20
+        },
+        "attemptLatency": {
+          "samples": 20,
+          "p50Ms": 44.402,
+          "p95Ms": 125.643,
+          "maxMs": 168.178
+        },
+        "successfulAttemptLatency": {
+          "samples": 20,
+          "p50Ms": 44.402,
+          "p95Ms": 125.643,
+          "maxMs": 168.178
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 20,
+          "p50Ms": 44.493,
+          "p95Ms": 125.703,
+          "maxMs": 168.234
+        }
+      },
+      "acknowledged_creation_replay": {
+        "statuses": {
+          "200": 20
+        },
+        "attemptLatency": {
+          "samples": 20,
+          "p50Ms": 2.647,
+          "p95Ms": 3.078,
+          "maxMs": 3.783
+        },
+        "successfulAttemptLatency": {
+          "samples": 20,
+          "p50Ms": 2.647,
+          "p95Ms": 3.078,
+          "maxMs": 3.783
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 20,
+          "p50Ms": 2.68,
+          "p95Ms": 3.109,
+          "maxMs": 3.812
+        }
+      },
+      "recovered_bootstrap": {
+        "statuses": {
+          "200": 1040,
+          "429": 80
+        },
+        "attemptLatency": {
+          "samples": 1120,
+          "p50Ms": 99.92,
+          "p95Ms": 163.535,
+          "maxMs": 276.883
+        },
+        "successfulAttemptLatency": {
+          "samples": 1040,
+          "p50Ms": 102.694,
+          "p95Ms": 166.388,
+          "maxMs": 276.883
+        },
+        "logicalRequestLatencyIncludingRetries": {
+          "samples": 1040,
+          "p50Ms": 107.199,
+          "p95Ms": 30117.172,
+          "maxMs": 30237.031
+        }
+      }
+    },
+    "phaseElapsedSeconds": {
+      "enroll_20_users_60_devices": {
+        "elapsedSeconds": 274.369
+      },
+      "create_100000_objects": {
+        "elapsedSeconds": 122.693
+      },
+      "bootstrap_60_devices": {
+        "elapsedSeconds": 217.737
+      },
+      "refresh_before_interruption": {
+        "elapsedSeconds": 150.342
+      },
+      "concurrent_update_delete_interruption_recovery": {
+        "elapsedSeconds": 95.986
+      },
+      "consistent_backup_reopen": {
+        "elapsedSeconds": 68.204
+      }
+    },
+    "maxSampledMemoryBytesIncludingPageCache": 501891072,
+    "resourceSampleCount": 193,
+    "arm64LifecycleSmoke": "passed",
+    "amd64LifecycleSmoke": "passed",
+    "arm64SmokeReport": {
+      "status": "passed",
+      "uid": "65532:65532",
+      "cpuLimit": 1,
+      "memoryLimitGiB": 1,
+      "readOnlyRoot": true,
+      "persistentRestart": true,
+      "consistentBackupRestore": true,
+      "restoredCredentialsRevoked": true,
+      "opaqueObjectPreserved": true,
+      "idleMemoryOnlyNotLoadBenchmark": "2.625MiB / 1GiB",
+      "sourceCommit": "52f393a5ffebd981dcccaf7a49df0e10b1bdb511",
+      "runnerArchitecture": "ARM64",
+      "kernelArchitecture": "aarch64",
+      "imageArchitecture": "arm64",
+      "scope": "native ARM64 lifecycle smoke; not an ARM64 capacity benchmark"
+    },
+    "amd64SmokeReport": {
+      "status": "passed",
+      "uid": "65532:65532",
+      "cpuLimit": 1,
+      "memoryLimitGiB": 1,
+      "readOnlyRoot": true,
+      "persistentRestart": true,
+      "consistentBackupRestore": true,
+      "restoredCredentialsRevoked": true,
+      "opaqueObjectPreserved": true,
+      "idleMemoryOnlyNotLoadBenchmark": "5.379MiB / 1GiB"
+    },
+    "sampleMeaning": {
+      "push": "1000 logical successful batches of 100 objects, 100000 created objects.",
+      "bootstrap": "1600 successful pages = 1500 initial pages (60 devices x 25 pages) + 100 concurrent fault-phase pages (20 devices x 5 pages).",
+      "recovered_bootstrap": "1040 successful pages = 520 post-restart pages + 520 restored-snapshot pages (20 users x 26 pages per pass).",
+      "latency": "Attempt summaries include 429 and controlled transport errors; successfulAttempt summaries exclude them; logicalRequest summaries include retry/wait time."
+    },
+    "mode": "real Go executable, host-to-container HTTPS over isolated Docker bridge; no published ports",
+    "imageId": "sha256:117a9561867d40ad6335a259ee669b3ab725794ccb46a7eeddc5bf492b2c4782",
+    "idleResource": {
+      "phase": "idle_empty",
+      "elapsedSeconds": 8.669,
+      "memoryBytesIncludingPageCache": 6819840,
+      "cpuUsageNs": 38369000
+    },
+    "diskBytes": {
+      "empty": {
+        "/data/haoxiguan.sqlite": 4096,
+        "/data/haoxiguan.sqlite-wal": 98912,
+        "/data/haoxiguan.sqlite-shm": 32768,
+        "/data/snapshot.sqlite": 0,
+        "/data/snapshot.sqlite-wal": 0
+      },
+      "enroll_20_users_60_devices": {
+        "/data/haoxiguan.sqlite": 4096,
+        "/data/haoxiguan.sqlite-wal": 2731592,
+        "/data/haoxiguan.sqlite-shm": 32768,
+        "/data/snapshot.sqlite": 0,
+        "/data/snapshot.sqlite-wal": 0
+      },
+      "create_100000_objects": {
+        "/data/haoxiguan.sqlite": 451764224,
+        "/data/haoxiguan.sqlite-wal": 4581472,
+        "/data/haoxiguan.sqlite-shm": 32768,
+        "/data/snapshot.sqlite": 0,
+        "/data/snapshot.sqlite-wal": 0
+      },
+      "bootstrap_60_devices": {
+        "/data/haoxiguan.sqlite": 454021120,
+        "/data/haoxiguan.sqlite-wal": 4581472,
+        "/data/haoxiguan.sqlite-shm": 32768,
+        "/data/snapshot.sqlite": 0,
+        "/data/snapshot.sqlite-wal": 0
+      },
+      "refresh_before_interruption": {
+        "/data/haoxiguan.sqlite": 454021120,
+        "/data/haoxiguan.sqlite-wal": 4581472,
+        "/data/haoxiguan.sqlite-shm": 32768,
+        "/data/snapshot.sqlite": 0,
+        "/data/snapshot.sqlite-wal": 0
+      },
+      "concurrent_update_delete_interruption_recovery": {
+        "/data/haoxiguan.sqlite": 459300864,
+        "/data/haoxiguan.sqlite-wal": 4581472,
+        "/data/haoxiguan.sqlite-shm": 32768,
+        "/data/snapshot.sqlite": 0,
+        "/data/snapshot.sqlite-wal": 0
+      },
+      "consistent_backup": {
+        "/data/haoxiguan.sqlite": 459300864,
+        "/data/haoxiguan.sqlite-wal": 0,
+        "/data/haoxiguan.sqlite-shm": 0,
+        "/data/snapshot.sqlite": 457269248,
+        "/data/snapshot.sqlite-wal": 0
+      },
+      "consistent_backup_reopen": {
+        "/data/haoxiguan.sqlite": 459300864,
+        "/data/haoxiguan.sqlite-wal": 0,
+        "/data/haoxiguan.sqlite-shm": 0,
+        "/data/snapshot.sqlite": 457269248,
+        "/data/snapshot.sqlite-wal": 2142432
+      }
+    },
+    "resourceLimits": [
+      "synthetic opaque payloads; excludes client encryption/decryption",
+      "one shared source IP; no WAN latency or bandwidth simulation",
+      "sampled Docker memory includes page cache, not exact peak RSS",
+      "x86_64 CI observations are not ARM64 or production capacity promises",
+      "latencies are observations, without an invented pass threshold"
+    ],
+    "completeVerification": {
+      "all60BootstrapHistoriesFullyVerified": true,
+      "faultCredentialMinimumLifetimeSeconds": 748.711,
+      "abruptRestart": {
+        "signal": "SIGKILL",
+        "count": 1,
+        "outstandingWorkers": 40,
+        "recoverySeconds": 0.266,
+        "committedResponseDiscardedBeforeRestart": true
+      },
+      "recoveredHistoryFullyVerified": true,
+      "opIdReplayDidNotDuplicateChanges": true,
+      "consistentBackupSeconds": 2.908,
+      "snapshotQuickCheck": "ok",
+      "snapshotCounts": {
+        "objects": 100000,
+        "changes": 102200,
+        "operations": 102200,
+        "users": 20,
+        "devices": 60
+      },
+      "restoredSnapshotHistoryFullyVerified": true,
+      "restoreScope": "isolated same-epoch backup reopen; production cross-machine/epoch rotation covered separately"
+    },
+    "readOnlyRoot": true,
+    "dockerNetworkInternal": true,
+    "publishedPorts": false,
+    "clientOutsideServerResourceLimit": true,
+    "forwardedIPHeadersSent": false,
+    "tlsServerIdentity": "localhost"
+  },
+  "verifyChecks": {
+    "format": true,
+    "vet": true,
+    "raceTests": true,
+    "thirdPartyNoticesCurrent": true,
+    "staticLinuxAmd64": true,
+    "staticLinuxArm64": true,
+    "binaryManifestAndElfArchitectureVerified": true,
+    "capacityHarnessTests": 8
+  },
+  "localMatchingCommit": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "sourceObjects": {
+    ".github/workflows/server.yml": {
+      "type": "blob",
+      "sha1": "7a36bc067e9c354751f6f950c9eeebb535f42a5c",
+      "unchangedFrom5249d5d": true,
+      "bytes": 5921,
+      "sha256": "a7ffd25e5ae34dfe860814eab455a85e40852fbdebd5706a65c9d2a6a5580a33"
+    },
+    "server": {
+      "type": "tree",
+      "sha1": "7dc1f34291c7b93cf157bffcf364207b8d3350d9",
+      "unchangedFrom5249d5d": true
+    },
+    "tools/container_smoke.py": {
+      "type": "blob",
+      "sha1": "866e4894a887f7148d83a7dad5af6469752f3fc7",
+      "unchangedFrom5249d5d": true,
+      "bytes": 6106,
+      "sha256": "02e8889f4e57aada6e641b425fd509da5d2436098732394adfce23f5a9c22baf"
+    },
+    "tools/generate_server_notices.py": {
+      "type": "blob",
+      "sha1": "94c6c3ce2402c704e10dbf30d7d7782bfe68a9f3",
+      "unchangedFrom5249d5d": true,
+      "bytes": 2689,
+      "sha256": "daf206bfacbc32e1de71962afc2cf6f132e21d74ec458b5ddddb1e86938bcd51"
+    },
+    "tools/server_https_capacity.py": {
+      "type": "blob",
+      "sha1": "c373a7aba08009e28f555a0c67e38111318a5ec0",
+      "unchangedFrom5249d5d": true,
+      "bytes": 28799,
+      "sha256": "910c55e495aecf3a55951bf6465dea8f70022af2e5e437d7e3ed220a062d14a4"
+    },
+    "tools/sync_test_certificate.go": {
+      "type": "blob",
+      "sha1": "df8ae592c00dda24da8f1a84a63cb3fe82885c64",
+      "unchangedFrom5249d5d": true,
+      "bytes": 1510,
+      "sha256": "7538f7b41bb9a8004751dc64f3c3dad9560ea540f016dedb43f254526c8d4b3e"
+    },
+    "tools/test_server_https_capacity.py": {
+      "type": "blob",
+      "sha1": "0e9a5c5eeceaf5dc564935d13fa202f082da25f8",
+      "unchangedFrom5249d5d": true,
+      "bytes": 5596,
+      "sha256": "2df16ae4067c2d9527c27a237d38d989c11319e43996bae587df7a0702f5bb09"
+    }
+  },
+  "metadata": {
+    "workflowRun": {
+      "path": "../server-evidence-8d28b98/workflow-run.json",
+      "bytes": 12825,
+      "sha256": "31724a77ef64e265f2cf2c04ed86497c26516f76c368f8bf4e4917b1e432c9e3"
+    },
+    "headCommit": {
+      "path": "../server-evidence-8d28b98/head-commit.json",
+      "bytes": 1364,
+      "sha256": "7790f63c40579b38d8921a2e8b083008b07f3cbaf7f9de7b0b126f418dec9497"
+    },
+    "mergeCommit": {
+      "path": "../server-evidence-8d28b98/merge-commit.json",
+      "bytes": 2608,
+      "sha256": "7cffeaa8d915d4e6452e1b0f1ecacf90a5ff7d2c2335bcaf1fde29a7a9e11811"
+    },
+    "jobs": {
+      "path": "../server-evidence-8d28b98/jobs-metadata.json",
+      "bytes": 8004,
+      "sha256": "a6e3fc3c9c6fa40883c1e7810689dc7a7a0c73d6f1ff90377ae54c95b230ac04"
+    },
+    "artifacts": {
+      "path": "../server-evidence-8d28b98/artifacts-metadata.json",
+      "bytes": 1446,
+      "sha256": "37a0ccdf223a009e1460d0810aa44af82c4bc2798b0c52d1059ba9dc593a2e97"
+    },
+    "sourceObjects": {
+      "path": "../server-evidence-8d28b98/source-objects.json",
+      "bytes": 2195,
+      "sha256": "ab72efa3bbe2fd763c260108851082cf38e054930b2011d37ffcb738ebb19dad"
+    },
+    "decodedLogsTransport": {
+      "path": "../server-evidence-8d28b98/downloaded-job-logs.final.json",
+      "bytes": 73908,
+      "sha256": "4a088627725a23da8993faa69a16b78b436a63cf0f5373ff7b43db768379e3fc"
+    }
+  },
+  "previousEvidenceBoundary": {
+    "workflowRunId": 37144662441,
+    "headCommit": "5249d5d2c41e26a28192a3b2cfa8ed25891277cc",
+    "path": "docs/验收记录/server-ci-5249d5d.json",
+    "reusedAsCurrentExecution": false,
+    "sourceObjectsUnchanged": true
+  },
+  "scope": [
+    "Thin repository index; original reports, exact decoded job logs and digest-verified ZIPs are preserved in taskroot outside Git. Paths are relative to repository root.",
+    "GitHub source and merge root trees equal the specified local commit root tree. All three new logs bind the recorded head source to the exact merge checkout. Server and relevant CI harness objects are unchanged from the previous source snapshot, but all execution observations below come from this new run.",
+    "Independent synthetic isolated amd64 HTTPS CI execution: 1 CPU, 1 GiB, UID 65532:65532, 20 users, 60 devices, 100000 initial 1024-byte opaque objects. Certificate and hostname verified; internal Docker bridge, no published ports, unchanged service limits, no forwarded-IP spoofing. Client work is outside server cgroup; client encryption/decryption and WAN conditions are excluded.",
+    "Original HTTP 429 and controlled-fault transport errors remain in report. Exact sample counts and separate attempt/success/logical distributions are retained here. No latency acceptance threshold or production capacity promise is inferred.",
+    "Memory is sampled Docker usage including page cache, not exact peak RSS. Recovery/backup/reopen timings are isolated same-epoch observations, not production cross-machine RPO/RTO acceptance.",
+    "Native aarch64 ARM64 evidence covers non-root read-only lifecycle, persistence, consistent backup/restore, restored credential revocation and opaque-object preservation; it is not an ARM64 capacity benchmark.",
+    "Only GitHub CI collected executable evidence. No local Go, Flutter, AVD, Docker or downloaded server binary was executed. No CI workflow was triggered, rerun, cancelled or modified during this audit."
+  ]
+}

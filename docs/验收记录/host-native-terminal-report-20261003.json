@@ -1,0 +1,129 @@
+{
+  "kind": "Host-only static terminal-report protection; not included in Android8d CI source",
+  "observedAtUtc": "2026-10-03T19:51:51.326343+00:00",
+  "testExecutionBaseCommit": "2ddec9eb6cc9d62e7743d08e7d3ab95aaa092c97",
+  "baseTree": "750b5ba60c11b5445f14faa71bde3e88e38de05e",
+  "currentAndroidSource": "8d28b98f36b2a2362647d85976340b6b30d0f892",
+  "currentAndroidRun": 37148462733,
+  "includedInCurrentAndroidSource": false,
+  "frozenDeltaFiles": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\android_acceptance.dart",
+      "bytes": 61786,
+      "sha256": "29619d7b1ba987b3976b8e72ad4c134dc5aed1d7dcb27e8285bdf6f8753ad32e"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\test\\android_acceptance_checkpoint_test.dart",
+      "bytes": 13817,
+      "sha256": "e6623b79818f8b41606609be6b982f1095191beeecd48bd7e3406e26eb44c6f6"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\test\\android_acceptance_owner_test.dart",
+      "bytes": 13170,
+      "sha256": "788c38f5f73ce989932983a086d41a23544e6faa7d570188752ec38c46011bf1"
+    }
+  ],
+  "exactDelta": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-source.patch",
+    "bytes": 8796,
+    "sha256": "f67ff9779ea16872e2c029df254e7f7783db001a60eeeac367c5d34a4b5c23a5"
+  },
+  "frozenSchema2Repository": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\haoxiguan\\tools\\fixtures\\schema2_repository.dart.txt",
+    "bytes": 19326,
+    "sha256": "6b3f9879ef38e4c874f2bd1efe310d2307e44ec5b48f823604d91f68dc69e3dc"
+  },
+  "commands": [
+    {
+      "command": "flutter test --no-pub test/android_acceptance_protocol_test.dart test/android_acceptance_checkpoint_test.dart test/android_acceptance_restore_sqlite_test.dart test/android_acceptance_owner_test.dart",
+      "exitCode": 0,
+      "passed": 16,
+      "groups": {
+        "protocol": 3,
+        "checkpoint": 4,
+        "realRestoreSQLite": 3,
+        "owner": 6
+      },
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-target-frozen.log",
+        "bytes": 9288,
+        "sha256": "88f804bbffc7820239cd63cec976218754a6e6cf5a239acd0aa303f3ac589de7"
+      }
+    },
+    {
+      "command": "flutter analyze --no-pub tools/android_acceptance.dart test/android_acceptance_protocol_test.dart test/android_acceptance_checkpoint_test.dart test/android_acceptance_restore_sqlite_test.dart test/android_acceptance_owner_test.dart",
+      "exitCode": 0,
+      "result": "No issues found",
+      "seconds": 8.4,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-analyze-frozen.log",
+        "bytes": 98,
+        "sha256": "9014a8edebaea18da444678aa60542de2edf10f3e9ef20283b88406b1873f8e9"
+      }
+    },
+    {
+      "command": "dart format tools/android_acceptance.dart test/android_acceptance_checkpoint_test.dart test/android_acceptance_owner_test.dart",
+      "exitCode": 0,
+      "files": 3,
+      "changed": 0,
+      "log": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-format-final.log",
+        "bytes": 48,
+        "sha256": "c359f9d4895e1f2fd67354fa174c1c86651cb97ca2eab14a615137600d9e80a8"
+      }
+    }
+  ],
+  "implementation": [
+    "After atomic process owner claim and before widgets, repository opening or report writes, read the retained report only.",
+    "A passed report is observed only if isolated package/build/phase/nonce/previousRunId and valid runId/PID/entryId exactly bind the original host authorization; bytes remain unchanged without requiring a checkpoint.",
+    "Any retained failed report stops entry without changing its bytes or first error, across PID/build/nonce differences. This does not promote a failed status to passed.",
+    "A nonmatching passed report still follows existing strict predecessor validation; a valid next host phase/new nonce may advance, while same-run wrong identity refuses replay.",
+    "Running reports receive no terminal exemption and still require their exact persisted checkpoint; missing or unrelated continuation remains fail closed.",
+    "Report package is explicit and SettingsCheckpoint decoder rejects a foreign package. Frozen schema2 repository and business baseline format are unchanged."
+  ],
+  "newTest": "Fresh IsolateNameServer registry plus real report file simulates a cold PID observing passed; checks full raw bytes unchanged, no checkpoint dependency, wrong package/build/phase/nonce/previous/runId/PID/entry rejection, failed bytes preserved, and running missing checkpoint rejection.",
+  "realSqliteRegressionRaw": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-host-frozen\\cancel-275ba80b\\evidence.json",
+      "bytes": 17997,
+      "sha256": "f1e0049cf089187f3fb4aa5bdb26a6566b0319c3dbec08e895d3ee49eea8a113"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-host-frozen\\checkpoint-sqlite-c21bf759\\evidence.json",
+      "bytes": 86015,
+      "sha256": "ebc5b41ea3c4e432d9f2cf770be4be9f7c1596008f1ef8dcc327a1ff7890c590"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-host-frozen\\confirm-reopen-f6bd4c70\\evidence.json",
+      "bytes": 50500,
+      "sha256": "2ca5bec4a654604f596a7b81efb837352eb572cfa0ebae5d2c970755325c2165"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-host-frozen\\reminder-storage-9c535e25\\evidence.json",
+      "bytes": 93360,
+      "sha256": "c98efc168895bf96e288afa390c34af8cc2c2fbde04dee2ab007f26da33e984a"
+    }
+  ],
+  "retainedEarlierIterationLogs": [
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-format.log",
+      "bytes": 196,
+      "sha256": "6c358336060471ad314c4a97bb43e80464fdf36f17e1f4c98e6e3bd639358646"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-target.log",
+      "bytes": 9568,
+      "sha256": "225e9f3fcc821eef539b02a11ee6741dc8fa1ed18d308e86172eacc4f00322cb"
+    },
+    {
+      "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-8d28b98\\terminal-analyze.log",
+      "bytes": 311,
+      "sha256": "34195cddc4932fa80b7242786934eaeb1e30f23bfa5ded1486fd00b898fdad52"
+    }
+  ],
+  "boundaries": [
+    "This patch responds to a deterministic static terminal-report edge; it is not attributed to any actual Android8d failure.",
+    "Current Android8d source and all original evidence remain pinned to the previous exact tree, without this patch.",
+    "Host fresh-registry simulation is not an Android process/device test; future exact-source native CI must validate the changed entry behavior."
+  ]
+}

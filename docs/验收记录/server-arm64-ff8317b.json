@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "uid": "65532:65532",
+  "cpuLimit": 1,
+  "memoryLimitGiB": 1,
+  "readOnlyRoot": true,
+  "persistentRestart": true,
+  "consistentBackupRestore": true,
+  "restoredCredentialsRevoked": true,
+  "opaqueObjectPreserved": true,
+  "idleMemoryOnlyNotLoadBenchmark": "2.914MiB / 1GiB",
+  "sourceCommit": "e33ec3badd6d848a1405551e2814d47439d55cfd",
+  "runnerArchitecture": "ARM64",
+  "kernelArchitecture": "aarch64",
+  "imageArchitecture": "arm64",
+  "scope": "native ARM64 lifecycle smoke; not an ARM64 capacity benchmark",
+  "ciEvidence": {
+    "headCommit": "ff8317ba1f1b79a561028f6462f27cee7ef33f46",
+    "mergeCommit": "e33ec3badd6d848a1405551e2814d47439d55cfd",
+    "runId": 37116729859,
+    "jobId": 111185228718,
+    "jobConclusion": "success",
+    "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37116729859/job/111185228718",
+    "reportSource": "ARM64_SMOKE_REPORT JSON in completed job log",
+    "reportedAtUTC": "2026-10-03T10:34:39.9051009Z",
+    "rawLogReportJson": "{\"status\":\"passed\",\"uid\":\"65532:65532\",\"cpuLimit\":1,\"memoryLimitGiB\":1,\"readOnlyRoot\":true,\"persistentRestart\":true,\"consistentBackupRestore\":true,\"restoredCredentialsRevoked\":true,\"opaqueObjectPreserved\":true,\"idleMemoryOnlyNotLoadBenchmark\":\"2.914MiB / 1GiB\",\"sourceCommit\":\"e33ec3badd6d848a1405551e2814d47439d55cfd\",\"runnerArchitecture\":\"ARM64\",\"kernelArchitecture\":\"aarch64\",\"imageArchitecture\":\"arm64\",\"scope\":\"native ARM64 lifecycle smoke; not an ARM64 capacity benchmark\"}",
+    "rawLogReportSha256": "b363b0d94b2f6ac58c8dd82bedbbcff04d1ead5c969004216249db8be28de343"
+  }
+}

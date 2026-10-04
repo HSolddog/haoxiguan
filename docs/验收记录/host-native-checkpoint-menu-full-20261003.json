@@ -1,0 +1,75 @@
+{
+  "recordedAtUtc": "2026-10-03",
+  "scope": "Host regression for frozen notification checkpoint and typed native sync menu fixture; not Android runtime acceptance",
+  "baseLocalCommit": "2e7942ff46adb2446fc6e7b7331ccf9eca5af039",
+  "baseRemoteCommit": "809045fd41259241dcfa40130d2c81589fbf3dc0",
+  "sourceFiles": [
+    {
+      "path": "tools/android_acceptance.dart",
+      "sha256": "17f980d713998e0c80d978703d9f4f39b31293970a9bd5d6b5bffc952a879f3c"
+    },
+    {
+      "path": "tools/android_sync_acceptance.dart",
+      "sha256": "85fd4495a87233a2157098b85dd7239e5e45d296914e0f8a15cd7ce28a8ad20b"
+    },
+    {
+      "path": "tools/run_android_acceptance.py",
+      "sha256": "738f5bfac8b0ee71b4b6b7c1e7a66e0178a5bd099811f759b2c2404d326e47c5"
+    },
+    {
+      "path": "tools/test_android_acceptance.py",
+      "sha256": "c5b6b0bbf8d11757d332ca2c03ccd7fda9cdcfd50c0314e52ff640ca3fef1738"
+    },
+    {
+      "path": "test/android_acceptance_checkpoint_test.dart",
+      "sha256": "1b7e248949dacddd63a2a14bc34b0bb27e74df91c8d043c39504b6840e89272d"
+    },
+    {
+      "path": "test/android_sync_acceptance_menu_test.dart",
+      "sha256": "4e90f3f3d99d3b21f10a6731b76145e8ea0df7464762a65a91693e6c68279602"
+    }
+  ],
+  "checks": {
+    "format": {
+      "command": "dart format --output=none --set-exit-if-changed lib test tools",
+      "files": 105,
+      "changed": 0,
+      "exitCode": 0
+    },
+    "analyze": {
+      "command": "flutter analyze --no-pub",
+      "issues": 0,
+      "seconds": 10.1,
+      "exitCode": 0
+    },
+    "test": {
+      "command": "flutter test --no-pub --concurrency=1 --reporter expanded",
+      "passed": 289,
+      "skipped": 3,
+      "failed": 0,
+      "exitCode": 0
+    }
+  },
+  "logs": [
+    {
+      "taskRootRelativePath": "native-checkpoint-menu-full-format.log",
+      "bytes": 50,
+      "sha256": "dac8fb68cb145cb6ca22308604493b5714ba9e750ed15312c55e381a3ac781cc"
+    },
+    {
+      "taskRootRelativePath": "native-checkpoint-menu-full-analyze.log",
+      "bytes": 99,
+      "sha256": "ea33dbff1cab172cc9af5766fcf8fdd2d0e3254219965dea4ef7f552eb9d1a22"
+    },
+    {
+      "taskRootRelativePath": "native-checkpoint-menu-full-tests.log",
+      "bytes": 126769,
+      "sha256": "f4d8f589d2181e56e3d926bf59529dd9466cf1ce6ba2ba41e4ba31af6186b224"
+    }
+  ],
+  "limitations": [
+    "Three real-service tests skipped by default; source809 CI separately executed them before these fixture-only changes.",
+    "Android API24/33/35/36 checkpoint and complete native-sync must execute in next CI.",
+    "Compatible restoration of exported historical over-limit text is still being implemented."
+  ]
+}
