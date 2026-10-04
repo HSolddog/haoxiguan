@@ -1,6 +1,8 @@
 # 固定签名测试包 1.2.1+7
 
-2026-10-04，用户另行批准在 Windows 本机使用现有长期密钥制作并发布测试包。正常产品 `assembleRelease` 已完成（746.1秒、退出码0）；本页记录本地完成状态，GitHub上传尚未执行，等待用户批准本机浏览器授权。没有创建第二套密钥、上传凭据、合并PR或部署服务。
+2026-10-04，用户另行批准在 Windows 本机使用现有长期密钥制作并发布测试包。正常产品 `assembleRelease` 已完成（746.1秒、退出码0），新的[固定签名预发布](https://github.com/HSolddog/haoxiguan/releases/tag/v1.2.1-test.20261004.fixed-signing)已发布。已从公开下载链接读回全部三个附件，字节数和SHA256与本地及GitHub摘要一致。没有创建第二套密钥、上传签名秘密、合并PR或部署服务。
+
+[直接下载APK](https://github.com/HSolddog/haoxiguan/releases/download/v1.2.1-test.20261004.fixed-signing/haoxiguan-1.2.1-build7-fixed-release.apk)。
 
 | 项目 | 本轮实际结果 |
 | --- | --- |
@@ -18,4 +20,4 @@
 
 首次换装请先在旧应用导出并核对备份。旧临时/debug签名不同，Android可能要求卸载旧版再安装；卸载会删除旧应用本机数据，未确认备份前不要卸载。新应用恢复时先核对预览，再明确确认。以后沿用固定密钥并递增versionCode，继续正常更新。长期密钥只在本机已有保护入口使用；异机备份仍由用户另行保管，本次未完成或验证异机密钥备份。
 
-GitHub将只上传APK、build-info.json和SHA256SUMS到新的prerelease，保留旧release和附件。发布状态及最终链接另行记录，不以本地APK完成代表上传已完成。
+GitHub仅上传APK、build-info.json和SHA256SUMS到新的prerelease（release ID 402864050，tag `v1.2.1-test.20261004.fixed-signing`），tag指向上述构建源码；旧release ID 402262545及原附件摘要保持不变。用户批准的官方GitHub CLI授权已完成，凭据保存在Windows安全keyring，未启用明文存储。见[发布与公开下载回验记录](验收记录/fixed-release-published-20261004.json)。构建摘要中的`publicationStatusAtPreparation`保留发布前准备时的历史状态，不代表当前上传状态。
