@@ -1,5 +1,6 @@
 """Run native no-cloud persistence and same-certificate upgrade on a disposable AVD."""
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -14,6 +15,9 @@ import xml.etree.ElementTree as ET
 package = 'com.haoxiguan.haoxiguan.acceptance'
 app_label = '好习惯隔离验收'
 activity = package + '/com.haoxiguan.haoxiguan.MainActivity'
+product_package = 'com.haoxiguan.haoxiguan'
+product_label = '好习惯'
+product_activity = product_package + '/' + product_package + '.MainActivity'
 process = None
 
 
@@ -39,6 +43,129 @@ def find_aapt(sdk):
     if not candidates:
         raise RuntimeError('Android SDK build-tools aapt is required to verify fixture identity')
     return candidates[-1]
+
+
+def verify_page_size(image):
+    global device_page_size
+    # The SDK tag alone is not runtime evidence. Retain the exact command bytes,
+    # including failed/partial reads, before deciding whether APKs may be installed.
+    stem = args.output / 'device-page-size'
+    try:
+        value = command(adb, 'shell', 'getconf', 'PAGE_SIZE', check=False, timeout=15)
+    except subprocess.TimeoutExpired as error:
+        stem.with_suffix('.txt').write_bytes(error.output or b'')
+        stem.with_suffix('.stderr.txt').write_bytes(error.stderr or b'')
+        raise
+    stem.with_suffix('.txt').write_bytes(value.stdout)
+    stem.with_suffix('.stderr.txt').write_bytes(value.stderr)
+    page_size = None
+    if value.returncode == 0 and not value.stderr and re.fullmatch(rb'[1-9][0-9]*\r?\n?', value.stdout):
+        page_size = int(value.stdout)
+    event('device-page-size', image=image, api=device_api, serial=adb_serial,
+          expected=args.expected_page_size, actual=page_size, exit=value.returncode)
+    image_directory = sdk / image.replace(';', '/')
+    for name in ('package.xml', 'source.properties'):
+        path = image_directory / name
+        if not path.is_file():
+            raise RuntimeError(f'installed system image metadata is missing: {name}')
+        (args.output / ('system-image-' + name)).write_bytes(path.read_bytes())
+    if page_size != args.expected_page_size:
+        raise RuntimeError(f'AVD PAGE_SIZE {page_size!r} does not match required {args.expected_page_size}; APK installation refused')
+    device_page_size = page_size
+    properties = {}
+    for name in ('ro.build.version.sdk', 'ro.product.cpu.abi', 'ro.build.fingerprint'):
+        properties[name] = shell('getprop', name).strip()
+    evidence = {'image': image, 'api': device_api, 'serial': adb_serial,
+                'pageSize': page_size, 'expectedPageSize': args.expected_page_size,
+                'properties': properties}
+    (args.output/'device-environment.json').write_text(json.dumps(evidence, indent=2)+'\n', encoding='utf-8')
+    print(f'{adb_serial}: getconf PAGE_SIZE={page_size}; image={image}')
+
+
+def verify_product_apk(apk, aapt):
+    # Only the checked-out source version and exact normal application identity
+    # authorize this optional startup check on the disposable AVD.
+    pubspec = (Path(__file__).resolve().parent.parent/'pubspec.yaml').read_text(encoding='utf-8')
+    versions = re.findall(r'^version: ([0-9]+\.[0-9]+\.[0-9]+)\+([1-9][0-9]*)\s*$', pubspec, re.MULTILINE)
+    if len(versions) != 1:
+        raise ValueError('source pubspec has no unambiguous product version')
+    version_name, version_code = versions[0]
+    badging = command(str(aapt), 'dump', 'badging', str(apk), timeout=30).stdout.decode('utf-8')
+    (args.output/'product-apk-badging.txt').write_text(badging, encoding='utf-8')
+    identities = re.findall(r"^package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'(?: |$)", badging, re.MULTILINE)
+    labels = re.findall(r"^application-label:'([^']*)'$", badging, re.MULTILINE)
+    launches = re.findall(r"^launchable-activity: name='([^']+)'(?: |$)", badging, re.MULTILINE)
+    if (identities != [(product_package, version_code, version_name)] or labels != [product_label] or
+            launches != [product_package + '.MainActivity'] or 'application-debuggable\n' not in badging):
+        raise ValueError('APK does not have the exact source product package, version, label, debug flag and activity')
+    evidence = {'package': product_package, 'versionCode': version_code, 'versionName': version_name,
+                'label': product_label, 'activity': product_activity,
+                'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}
+    (args.output/'product-apk-identity.json').write_text(json.dumps(evidence, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+    event('product-apk-identity', **evidence)
+    return evidence
+
+
+def product_read(stem, *values, timeout=15):
+    path = args.output/stem
+    try:
+        value = command(adb, *values, check=False, timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        path.with_suffix('.txt').write_bytes(error.output or b'')
+        path.with_suffix('.stderr.txt').write_bytes(error.stderr or b'')
+        raise
+    path.with_suffix('.txt').write_bytes(value.stdout)
+    path.with_suffix('.stderr.txt').write_bytes(value.stderr)
+    value.check_returncode()
+    if value.stderr:
+        raise RuntimeError(f'{stem} produced unexpected stderr')
+    return value.stdout.decode('utf-8')
+
+
+def verify_product_startup(apk, aapt):
+    identity = verify_product_apk(apk, aapt)
+    install_mode = ['--no-streaming'] if args.api == 24 else []
+    installed = product_read('product-install', 'install', *install_mode, str(apk), timeout=180)
+    if re.findall(r'^Success$', installed, re.MULTILINE) != ['Success']:
+        raise RuntimeError('product install did not report exactly one Success')
+    launch = product_read('product-start', 'shell', 'am', 'start', '-W', '-n', product_activity, timeout=90)
+    statuses = re.findall(r'^Status: (.*)$', launch, re.MULTILINE)
+    activities = re.findall(r'^Activity: (.*)$', launch, re.MULTILINE)
+    if (statuses != ['ok'] or len(activities) != 1 or activities[0] not in
+            (product_activity, product_package + '/.MainActivity') or
+            re.search(r'^(?:Error|Warning):', launch, re.MULTILINE) or
+            not re.search(r'^Complete\s*$', launch, re.MULTILINE)):
+        raise RuntimeError('product am start -W did not prove one successful exact Activity launch')
+    observations = []
+    original = None
+    for attempt in range(3):
+        if attempt:
+            time.sleep(2)
+        require_emulator('product startup')
+        processes = product_read(f'product-processes-{attempt}', 'shell', *process_list_command())
+        identities = process_identities(processes)
+        primary = {pid: row['user'] for pid, row in identities.items() if row['name'] == product_package}
+        if len(primary) != 1 or original is not None and primary != original:
+            raise RuntimeError('product startup did not retain one live original application process')
+        original = primary
+        product_pid = next(iter(primary))
+        log = product_read(f'product-logcat-{attempt}', 'logcat', '-b', 'all', '-d',
+                           '-v', 'threadtime', f'--pid={product_pid}', timeout=30)
+        if re.search(r'FATAL EXCEPTION|Fatal signal|Abort message:|JNI DETECTED ERROR|UnsatisfiedLinkError', log):
+            raise RuntimeError('product startup log contains a Java, JNI or native crash')
+        observations.append({'pid': product_pid, 'user': primary[product_pid], 'time': time.monotonic()})
+    activities = product_read('product-activities', 'shell', 'dumpsys', 'activity', 'activities')
+    resumed = re.findall(r'^\s*(?:mResumedActivity|mTopResumedActivity|topResumedActivity)\s*[:=].*?\s' + re.escape(product_package) +
+                         r'/(?:\.MainActivity|' + re.escape(product_package) + r'\.MainActivity)(?:\s|\})', activities, re.MULTILINE)
+    if not resumed:
+        raise RuntimeError('product Activity is not observed resumed after startup')
+    (args.output/'product-startup.png').write_bytes(command(adb, 'exec-out', 'screencap', '-p').stdout)
+    evidence = {**identity, 'status': 'passed', 'pageSize': device_page_size,
+                'observations': observations, 'nativeCrashObserved': False}
+    (args.output/'product-startup.json').write_text(json.dumps(evidence, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+    event('product-startup-passed', package=product_package, pid=product_pid)
+    # Close the normal product before the isolated fixture's UI/Settings checks.
+    shell('am', 'force-stop', product_package)
 
 
 def require_emulator(stage):
@@ -258,6 +385,7 @@ background_requested = set()
 environment_events = []
 ui_stages = {}
 device_api = None
+device_page_size = None
 
 
 def verify_device_api():
@@ -885,15 +1013,23 @@ def collect_diagnostics(emulator, log, runtime_process=None, runtime_log=None):
 
 
 def main(argv=None):
-    global args, sdk, adb, adb_serial, process
+    global args, sdk, adb, adb_serial, process, device_page_size
     parser = argparse.ArgumentParser()
     parser.add_argument('--api', type=int, required=True)
     parser.add_argument('--apks', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--port', type=int, default=5554)
+    parser.add_argument('--image-target', choices=('default', 'google_apis_ps16k'), default='default')
+    parser.add_argument('--expected-page-size', type=int, choices=(4096, 16384))
+    parser.add_argument('--product-apk', type=Path)
     args = parser.parse_args(argv)
     if args.port < 5554 or args.port > 5682 or args.port % 2:
         parser.error('--port must be an even emulator console port from 5554 to 5682')
+    if args.image_target == 'google_apis_ps16k' and (args.api < 35 or args.expected_page_size != 16384):
+        parser.error('google_apis_ps16k requires API 35+ and --expected-page-size 16384')
+    if args.product_apk is not None and not args.product_apk.is_file():
+        parser.error('--product-apk must be an existing APK file')
+    device_page_size = None
     sdk = Path(os.environ.get('ANDROID_HOME') or os.environ['ANDROID_SDK_ROOT'])
     adb = str(sdk / 'platform-tools/adb')
     adb_serial = f'emulator-{args.port}'
@@ -904,10 +1040,16 @@ def main(argv=None):
     os.environ['ANDROID_USER_HOME'] = str(android_user)
     os.environ['ANDROID_EMULATOR_HOME'] = str(android_user)
     os.environ['ANDROID_AVD_HOME'] = str(android_user/'avd')
-    image = f'system-images;android-{args.api};default;x86_64'
+    image = f'system-images;android-{args.api};{args.image_target};x86_64'
     manager = sdk / 'cmdline-tools/latest/bin'
-    subprocess.run([str(manager / 'sdkmanager'), 'emulator', 'platform-tools', image], input='y\n' * 100,
-                   text=True, check=True, timeout=600)
+    install_command = [str(manager / 'sdkmanager'), 'emulator', 'platform-tools', image]
+    if args.expected_page_size is not None:
+        event('sdk-system-image-install', image=image, command=install_command)
+        with (args.output/'sdkmanager-install.log').open('wb') as sdk_log:
+            subprocess.run(install_command, input=('y\n' * 100).encode(), stdout=sdk_log,
+                           stderr=subprocess.STDOUT, check=True, timeout=600)
+    else:
+        subprocess.run(install_command, input='y\n' * 100, text=True, check=True, timeout=600)
     require_unused_serial()
     subprocess.run([str(manager / 'avdmanager'), 'create', 'avd', '--force', '--name', 'acceptance',
                     '--package', image, '--device', 'pixel_4'], input='no\n', text=True, check=True, timeout=60)
@@ -937,6 +1079,8 @@ def main(argv=None):
         else:
             raise TimeoutError('emulator did not boot')
         verify_device_api()
+        if args.expected_page_size is not None:
+            verify_page_size(image)
         # Keep evidence while the guest is alive; a final logcat cannot recover
         # anything once its ADB transport or emulator has died.
         runtime_log = (args.output/'runtime-live.log').open('wb')
@@ -967,6 +1111,8 @@ def main(argv=None):
             shell('settings', 'put', 'global', setting, '0')
         results = []
         aapt = find_aapt(sdk)
+        if args.product_apk is not None:
+            verify_product_startup(args.product_apk, aapt)
         for build in (10001, 10002):
             apk = args.apks/f'acceptance-{build}.apk'
             assert apk.exists(), apk

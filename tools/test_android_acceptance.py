@@ -4,6 +4,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -304,6 +305,168 @@ class AndroidAcceptanceDriverTest(unittest.TestCase):
         for value in ('35', 'unknown', ''):
             with self.subTest(value=value), patch.object(driver, 'shell', return_value=value), self.assertRaises(RuntimeError):
                 driver.verify_device_api()
+
+    def image_metadata(self):
+        driver.sdk = Path(self.directory.name)/'sdk'
+        image = 'system-images;android-35;google_apis_ps16k;x86_64'
+        directory = driver.sdk/image.replace(';', '/')
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory/'package.xml').write_bytes(b'<package revision="5"/>\n')
+        (directory/'source.properties').write_bytes(b'AndroidVersion.ApiLevel=35\nSystemImage.Abi=x86_64\n')
+        driver.args.expected_page_size = 16384
+        driver.device_api = 35
+        driver.device_page_size = None
+        return image
+
+    def test_page_size_requires_actual_exact_read_and_preserves_image_metadata(self):
+        image = self.image_metadata()
+        with patch.object(driver, 'command', return_value=result(b'16384\n')) as command, patch.object(driver, 'shell', return_value='35'):
+            driver.verify_page_size(image)
+        self.assertEqual(command.call_args.args, ('adb', 'shell', 'getconf', 'PAGE_SIZE'))
+        self.assertEqual((driver.args.output/'device-page-size.txt').read_bytes(), b'16384\n')
+        self.assertEqual((driver.args.output/'system-image-package.xml').read_bytes(), b'<package revision="5"/>\n')
+        self.assertEqual(json.loads((driver.args.output/'device-environment.json').read_text())['pageSize'], 16384)
+        self.assertEqual(driver.device_page_size, 16384)
+        self.assertEqual(self.events()[-1]['image'], image)
+
+    def test_wrong_failed_ambiguous_or_noisy_page_size_cannot_pass(self):
+        image = self.image_metadata()
+        for reply in (result(b'4096\n'), result(b'16384\n', code=1), result(b'16384\n', stderr=b'error\n'),
+                      result(b'16384 4096\n'), result(b'warning\n16384\n'), result(b' 16384\n'), result(b'')):
+            with self.subTest(reply=reply), patch.object(driver, 'command', return_value=reply), patch.object(driver, 'shell') as shell:
+                with self.assertRaisesRegex(RuntimeError, 'APK installation refused'):
+                    driver.verify_page_size(image)
+                self.assertEqual((driver.args.output/'device-page-size.txt').read_bytes(), reply.stdout)
+                self.assertEqual((driver.args.output/'device-page-size.stderr.txt').read_bytes(), reply.stderr)
+                shell.assert_not_called()
+        self.assertIsNone(driver.device_page_size)
+
+    def test_page_size_timeout_keeps_raw_partial_output(self):
+        image = self.image_metadata()
+        failure = subprocess.TimeoutExpired(['adb'], 15, output=b'163', stderr=b'closed')
+        with patch.object(driver, 'command', side_effect=failure), self.assertRaises(subprocess.TimeoutExpired):
+            driver.verify_page_size(image)
+        self.assertEqual((driver.args.output/'device-page-size.txt').read_bytes(), b'163')
+        self.assertEqual((driver.args.output/'device-page-size.stderr.txt').read_bytes(), b'closed')
+
+    def test_16k_target_cannot_omit_the_runtime_gate_or_use_an_old_api(self):
+        base = ['--api', '35', '--apks', self.directory.name, '--output', self.directory.name,
+                '--image-target', 'google_apis_ps16k']
+        for values in (base, base + ['--expected-page-size', '4096'],
+                       [value if value != '35' else '24' for value in base] + ['--expected-page-size', '16384']):
+            with self.subTest(values=values), patch.dict(os.environ, {}, clear=True), patch.object(driver.subprocess, 'run') as run:
+                with patch('sys.stderr', new=io.StringIO()), self.assertRaises(SystemExit):
+                    driver.main(values)
+                run.assert_not_called()
+
+    def test_main_rejects_a_4k_guest_before_any_apk_or_product_installation(self):
+        self.image_metadata()
+        env = {'ANDROID_HOME': str(driver.sdk)}
+        def reply(*values, **kwargs):
+            return result(b'4096\n' if 'getconf' in values else b'1\n')
+        def cleanup(process, log, *others):
+            log.close()
+        with patch.dict(os.environ, env), patch.object(driver.Path, 'cwd', return_value=Path(self.directory.name)), \
+                patch.object(driver.subprocess, 'run'), patch.object(driver.subprocess, 'Popen', return_value=driver.process), \
+                patch.object(driver, 'command', side_effect=reply) as command, \
+                patch.object(driver, 'require_unused_serial'), patch.object(driver, 'shell', return_value='35'), \
+                patch.object(driver, 'find_aapt') as aapt, patch.object(driver, 'verify_product_startup') as product, \
+                patch.object(driver, 'collect_diagnostics', side_effect=cleanup):
+            with self.assertRaisesRegex(RuntimeError, 'APK installation refused'):
+                driver.main(['--api', '35', '--apks', self.directory.name, '--output', self.directory.name,
+                             '--image-target', 'google_apis_ps16k', '--expected-page-size', '16384'])
+        aapt.assert_not_called()
+        product.assert_not_called()
+        self.assertFalse(any('install' in call.args for call in command.call_args_list))
+        self.assertEqual((driver.args.output/'device-page-size.txt').read_bytes(), b'4096\n')
+
+    def product_badging(self):
+        raw = (Path(driver.__file__).resolve().parent.parent/'pubspec.yaml').read_text(encoding='utf-8')
+        name, code = re.findall(r'^version: ([0-9]+\.[0-9]+\.[0-9]+)\+([1-9][0-9]*)\s*$', raw, re.MULTILINE)[0]
+        return (f"package: name='{driver.product_package}' versionCode='{code}' versionName='{name}'\n"
+                f"application-label:'{driver.product_label}'\napplication-debuggable\n"
+                f"launchable-activity: name='{driver.product_package}.MainActivity' label='{driver.product_label}'\n")
+
+    def test_product_apk_requires_current_source_identity_and_never_accepts_fixture(self):
+        apk = Path(self.directory.name)/'product.apk'
+        apk.write_bytes(b'synthetic-apk')
+        badging = self.product_badging()
+        with patch.object(driver, 'command', return_value=result(badging.encode())):
+            identity = driver.verify_product_apk(apk, 'aapt')
+        self.assertEqual(identity['package'], driver.product_package)
+        self.assertRegex(identity['sha256'], r'^[0-9a-f]{64}$')
+        rejected = (badging.replace(driver.product_package, driver.package),
+                    badging.replace(driver.product_label, 'Other app'),
+                    re.sub(r"versionCode='[0-9]+'", "versionCode='10002'", badging),
+                    re.sub(r"versionName='[^']+'", "versionName='0.0.0'", badging),
+                    badging.replace('application-debuggable\n', ''), badging.replace('.MainActivity', '.OtherActivity'),
+                    badging + f"application-label:'{driver.product_label}'\n")
+        for other in rejected:
+            with self.subTest(badging=other), patch.object(driver, 'command', return_value=result(other.encode())), self.assertRaises(ValueError):
+                driver.verify_product_apk(apk, 'aapt')
+        self.assertEqual(len(self.events()), 1)
+
+    def product_response(self, *values, **kwargs):
+        if 'install' in values:
+            return result(b'Performing Streamed Install\nSuccess\n')
+        if 'start' in values:
+            return result(f'Status: ok\nActivity: {driver.product_package}/.MainActivity\nComplete\n'.encode())
+        if 'ps' in values:
+            return result(process_list(3001).replace(driver.package.encode(), driver.product_package.encode()))
+        if 'logcat' in values:
+            return result(b'07-13 10:30:00.000 3001 3001 I flutter : first frame\n')
+        if 'activities' in values:
+            return result(f'  topResumedActivity=ActivityRecord{{abc u0 {driver.product_package}/.MainActivity t3}}\n'.encode())
+        if 'screencap' in values:
+            return result(b'png')
+        self.fail(f'unexpected product command: {values}')
+
+    def test_product_startup_requires_launch_pid_crash_check_resumed_activity_and_evidence(self):
+        driver.device_page_size = 16384
+        identity = {'package': driver.product_package}
+        with patch.object(driver, 'verify_product_apk', return_value=identity), \
+                patch.object(driver, 'command', side_effect=self.product_response) as command, \
+                patch.object(driver.time, 'sleep'), patch.object(driver, 'shell') as shell:
+            driver.verify_product_startup(Path('product.apk'), 'aapt')
+        saved = json.loads((driver.args.output/'product-startup.json').read_text())
+        self.assertEqual(saved['pageSize'], 16384)
+        self.assertEqual([row['pid'] for row in saved['observations']], [3001, 3001, 3001])
+        self.assertFalse(saved['nativeCrashObserved'])
+        self.assertEqual((driver.args.output/'product-startup.png').read_bytes(), b'png')
+        shell.assert_called_once_with('am', 'force-stop', driver.product_package)
+        self.assertEqual(sum('--pid=3001' in call.args for call in command.call_args_list), 3)
+
+    def test_product_startup_rejects_failed_launch_crash_pid_replacement_or_wrong_foreground(self):
+        cases = {
+            'install': result(b'Failure [INSTALL_FAILED_INVALID_APK]\n'),
+            'start': result(b'Error: Activity class does not exist.\n'),
+            'logcat': result(b'Fatal signal 11 (SIGSEGV), pid 3001\n'),
+            'ps': result(process_list(3001).replace(driver.package.encode(), b'other.application')),
+            'activities': result(b'topResumedActivity=ActivityRecord{abc u0 other.application/.MainActivity t3}\n'),
+        }
+        for broken, value in cases.items():
+            def reply(*values, **kwargs):
+                return value if broken in values else self.product_response(*values, **kwargs)
+            with self.subTest(broken=broken), patch.object(driver, 'verify_product_apk', return_value={}), \
+                    patch.object(driver, 'command', side_effect=reply), patch.object(driver.time, 'sleep'), \
+                    patch.object(driver, 'shell') as shell, self.assertRaises(RuntimeError):
+                driver.verify_product_startup(Path('product.apk'), 'aapt')
+            shell.assert_not_called()
+            self.assertFalse((driver.args.output/'product-startup.json').exists())
+
+    def test_product_pid_restart_cannot_pass_as_stable_startup(self):
+        snapshots = 0
+        def reply(*values, **kwargs):
+            nonlocal snapshots
+            if 'ps' in values:
+                snapshots += 1
+                return result(process_list(3000 + snapshots).replace(driver.package.encode(), driver.product_package.encode()))
+            return self.product_response(*values, **kwargs)
+        with patch.object(driver, 'verify_product_apk', return_value={}), patch.object(driver, 'command', side_effect=reply), \
+                patch.object(driver.time, 'sleep'), patch.object(driver, 'shell') as shell:
+            with self.assertRaisesRegex(RuntimeError, 'original application process'):
+                driver.verify_product_startup(Path('product.apk'), 'aapt')
+        shell.assert_not_called()
 
     def test_actual_apk_identity_is_closed_to_the_isolated_label_package_and_build(self):
         apk = Path(self.directory.name)/'acceptance-10002.apk'
