@@ -1,0 +1,35 @@
+{
+  "sourceHead": "68d35077d57c5b9d6331e43f6b476f2ebdb3079d",
+  "mergeCommit": "49b9504253357dffc6452686f8b4d80e015b946e",
+  "runId": 37122017331,
+  "sanitization": "Keep every com.android.settings node and its parent hierarchy, text, identity, bounds and switch state. Remove non-Settings nodes and unconsumed metadata attributes; no Settings labels or control state changed.",
+  "fixtures": [
+    {
+      "api": 24,
+      "runId": "1791030108309507",
+      "artifactId": 11274266465,
+      "originalPath": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-68d3507\\native-24\\ui-1791030108309507-awaitingNotificationDeny.xml",
+      "originalSha256": "83353f6eb3733aa543a8d8e371d6d22d42e5fac37f7dc964659f264e017c2bd0",
+      "fixture": "tools\\fixtures\\native-settings-api24-app-info.xml",
+      "fixtureSha256": "44134e961f0e6ddd37df923b16e045117b1f344d4838553799af85840e09108a"
+    },
+    {
+      "api": 35,
+      "runId": "1791030162080999",
+      "artifactId": 11273887365,
+      "originalPath": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-68d3507\\native-35\\ui-1791030162080999-awaitingNotificationDeny.xml",
+      "originalSha256": "f882405f8950d0fe1a71de3ca51e4ecc09000c0f7b03aa7c81e029684e861b11",
+      "fixture": "tools\\fixtures\\native-settings-api35-notifications.xml",
+      "fixtureSha256": "e557d82cae5bd7c3849b1573044a967aa31615c6f31f6105aaa0cf5f1ceda66e"
+    },
+    {
+      "api": 36,
+      "runId": "1791030128478865",
+      "artifactId": 11273548015,
+      "originalPath": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-68d3507\\native-36\\ui-1791030128478865-awaitingNotificationDeny.xml",
+      "originalSha256": "aec030b00225d6a865a44ead35f405e3e95523386eda17df812b0acb4a8b6275",
+      "fixture": "tools/fixtures/native-settings-api36-notifications.xml",
+      "fixtureSha256": "c86ebb154bc6a5f87bb1b2a109882ea55b5e9d2078859808caf4aa025ec31d02"
+    }
+  ]
+}

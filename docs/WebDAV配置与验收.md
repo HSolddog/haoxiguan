@@ -37,6 +37,18 @@ flutter test test/webdav_integration_test.dart \
 
 测试默认账号仅是本地测试夹具的公开合成账号。真实服务用 `TEST_DAV_USER` 和 `TEST_DAV_PASSWORD` 指定专门测试凭据，不能提交真实凭据。测试生成随机空间并只删除自身创建的文件。
 
+## 当前源码的第二种实现补验（2026-10-04，进行中）
+
+上节2026-10-02的Nextcloud记录仅对应旧源码。当前ca85d82已完成官方Nextcloud 33.0.9-apache隔离容器4/4与WsgiDAV TLS 1/1，均实际执行零跳过；版本/镜像摘要、源码146个Git blob哈希、原始日志/归档均核证。恢复元数据、历史超长文本完整保留、删除权限探针及生产保留策略结果见[最终定向证据](验收记录/design-targeted-ci-ca85d82.json)。这份新结果不沿用旧源码的通过结论。
+
 ## 未完成的 Android 验收
 
 后台任务、Keystore、Wi-Fi 限制、长期省电后的补做仍需 Android 系统和真机验证。实验室服务测试不等同于所有 Nextcloud/NAS 配置均兼容，也不代表移动端已完成整套 B01–B04。iOS 后台及文件能力后续单独适配。
+
+### 当前条件请求修复的验证范围
+
+首轮官方 Nextcloud 33.0.9-apache 的启用探针及普通/兼容 SQLite 恢复通过，保留夹具的 marker 条件 PUT 返回 412。仅布尔诊断证实压缩 GET 的强 ETag 含 `-gzip` 后缀；这与 [Apache 官方的压缩 ETag 规则](https://httpd.apache.org/docs/2.4/mod/mod_deflate.html#deflatealteretag)一致。客户端请求 identity 表示以取得未压缩表示的 ETag，条件删除和替换保护均保留。原始值不被改写，不通过去掉条件解决冲突。
+
+31项客户端/权限探针和10项隔离运行器回归通过；最终同源码的Nextcloud与WsgiDAV TLS均已实际执行通过。Nextcloud生产prune真实完成两次原If-Match条件DELETE204，旧marker/data404，最新及其他设备副本精确恢复；普通/兼容恢复的11表保护与重开保持一致。首轮和诊断的失败归档见 [摘要](验收记录/design-targeted-first-runs-20261004.json)。此类实验室结果不代表任意 NAS 配置或 Android 长期后台已验收。
+
+最终执行、源码与归档绑定见[定向CI](https://github.com/HSolddog/haoxiguan/actions/runs/37170134852)和[证据摘要](验收记录/design-targeted-ci-ca85d82.json)。首轮412发生在测试时间夹具准备、未进入生产prune；原失败持续保留。当前修复请求identity表示，不改写ETag、不取消条件、不改服务配置。

@@ -1,3 +1,14 @@
+class QuickRecordUndo {
+  const QuickRecordUndo({
+    required this.habitId,
+    required this.after,
+    this.before,
+  });
+  final String habitId;
+  final RecordEntry? before;
+  final RecordEntry after;
+}
+
 class RecordEntry {
   const RecordEntry({
     required this.id,

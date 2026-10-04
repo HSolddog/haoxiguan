@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../models/record_entry.dart';
 import '../state/habit_controller.dart';
+import 'unsaved_changes_guard.dart';
 
 Future<void> showRecordEditor(
   BuildContext context,
@@ -29,11 +30,23 @@ class _RecordEditor extends StatefulWidget {
 }
 
 class _RecordEditorState extends State<_RecordEditor> {
+  final _guard = GlobalKey<UnsavedChangesGuardState>();
   final _value = TextEditingController();
   final _seconds = TextEditingController(text: '0');
   bool _replace = false;
   bool _saving = false;
+  bool _saved = false;
   String? _error;
+  bool get _dirty => _value.text.isNotEmpty || _seconds.text != '0' || _replace;
+
+  @override
+  void initState() {
+    super.initState();
+    _value.addListener(_draftChanged);
+    _seconds.addListener(_draftChanged);
+  }
+
+  void _draftChanged() => setState(() => _saved = false);
   @override
   void dispose() {
     _value.dispose();
@@ -42,6 +55,20 @@ class _RecordEditorState extends State<_RecordEditor> {
   }
 
   Future<void> _delete(Habit habit, RecordEntry entry) async {
+    if (!mounted || _saving) return;
+    final route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
+    var answered = false;
+    void answer(BuildContext dialogContext, bool confirmed) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, confirmed);
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -49,17 +76,19 @@ class _RecordEditorState extends State<_RecordEditor> {
         content: const Text('只撤销这次记录，当天的其他记录和备注保留。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => answer(context, false),
             child: const Text('取消'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => answer(context, true),
             child: const Text('撤销这条记录'),
           ),
         ],
       ),
     );
-    if (!mounted || confirmed != true) return;
+    if (!mounted || confirmed != true || _saving || route?.isCurrent != true) {
+      return;
+    }
     setState(() => _saving = true);
     final saved = await widget.controller.deleteEntry(habit.id, entry.id);
     if (!mounted) return;
@@ -76,10 +105,16 @@ class _RecordEditorState extends State<_RecordEditor> {
     final entries = habit.entries
         .where((e) => !e.deleted && e.date == dateKey(widget.date))
         .toList();
-    return AlertDialog(
-      title: Text('${habit.title} · ${dateKey(widget.date)}'),
-      content: SingleChildScrollView(
-        child: Column(
+    return UnsavedChangesGuard(
+      key: _guard,
+      dirty: _dirty,
+      isDirty: () => _dirty,
+      isSaving: () => _saving,
+      saving: _saving,
+      child: AlertDialog(
+        scrollable: true,
+        title: Text('${habit.title} · ${dateKey(widget.date)}'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text('目前 ${habit.valueLabel(habit.valueOn(widget.date))}'),
@@ -92,12 +127,16 @@ class _RecordEditorState extends State<_RecordEditor> {
               selected: {_replace},
               onSelectionChanged: _saving
                   ? null
-                  : (v) => setState(() => _replace = v.first),
+                  : (v) => setState(() {
+                      _replace = v.first;
+                      _saved = false;
+                    }),
             ),
             const SizedBox(height: 12),
             TextField(
               key: const Key('record-value-field'),
               controller: _value,
+              enabled: !_saving,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -110,8 +149,17 @@ class _RecordEditorState extends State<_RecordEditor> {
             if (duration)
               TextField(
                 controller: _seconds,
+                enabled: !_saving,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: '秒（0–59）'),
+              ),
+            if (_saved)
+              Semantics(
+                liveRegion: true,
+                child: const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('记录已保存。', key: Key('record-save-success')),
+                ),
               ),
             if (_replace)
               const Padding(
@@ -142,56 +190,67 @@ class _RecordEditorState extends State<_RecordEditor> {
               ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          key: const Key('save-record-button'),
-          onPressed: _saving
-              ? null
-              : () async {
-                  int value;
-                  try {
-                    if (duration) {
-                      final minutes = int.parse(_value.text.trim());
-                      final seconds = int.parse(_seconds.text.trim());
-                      if (minutes < 0 || seconds < 0 || seconds > 59) {
-                        throw const FormatException('时长无效');
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : () => _guard.currentState?.leave(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const Key('save-record-button'),
+            onPressed: _saving
+                ? null
+                : () async {
+                    if (!mounted || _saving) return;
+                    final route = ModalRoute.of(context);
+                    if (route?.isCurrent != true) return;
+                    int value;
+                    try {
+                      if (duration) {
+                        final minutes = int.parse(_value.text.trim());
+                        final seconds = int.parse(_seconds.text.trim());
+                        if (minutes < 0 || seconds < 0 || seconds > 59) {
+                          throw const FormatException('时长无效');
+                        }
+                        value = minutes * 60 + seconds;
+                      } else {
+                        value = parseFixed(_value.text, scale: habit.scale);
                       }
-                      value = minutes * 60 + seconds;
-                    } else {
-                      value = parseFixed(_value.text, scale: habit.scale);
+                      if (value == 0 && !_replace) {
+                        throw const FormatException('增加的数值需大于 0');
+                      }
+                    } on FormatException catch (error) {
+                      setState(() => _error = error.message);
+                      return;
                     }
-                    if (value == 0 && !_replace) {
-                      throw const FormatException('增加的数值需大于 0');
-                    }
-                  } on FormatException catch (error) {
-                    setState(() => _error = error.message);
-                    return;
-                  }
-                  setState(() => _saving = true);
-                  final saved = await widget.controller.addValue(
-                    habit.id,
-                    widget.date,
-                    value,
-                    replaceTotal: _replace,
-                  );
-                  if (!context.mounted) return;
-                  if (saved) {
-                    Navigator.pop(context);
-                  } else {
+                    setState(() => _saving = true);
+                    final saved = await widget.controller.addValue(
+                      habit.id,
+                      widget.date,
+                      value,
+                      replaceTotal: _replace,
+                    );
+                    if (!mounted || !context.mounted) return;
                     setState(() {
                       _saving = false;
-                      _error = '保存未完成，请重试。';
+                      _error = saved ? null : '保存未完成，请重试。';
                     });
-                  }
-                },
-          child: Text(_saving ? '正在保存' : '保存'),
-        ),
-      ],
+                    if (saved && route?.isCurrent == true) {
+                      Navigator.pop(context);
+                    } else if (saved && route?.isActive == true) {
+                      // The submitted amount is committed even while another
+                      // route covers this editor. Retain it with a fresh draft.
+                      _value.clear();
+                      _seconds.text = '0';
+                      setState(() {
+                        _replace = false;
+                        _saved = true;
+                      });
+                    }
+                  },
+            child: Text(_saving ? '正在保存' : '保存'),
+          ),
+        ],
+      ),
     );
   }
 }

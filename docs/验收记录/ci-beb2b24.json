@@ -1,0 +1,465 @@
+{
+  "kind": "public_synthetic_native_matrix_summary",
+  "scope": "Synthetic data in isolated GitHub CI emulators. Original ZIPs, reports, XML and runtime diagnostics are retained privately; no personal device data is included.",
+  "source": {
+    "head": "beb2b2470276ff790166c08246f7ebe50c770841",
+    "localEquivalent": "764ae7d330fae6aede5347038c7c74e33ddff1c5",
+    "merge": "c6af042afaa9fa697396e6b33fd5a3cc6e76c1b0",
+    "tree": "2a43a713dc6d59386bd6ceb1e77cee0324f97521",
+    "headLocalMergeTreeEqual": true
+  },
+  "workflow": {
+    "runId": 37165327894,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1
+  },
+  "nativeMatrix": [
+    {
+      "api": 24,
+      "jobId": 111328343595,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/job/111328343595",
+      "conclusion": "success",
+      "artifact": {
+        "id": 11289443197,
+        "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11289443197",
+        "bytes": 578043,
+        "sha256": "a868eaf07e75290db0e9990fc9562c2f094c7a931242bf8592bf60f86185dcd8",
+        "downloadedDigestAndCrcAndExtractedBytesVerified": true
+      },
+      "completedPhases": 4,
+      "phases": [
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "create",
+          "status": "passed",
+          "reportBytes": 3539,
+          "reportSha256": "9e9d4008f5d47c6f40f0d4d528a4d3a90fb981c6559a690042f83be7de5a622c"
+        },
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 3553,
+          "reportSha256": "1641238bad9fb1669a1e7b1b97eb84bb8b9311b150510646678ac35726f03982"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 207836,
+          "reportSha256": "cdce8b4fe7b069b415a717e0639deb17c05db6cb53ec2ce69e3f15f1fd19004b"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 241295,
+          "reportSha256": "7e7cd5c5db461e8a16da334ecd2ee09d88f534556d96516a858531db61d8e44e"
+        }
+      ],
+      "fourDistinctLogicalRunsAndLaunchAuthorizations": true,
+      "schema3Reports": 2,
+      "allThirteenSchema3FlagsTrue": true,
+      "actualNotificationSdkMatches": true,
+      "channels": {
+        "diagnosis": "notApplicable",
+        "recovery": "notApplicable",
+        "initialEnabled": "notApplicable",
+        "observedImportanceBeforeDisableAfterDisableAfterEnable": []
+      },
+      "exactRestoreCancelSqlTableCount": 11,
+      "exactCancelSnapshotAndCompleteModelUnchanged": true,
+      "singleProtectionPayloadAndDigestEqualActualBefore": true,
+      "confirmedSqlAndCompleteModelPreservedAfterReopen": true,
+      "realRestoreCancelTaps": 2,
+      "realRestoreConfirmTaps": 2,
+      "restorePreviewCountsAndDateObservedInActualXml": true,
+      "permissionRevocationSystemKillResumes": 0,
+      "sameLogicalRunAndAuthorizationWithExactSqlAndModelOnResume": true,
+      "eachSettingsStageHasOneTapStateAndAck": true,
+      "retainedEngineAndExecutedRecreationProofs": 4,
+      "semanticsRebindObservationsByPhase": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "reportedVisibleRebindsMatchedToNativeLifecycleEvents": true,
+      "completeExistingSemanticsTreeRootAndNodeIdsPreserved": true,
+      "noSemanticsOrOwnershipFirstFailure": true,
+      "resultsSha256": "6b8e530cfb4046cc96d97d72703ba12d6acd4115cf19365810b9e0e89b91f261",
+      "driverEventsSha256": "adc67932906b885f7267ac54bec05006743445d9edce1d28459b2fde4444997e",
+      "runtimeLogSha256": "0649c046994c3e2a6cb2bfdca67130fbdf8133e15ecfbd6393ccd5b68f444209",
+      "jobLogSha256": "61e859ab879a3ad5554bc69c5f66739d832d7eda08c78af5186c1d4bb072c31b"
+    },
+    {
+      "api": 33,
+      "jobId": 111328343564,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/job/111328343564",
+      "conclusion": "success",
+      "artifact": {
+        "id": 11288903605,
+        "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11288903605",
+        "bytes": 687115,
+        "sha256": "b65a7402b7bd968d45d095c67d49c26bb32d4aa2cdb2aa3b3e7d09e3388573f8",
+        "downloadedDigestAndCrcAndExtractedBytesVerified": true
+      },
+      "completedPhases": 4,
+      "phases": [
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "create",
+          "status": "passed",
+          "reportBytes": 3539,
+          "reportSha256": "e8d10622a6ba617210cbb476ea21802344fec50d2656e99e8e4eb05303a193bd"
+        },
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 3553,
+          "reportSha256": "ff79609479ee1e0964f4b61fa3a2abc0477fbeb11bed97aa09aecf6d30d5139b"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 236943,
+          "reportSha256": "cdc1fa74ccbf7caa0d745161a1111dac1e939e448867f6058aaac1c0ea0fa80c"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 278867,
+          "reportSha256": "8a14bd94c4e7ab680713645a35751f0de4db496b0b9573e4ab8b0bb46eaebffa"
+        }
+      ],
+      "fourDistinctLogicalRunsAndLaunchAuthorizations": true,
+      "schema3Reports": 2,
+      "allThirteenSchema3FlagsTrue": true,
+      "actualNotificationSdkMatches": true,
+      "channels": {
+        "diagnosis": true,
+        "recovery": true,
+        "initialEnabled": true,
+        "observedImportanceBeforeDisableAfterDisableAfterEnable": [
+          [
+            4,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            4
+          ]
+        ]
+      },
+      "exactRestoreCancelSqlTableCount": 11,
+      "exactCancelSnapshotAndCompleteModelUnchanged": true,
+      "singleProtectionPayloadAndDigestEqualActualBefore": true,
+      "confirmedSqlAndCompleteModelPreservedAfterReopen": true,
+      "realRestoreCancelTaps": 2,
+      "realRestoreConfirmTaps": 2,
+      "restorePreviewCountsAndDateObservedInActualXml": true,
+      "permissionRevocationSystemKillResumes": 2,
+      "sameLogicalRunAndAuthorizationWithExactSqlAndModelOnResume": true,
+      "eachSettingsStageHasOneTapStateAndAck": true,
+      "retainedEngineAndExecutedRecreationProofs": 4,
+      "semanticsRebindObservationsByPhase": [
+        2,
+        2,
+        3,
+        3
+      ],
+      "reportedVisibleRebindsMatchedToNativeLifecycleEvents": true,
+      "completeExistingSemanticsTreeRootAndNodeIdsPreserved": true,
+      "noSemanticsOrOwnershipFirstFailure": true,
+      "resultsSha256": "0d5996078ab9dd87b6315f2634cf60a2c8e98e1b1e6dfbd51a61b5c61b32def9",
+      "driverEventsSha256": "140e89cb0e3f1a88672291a3c252dfcb121f27c637224f65d3b888d18a81d9a5",
+      "runtimeLogSha256": "db3f7b71227f0aa390d48ffc77366226d04248c597590b10f7f1c90702706a38",
+      "jobLogSha256": "0f0bb9d9deb6783452a8ff8662a590c75b1f2460911dadfed6e53d3adde9c08c"
+    },
+    {
+      "api": 35,
+      "jobId": 111328343547,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/job/111328343547",
+      "conclusion": "success",
+      "artifact": {
+        "id": 11289193680,
+        "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11289193680",
+        "bytes": 698195,
+        "sha256": "d154846b5b47341f1e6a693b4517e12f182ad52ebdc76ea53fa26f68fece6624",
+        "downloadedDigestAndCrcAndExtractedBytesVerified": true
+      },
+      "completedPhases": 4,
+      "phases": [
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "create",
+          "status": "passed",
+          "reportBytes": 3539,
+          "reportSha256": "3c7b5554018c78744e37159e2a9140b7ecd6ea4bd43ca5e06bf267fb75868974"
+        },
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 2805,
+          "reportSha256": "a2955828ae2e65f2054dc026f0f143d3745ceb3d395fb2cd0a6382e47631465b"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 236195,
+          "reportSha256": "87b04b31e9ab07cc34659122d62764b6355ce312f2b7f71a4a2a66dab4dada21"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 278119,
+          "reportSha256": "8832e3570bcb004822931c0d098183a4fb87bf79c18105792b1945fbccc3847e"
+        }
+      ],
+      "fourDistinctLogicalRunsAndLaunchAuthorizations": true,
+      "schema3Reports": 2,
+      "allThirteenSchema3FlagsTrue": true,
+      "actualNotificationSdkMatches": true,
+      "channels": {
+        "diagnosis": true,
+        "recovery": true,
+        "initialEnabled": true,
+        "observedImportanceBeforeDisableAfterDisableAfterEnable": [
+          [
+            4,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            4
+          ]
+        ]
+      },
+      "exactRestoreCancelSqlTableCount": 11,
+      "exactCancelSnapshotAndCompleteModelUnchanged": true,
+      "singleProtectionPayloadAndDigestEqualActualBefore": true,
+      "confirmedSqlAndCompleteModelPreservedAfterReopen": true,
+      "realRestoreCancelTaps": 2,
+      "realRestoreConfirmTaps": 2,
+      "restorePreviewCountsAndDateObservedInActualXml": true,
+      "permissionRevocationSystemKillResumes": 2,
+      "sameLogicalRunAndAuthorizationWithExactSqlAndModelOnResume": true,
+      "eachSettingsStageHasOneTapStateAndAck": true,
+      "retainedEngineAndExecutedRecreationProofs": 4,
+      "semanticsRebindObservationsByPhase": [
+        2,
+        1,
+        2,
+        2
+      ],
+      "reportedVisibleRebindsMatchedToNativeLifecycleEvents": true,
+      "completeExistingSemanticsTreeRootAndNodeIdsPreserved": true,
+      "noSemanticsOrOwnershipFirstFailure": true,
+      "resultsSha256": "cfc11f9b5f0e35b409579a0fba091763824b253f35a4e4ebbfd835668001ebf5",
+      "driverEventsSha256": "bdc6c49ef30d0c90ed0922e4eb19cc5768af2dd666054c91dc223fd8fc9e0f89",
+      "runtimeLogSha256": "7542081e6058228958c6f9d99faad3832cfffbe8cd0f82eaf0580c727afe9eb8",
+      "jobLogSha256": "388395c30cb9cfa737516a134c26a6c945c1b638cd3bdbca2cd30b856a3fe254"
+    },
+    {
+      "api": 36,
+      "jobId": 111328343570,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/job/111328343570",
+      "conclusion": "success",
+      "artifact": {
+        "id": 11289098905,
+        "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37165327894/artifacts/11289098905",
+        "bytes": 677498,
+        "sha256": "18fb157878396af6d06e12a12eb21b70c477b3b50ced600803aafbacb217d776",
+        "downloadedDigestAndCrcAndExtractedBytesVerified": true
+      },
+      "completedPhases": 4,
+      "phases": [
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "create",
+          "status": "passed",
+          "reportBytes": 3539,
+          "reportSha256": "225ccca82143e073655c6e8625a511c8735ccb064eb7d648e92dc6a8d00032e0"
+        },
+        {
+          "build": "10001",
+          "schema": 2,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 3553,
+          "reportSha256": "478bd7492a9add0a29ffa20b8c50000a2651bc2d76617ed21bd7c28e093cd183"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 236943,
+          "reportSha256": "2d464ea9874568ed19939b7b9b3ab35f0aa825af86f06775b67ffb8e33108e5e"
+        },
+        {
+          "build": "10002",
+          "schema": 3,
+          "phase": "reopen",
+          "status": "passed",
+          "reportBytes": 278867,
+          "reportSha256": "a3e13e7f1aefe515a5fa428cca53155e6016772fda02260d83376c9beb03fd53"
+        }
+      ],
+      "fourDistinctLogicalRunsAndLaunchAuthorizations": true,
+      "schema3Reports": 2,
+      "allThirteenSchema3FlagsTrue": true,
+      "actualNotificationSdkMatches": true,
+      "channels": {
+        "diagnosis": true,
+        "recovery": true,
+        "initialEnabled": true,
+        "observedImportanceBeforeDisableAfterDisableAfterEnable": [
+          [
+            4,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            4
+          ]
+        ]
+      },
+      "exactRestoreCancelSqlTableCount": 11,
+      "exactCancelSnapshotAndCompleteModelUnchanged": true,
+      "singleProtectionPayloadAndDigestEqualActualBefore": true,
+      "confirmedSqlAndCompleteModelPreservedAfterReopen": true,
+      "realRestoreCancelTaps": 2,
+      "realRestoreConfirmTaps": 2,
+      "restorePreviewCountsAndDateObservedInActualXml": true,
+      "permissionRevocationSystemKillResumes": 2,
+      "sameLogicalRunAndAuthorizationWithExactSqlAndModelOnResume": true,
+      "eachSettingsStageHasOneTapStateAndAck": true,
+      "retainedEngineAndExecutedRecreationProofs": 4,
+      "semanticsRebindObservationsByPhase": [
+        2,
+        2,
+        3,
+        3
+      ],
+      "reportedVisibleRebindsMatchedToNativeLifecycleEvents": true,
+      "completeExistingSemanticsTreeRootAndNodeIdsPreserved": true,
+      "noSemanticsOrOwnershipFirstFailure": true,
+      "resultsSha256": "5450f489e78b20056f9f5d5815d666db203cb55a654ffc521deba228bfe5a71d",
+      "driverEventsSha256": "eb3abbd1c14f5bf84c77fdae7e2780cadd5008bf387c41f33bc966faf6571794",
+      "runtimeLogSha256": "addac86fff08ff23fc6aac9721b52e06be158cde4bb54ddc63f5ff9a2a10c569",
+      "jobLogSha256": "f18256760c43f839273c21256fa642fb29f7fc2181f4796052b5fb7fec1d12fa"
+    }
+  ],
+  "schema3RequiredTrueFlags": [
+    "safExportReadback",
+    "safOpenDecrypt",
+    "safSizeLimit",
+    "nativeReminderScheduling",
+    "workManagerRenewal",
+    "periodicTasksRegistered",
+    "nativeDeniedHabitSaved",
+    "nativeAppPermissionDiagnosis",
+    "nativeAppPermissionRecovery",
+    "nativeRestorePreviewCancel",
+    "nativeRestoreProtection",
+    "nativeRestoreConfirm",
+    "nativeRestoreReopen"
+  ],
+  "aggregate": {
+    "apis": [
+      24,
+      33,
+      35,
+      36
+    ],
+    "passedPhases": 16,
+    "schema2PassedPhases": 8,
+    "schema3PassedPhases": 8,
+    "frozenDriverEnginePredicatesPassed": 16,
+    "frozenDriverSdkAndThirteenFlagsPredicatesPassed": 8,
+    "realRestoreCancelTaps": 8,
+    "realRestoreConfirmTaps": 8,
+    "observedPermissionRevocationSystemKillResumes": 6,
+    "nativeMatrixComplete": true
+  },
+  "sourceFiles": [
+    {
+      "path": "tools/run_android_acceptance.py",
+      "bytes": 56297,
+      "sha256": "96275261dea589b2edb423a56d5c4d9c5689418cccc7af238ec9032710331c13"
+    },
+    {
+      "path": "tools/android_acceptance.dart",
+      "bytes": 68675,
+      "sha256": "31c74ce24587e9eac5fc00253927a74308c24db85ce016a3aacfd8218d756961"
+    },
+    {
+      "path": "tools/acceptance_semantics.dart",
+      "bytes": 8543,
+      "sha256": "8fa07a86a5c8dea2363c6b8bdff17b83eef3129b92f62afc333d13a46c8fbb6a"
+    },
+    {
+      "path": "tools/fixtures/acceptance_engine_host.kt.txt",
+      "bytes": 10736,
+      "sha256": "af25b2e542e3d6ebca48b5bbc9a84c69458093c2a10853d64e86077b4356834f"
+    },
+    {
+      "path": ".github/workflows/android.yml",
+      "bytes": 7955,
+      "sha256": "9981af5738451cf8f78dba8f2f471a7035e7bb35dc036fe0e434fa0669f0ceca"
+    }
+  ],
+  "independentAuditSha256": {
+    "api24And33Full": "58fb6757f772fa4232974fd6cb7dca993f91f8fea9de7bb843e1168764781863",
+    "api24And33RebindEvents": "a554c2c15fbb002d257b454e981ce38b6760645e65936e6707cb8e8e068d766d",
+    "api35Core": "0803ad15aa92b644f4ce1bc18bc8e3866f6f17663c95dd4e8a6f61659942106c",
+    "api36Core": "172ecf0c9cba81c49ba8cee540e6b04a9baf894d03bba8e591afefa8cf95063a",
+    "api35BindingAndContinuation": "4d47be11fab76b5f4c658e3f30500b5ae2f8d7f1131897030c537855b6ccdd1a",
+    "api36BindingAndContinuation": "090cf43fdf0014169fccd0322b1b6877a3a96ea108175c0bd5bbadc158d6affc"
+  },
+  "relatedEvidence": [
+    {
+      "path": "docs/验收记录/verify-beb2b24.json",
+      "sha256": "d98fd289ad284afae6a0d12f3d0b73e0a4265f02cd439100e8061a947033f3f5"
+    },
+    {
+      "path": "docs/验收记录/native-sync-ci-beb2b24.json",
+      "sha256": "1bf36262f8b5ed991568b973f694043a6cf152cc39a559ee67e71a8d12aed06b"
+    }
+  ],
+  "boundaries": [
+    "All four API levels passed all four actual phases on this exact source; no rerun was requested.",
+    "The exact-source retained-engine recreation, existing semantics-tree resend, restore, notification and channel gates are supported by this round's original reports and native/UI traces.",
+    "API24 channel checks are explicitly notApplicable; API33/35/36 include observed enabled, disabled and recovered channel states.",
+    "The previous API35 identity failure lacked identity samples; its exact triggering comparison remains undetermined. This round does not retroactively identify that earlier race.",
+    "No local SDK, emulator, real device or downloaded binary was executed during this artifact review."
+  ]
+}

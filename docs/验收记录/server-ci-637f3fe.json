@@ -1,0 +1,122 @@
+{
+  "kind": "public_synthetic_server_ci_summary",
+  "syntheticCI": {
+    "syntheticDataOnly": true,
+    "execution": "Real server executable and certificate-verified HTTPS; isolated CI load and fault fixtures; no real user data."
+  },
+  "repository": "HSolddog/haoxiguan",
+  "headCommit": "637f3fea26986658fb35b4205db4828ce1fcfa55",
+  "mergeCommit": "cec9302b5bfce4ab8b3a98a2f6d0c8b40e0a14c8",
+  "rootTree": "684b8daba98283c51c18c2f220d13b6d1fba51dd",
+  "headAndMergeTreesEqual": true,
+  "run": {
+    "id": 37152885764,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885764",
+    "attempt": 1,
+    "conclusion": "success"
+  },
+  "jobs": [
+    {
+      "name": "verify",
+      "id": 111290207215,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885764/job/111290207215",
+      "conclusion": "success",
+      "decodedLogSha256": "32a5f8eef93576efa57f2788a2b7652f292829930a236829810ae6567c10b2cc"
+    },
+    {
+      "name": "arm64-smoke",
+      "id": 111290583995,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885764/job/111290583995",
+      "conclusion": "success",
+      "decodedLogSha256": "0f650dea6bb1c99c83b40d7c749c9f0bec8232c4f27d09dad2ad6d683c91d74e"
+    },
+    {
+      "name": "capacity",
+      "id": 111290583962,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885764/job/111290583962",
+      "conclusion": "success",
+      "decodedLogSha256": "d39c62c44fd833b165ea585919a38f1e86411bf5f5049311385399310d3ae11c"
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "binary",
+      "id": 11285011265,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885764/artifacts/11285011265",
+      "archiveBytes": 18457703,
+      "archiveSha256": "0e39e65715ef931c511e0bd4d4e1ddaec2943d845a65b7f55acb5f4fb8622da2",
+      "githubDigestMatched": true
+    },
+    {
+      "role": "capacity",
+      "id": 11284783349,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37152885764/artifacts/11284783349",
+      "archiveBytes": 4969,
+      "archiveSha256": "4ba389b439a1dab597e5c4963784ee147a7e2dad63bb271b4ef1b40cef2cc3a3",
+      "githubDigestMatched": true
+    }
+  ],
+  "checks": {
+    "format": true,
+    "vet": true,
+    "raceTests": true,
+    "thirdPartyNoticesCurrent": true,
+    "staticLinuxAmd64": true,
+    "staticLinuxArm64": true,
+    "binaryManifestAndElfArchitectureVerified": true,
+    "capacityHarnessTests": 8
+  },
+  "capacity": {
+    "status": "passed",
+    "architecture": "amd64",
+    "elapsedSeconds": 938.726,
+    "cpuLimit": 1,
+    "memoryLimitGiB": 1,
+    "syntheticUsers": 20,
+    "syntheticDevices": 60,
+    "initialObjects": 100000,
+    "opaqueBytesPerObject": 1024,
+    "pushConcurrency": 20,
+    "bootstrapConcurrency": 60,
+    "pushBatchSize": 100,
+    "pullPageSize": 200,
+    "sampledMemoryBytesIncludingPageCache": 505634816,
+    "http429Responses": 744,
+    "controlledFaultTransportErrors": 39,
+    "recoverySeconds": 0.301,
+    "backupSeconds": 2.094,
+    "backupReopenSeconds": 67.38
+  },
+  "latencyP95Ms": {
+    "push": {
+      "allAttempts": 1514.201,
+      "successfulAttempts": 1525.585,
+      "logicalRequestsIncludingRetries": 30035.354
+    },
+    "bootstrap": {
+      "allAttempts": 562.441,
+      "successfulAttempts": 591.67,
+      "logicalRequestsIncludingRetries": 30426.655
+    }
+  },
+  "integrity": {
+    "tlsCertificateAndHostnameVerified": true,
+    "rateLimitsUnchanged": true,
+    "all60BootstrapHistoriesFullyVerified": true,
+    "recoveredHistoryFullyVerified": true,
+    "opIdReplayDidNotDuplicateChanges": true,
+    "restoredSnapshotHistoryFullyVerified": true,
+    "snapshotQuickCheck": "ok"
+  },
+  "lifecycleSmoke": {
+    "amd64": "passed",
+    "arm64": "passed"
+  },
+  "boundaries": [
+    "Synthetic opaque payloads exclude client encryption/decryption; one source IP and no WAN simulation. Client load is outside the server resource limit.",
+    "Memory is sampled container usage including page cache, not exact peak RSS. 429 and controlled transport failures remain counted. No latency acceptance threshold is inferred.",
+    "Capacity measurements cover amd64 only; ARM64 evidence covers lifecycle/persistence/backup/restore, not capacity. No production capacity or cross-machine/epoch RPO/RTO claim."
+  ],
+  "sourceIndexSha256": "ad63a41d7541e6220c1e33783b4902005b3b3a470b5651be94b407448216c9bc",
+  "retention": "Full original index, reports, logs and downloaded archives remain local; excluded from this public summary."
+}

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/sqlite_habit_repository.dart';
+import '../models/record_entry.dart';
 import '../services/backup_files.dart';
 import '../services/backup_settings.dart';
 import '../services/device_task_lock.dart';
@@ -13,21 +14,32 @@ import '../services/sync_engine.dart';
 import '../services/sync_entities.dart';
 import '../services/sync_recovery.dart';
 import '../state/habit_controller.dart';
+import 'unsaved_changes_guard.dart';
 
 class SyncScreen extends StatefulWidget {
-  const SyncScreen({super.key, required this.controller});
+  const SyncScreen({super.key, required this.controller, this.settingsStore});
   final HabitController controller;
+  final SyncSettingsStore? settingsStore;
   @override
   State<SyncScreen> createState() => _SyncScreenState();
 }
 
 class _SyncScreenState extends State<SyncScreen> {
-  final _store = SyncSettingsStore(DeviceSecretStore());
+  late final _store =
+      widget.settingsStore ?? SyncSettingsStore(DeviceSecretStore());
   final _files = PlatformBackupFiles();
   final _endpoint = TextEditingController();
   final _invite = TextEditingController();
   final _name = TextEditingController(text: '我的安卓设备');
   final _recoveryPassword = TextEditingController();
+  final _connectionGuard = GlobalKey<UnsavedChangesGuardState>();
+  bool get _connectionDirty => _settings == null
+      ? _endpoint.text.isNotEmpty ||
+            _invite.text.isNotEmpty ||
+            _name.text != '我的安卓设备' ||
+            _recoveryPassword.text.isNotEmpty ||
+            _join
+      : _invite.text.isNotEmpty;
   SyncSettings? _settings;
   bool _busy = false, _join = false;
   String? _message, _lastSuccess;
@@ -35,10 +47,7 @@ class _SyncScreenState extends State<SyncScreen> {
   @override
   void initState() {
     super.initState();
-    _run(() async {
-      _settings = await _store.load();
-      await _readStatus();
-    });
+    _load();
   }
 
   @override
@@ -51,7 +60,20 @@ class _SyncScreenState extends State<SyncScreen> {
     super.dispose();
   }
 
-  Future<void> _run(Future<void> Function() action) async {
+  Future<void> _load() => _perform(() async {
+    _settings = await _store.load();
+    await _readStatus();
+  });
+
+  Future<void> _run(Future<void> Function() action) {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) {
+      return Future<void>.value();
+    }
+    return _perform(action);
+  }
+
+  Future<void> _perform(Future<void> Function() action) async {
+    if (!mounted || _busy) return;
     setState(() {
       _busy = true;
       _message = null;
@@ -109,25 +131,39 @@ class _SyncScreenState extends State<SyncScreen> {
     }
   }
 
-  Future<bool> _confirm(String title, String message, String action) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(child: Text(message)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(action),
-            ),
-          ],
-        ),
-      ) ??
-      false;
+  Future<bool> _confirm(String title, String message, String action) async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return false;
+    final origin = ModalRoute.of(context);
+    var answered = false;
+    void answer(BuildContext dialogContext, bool confirmed) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, confirmed);
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(child: Text(message)),
+        actions: [
+          TextButton(
+            onPressed: () => answer(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => answer(context, true),
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true && mounted && origin?.isCurrent == true;
+  }
 
   Future<void> _connect() => _run(() async {
     final endpoint = HttpSyncTransport.validateEndpoint(
@@ -179,37 +215,67 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _exportRecovery() => _run(() async {
-    final password = await showDialog<String>(
+    final saved = await showDialog<bool>(
       context: context,
-      builder: (_) => const _RecoveryPasswordDialog(),
+      barrierDismissible: false,
+      builder: (_) => SyncRecoveryPasswordDialog(
+        onContinue: (password) async {
+          final bytes = await SyncRecoveryCodec.encrypt(
+            _settings!.keys,
+            password,
+          );
+          final verified = await SyncRecoveryCodec.decrypt(bytes, password);
+          verified.dispose();
+          if (!await _files.save(
+            bytes,
+            'haoxiguan-sync-recovery-${DateTime.now().millisecondsSinceEpoch}.hgr',
+          )) {
+            return false;
+          }
+          final previous = _settings!.recoveryExported;
+          _settings!.recoveryExported = true;
+          try {
+            await _store.save(_settings!);
+          } on Object {
+            _settings!.recoveryExported = previous;
+            rethrow;
+          }
+          return true;
+        },
+      ),
     );
-    if (password == null) return;
-    final bytes = await SyncRecoveryCodec.encrypt(_settings!.keys, password);
-    final verified = await SyncRecoveryCodec.decrypt(bytes, password);
-    verified.dispose();
-    if (!await _files.save(
-      bytes,
-      'haoxiguan-sync-recovery-${DateTime.now().millisecondsSinceEpoch}.hgr',
-    )) {
-      return;
+    if (saved == true) {
+      _message = '恢复文件已保存并读回校验。请将文件和密码分别保管；其中不含登录令牌，也不包含习惯数据。';
     }
-    _settings!.recoveryExported = true;
-    await _store.save(_settings!);
-    _message = '恢复文件已保存并读回校验。请将文件和密码分别保管；其中不含登录令牌，也不包含习惯数据。';
   });
 
   Future<void> _sync() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!_settings!.recoveryExported) {
       throw const FormatException('请先保存加密恢复文件，避免换机后无法解密');
     }
     try {
-      final result = await _withEngine(
+      var result = await _withEngine(
         (engine) => engine.run(
           onProgress: (count) {
             if (mounted) setState(() => _message = '已确认上传 $count 个变更，正在继续核对…');
           },
         ),
       );
+      if (result.preview != null) {
+        if (!mounted || origin?.isCurrent != true) return;
+        final preview = result.preview!;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (_) => InitialSyncPreviewDialog(preview: preview),
+        );
+        if (confirmed != true || !mounted || origin?.isCurrent != true) {
+          _message = '已取消首次同步。本机与远端内容均未改变；下次同步将重新预览。';
+          return;
+        }
+        await _withEngine((engine) => engine.confirmInitialSync(preview));
+        result = await _withEngine((engine) => engine.run());
+      }
       _message = result.conflicts.isNotEmpty
           ? '${result.conflicts.length} 个习惯需要处理冲突，本机内容尚未被替换。'
           : result.complete
@@ -227,116 +293,16 @@ class _SyncScreenState extends State<SyncScreen> {
       _message = '当前没有需要处理的冲突。';
       return;
     }
-    final choices = <String, bool>{};
-    final allowed = <String, bool>{};
-    for (final id in decision.conflicts) {
-      final candidate = Map<String, dynamic>.from(decision.local);
-      SyncEntities.chooseHabit(candidate, decision.remote, id, [
-        decision.local,
-        decision.remote,
-      ]);
-      try {
-        SyncEntities.assemble(widget.controller.exportJson(), candidate);
-        allowed[id] = true;
-      } on Object {
-        allowed[id] = false;
-      }
-    }
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('选择每个习惯保留的版本'),
-          content: SizedBox(
-            width: 500,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '独立新增记录已自动合并；这里包含相互冲突的修改。选择以整个习惯为单位，本机原数据和远端候选都会先保留副本。',
-                  ),
-                  for (final id in decision.conflicts)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _title(id, decision.local, decision.remote),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text('本机：${_summary(id, decision.local)}'),
-                          Text('远端：${_summary(id, decision.remote)}'),
-                          if (allowed[id] == false)
-                            const Text('远端结构尚不完整，可保留本机版本，或取消并等待其他设备完成同步。'),
-                          DropdownButtonFormField<bool>(
-                            initialValue: choices[id],
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: '请选择保留的版本',
-                            ),
-                            items: [
-                              const DropdownMenuItem(
-                                value: false,
-                                child: Text('保留本机整个习惯'),
-                              ),
-                              DropdownMenuItem(
-                                value: true,
-                                enabled: allowed[id]!,
-                                child: const Text('采用远端整个习惯'),
-                              ),
-                            ],
-                            onChanged: (v) =>
-                                setDialogState(() => choices[id] = v!),
-                          ),
-                          TextButton(
-                            onPressed: () => showDialog<void>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('冲突内容详情'),
-                                content: SingleChildScrollView(
-                                  child: SelectableText(
-                                    const JsonEncoder.withIndent('  ').convert({
-                                      '本机': _subset(id, decision.local),
-                                      '远端': _subset(id, decision.remote),
-                                    }),
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('关闭'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            child: const Text('查看完整候选内容'),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('稍后处理'),
-            ),
-            FilledButton(
-              onPressed: choices.length == decision.conflicts.length
-                  ? () => Navigator.pop(context, true)
-                  : null,
-              child: const Text('保护副本并应用选择'),
-            ),
-          ],
-        ),
+      barrierDismissible: false,
+      builder: (_) => SyncConflictDialog(
+        decision: decision,
+        onApply: (choices) =>
+            _withEngine((engine) => engine.resolveItems(decision, choices)),
       ),
     );
     if (confirmed != true) return;
-    await _withEngine((engine) => engine.resolve(choices));
     await _readStatus();
     _message = '选择已保存，原内容已保护。请再次同步以提交选择并检查其他设备的新变更。';
   });
@@ -367,7 +333,9 @@ class _SyncScreenState extends State<SyncScreen> {
           '服务器基线已经改变。将保护本地数据，并重新下载核对；所有不同的习惯都需要你选择版本，不把旧服务器缺少的记录当作删除。',
           '保护并重新核对',
         );
-        if (!confirmed) {
+        if (!confirmed ||
+            !mounted ||
+            ModalRoute.of(context)?.isCurrent != true) {
           _message = '新授权已保存，尚未重新核对基线。可通过下方“重新核对基线”继续。';
           return;
         }
@@ -380,11 +348,14 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _resetBaseline() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!await _confirm(
-      '重新核对远端基线？',
-      '本地内容会先保留副本，重新下载后，每个不同的习惯都需要明确选择版本。请先获得当前服务器的有效授权。',
-      '保护并核对',
-    )) {
+          '重新核对远端基线？',
+          '本地内容会先保留副本，重新下载后，每个不同的习惯都需要明确选择版本。请先获得当前服务器的有效授权。',
+          '保护并核对',
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     await _withEngine((engine) => engine.resetBaselineForReview());
@@ -400,11 +371,23 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _devices() => _run(() async {
+    final origin = ModalRoute.of(context);
     final response = await _withEngine(
       (engine) => engine.session.request('GET', '/v1/devices'),
     );
-    if (!mounted) return;
+    if (!mounted || origin?.isCurrent != true) return;
     final devices = response['devices'] as List;
+    var answered = false;
+    void answer(BuildContext dialogContext, String? target) {
+      if (answered ||
+          !dialogContext.mounted ||
+          ModalRoute.of(dialogContext)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(dialogContext, target);
+    }
+
     final target = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -432,7 +415,7 @@ class _SyncScreenState extends State<SyncScreen> {
                         ? null
                         : TextButton(
                             onPressed: () =>
-                                Navigator.pop(context, device['id'] as String),
+                                answer(context, device['id'] as String),
                             child: const Text('撤销'),
                           ),
                   ),
@@ -442,7 +425,7 @@ class _SyncScreenState extends State<SyncScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => answer(context, null),
             child: const Text('关闭'),
           ),
         ],
@@ -450,11 +433,14 @@ class _SyncScreenState extends State<SyncScreen> {
     );
     if (target == null ||
         !mounted ||
+        origin?.isCurrent != true ||
         !await _confirm(
           '撤销设备授权？',
           '该设备之后不能读写服务器；其本地习惯仍保留。重新连接需要新的邀请。',
           '撤销授权',
-        )) {
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     if (!RegExp(r'^[A-Za-z0-9_-]{32}$').hasMatch(target)) {
@@ -497,7 +483,12 @@ class _SyncScreenState extends State<SyncScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (context.mounted &&
+                  ModalRoute.of(context)?.isCurrent == true) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text('关闭'),
           ),
         ],
@@ -506,11 +497,14 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _deleteRemoteAccount() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!await _confirm(
-      '永久删除远端账户？',
-      '将删除该服务器上此账户的全部密文、同步历史和轮换归档，并撤销所有设备。不会删除本机习惯。管理员离线备份仍按其保存政策处理。此操作不能撤销。',
-      '永久删除远端账户',
-    )) {
+          '永久删除远端账户？',
+          '将删除该服务器上此账户的全部密文、同步历史和轮换归档，并撤销所有设备。不会删除本机习惯。管理员离线备份仍按其保存政策处理。此操作不能撤销。',
+          '永久删除远端账户',
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     await _withEngine(
@@ -528,11 +522,14 @@ class _SyncScreenState extends State<SyncScreen> {
   });
 
   Future<void> _disconnect() => _run(() async {
+    final origin = ModalRoute.of(context);
     if (!await _confirm(
-      '断开本机同步？',
-      '保留本机所有习惯、远端数据和已保存的恢复材料。服务器上的设备授权可在“已授权设备”中另外撤销。',
-      '断开本机',
-    )) {
+          '断开本机同步？',
+          '保留本机所有习惯、远端数据和已保存的恢复材料。服务器上的设备授权可在“已授权设备”中另外撤销。',
+          '断开本机',
+        ) ||
+        !mounted ||
+        origin?.isCurrent != true) {
       return;
     }
     await _store.disconnect();
@@ -542,30 +539,13 @@ class _SyncScreenState extends State<SyncScreen> {
     _message = '已断开。本机继续独立保存记录。';
   });
 
-  static String _title(String id, EntityMap local, EntityMap remote) =>
-      (local['h/$id'] as Map?)?['title'] as String? ??
-      (remote['h/$id'] as Map?)?['title'] as String? ??
-      '已删除的习惯';
-  static EntityMap _subset(String id, EntityMap map) => {
-    for (final e in map.entries)
-      if (SyncEntities.habitId(e.key, e.value) == id) e.key: e.value,
-  };
-  static String _summary(String id, EntityMap map) {
-    final h = map['h/$id'];
-    final records = _subset(
-      id,
-      map,
-    ).entries.where((e) => e.key.startsWith('r/') && e.value != null).length;
-    final notes = _subset(id, map).entries
-        .where((e) => e.key.startsWith('n/') && e.value != null)
-        .map((e) => (e.value as Map)['text'])
-        .join('；');
-    return '${h == null ? '习惯已删除' : h['title']}，$records 条事实${notes.isEmpty ? '' : '；备注：$notes'}';
-  }
-
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !_busy,
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+    key: _connectionGuard,
+    dirty: _connectionDirty,
+    isDirty: () => _connectionDirty,
+    saving: _busy,
+    isSaving: () => _busy,
     child: Scaffold(
       appBar: AppBar(title: const Text('自有同步服务')),
       body: ListView(
@@ -584,6 +564,7 @@ class _SyncScreenState extends State<SyncScreen> {
             ),
           if (_settings == null) ...[
             TextField(
+              key: const Key('sync-endpoint'),
               controller: _endpoint,
               enabled: !_busy,
               keyboardType: TextInputType.url,
@@ -693,16 +674,303 @@ class _SyncScreenState extends State<SyncScreen> {
   );
 }
 
-class _RecoveryPasswordDialog extends StatefulWidget {
-  const _RecoveryPasswordDialog();
-  @override
-  State<_RecoveryPasswordDialog> createState() =>
-      _RecoveryPasswordDialogState();
+String _syncHabitTitle(String id, EntityMap local, EntityMap remote) =>
+    (local['h/$id'] as Map?)?['title'] as String? ??
+    (remote['h/$id'] as Map?)?['title'] as String? ??
+    '已删除的习惯';
+
+String _syncSummary(EntityMap entities) {
+  int count(String prefix) => entities.entries
+      .where((e) => e.key.startsWith(prefix) && e.value != null)
+      .length;
+  final dates = <String>{};
+  for (final entry in entities.entries) {
+    if (entry.value == null) continue;
+    if (entry.key.startsWith('r/')) {
+      dates.add(entry.value['data']['date'] as String);
+    }
+    if (entry.key.startsWith('n/')) dates.add(entry.value['date'] as String);
+  }
+  final sorted = dates.toList()..sort();
+  return '${count('h/')} 个习惯 · ${count('p/')} 个计划 · ${count('r/')} 条记录 · ${count('n/')} 条备注\n'
+      '${sorted.isEmpty ? '暂无记录日期' : '记录日期：${sorted.first} 至 ${sorted.last}'}';
 }
 
-class _RecoveryPasswordDialogState extends State<_RecoveryPasswordDialog> {
+class InitialSyncPreviewDialog extends StatelessWidget {
+  const InitialSyncPreviewDialog({super.key, required this.preview});
+  final InitialSyncPreview preview;
+  @override
+  Widget build(BuildContext context) {
+    var answered = false;
+    void answer(bool confirmed) {
+      if (answered ||
+          !context.mounted ||
+          ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      answered = true;
+      Navigator.pop(context, confirmed);
+    }
+
+    return AlertDialog(
+      title: const Text('首次同步预览'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('本机\n${_syncSummary(preview.local)}'),
+              const SizedBox(height: 16),
+              Text('远端\n${_syncSummary(preview.remote)}'),
+              const SizedBox(height: 16),
+              const Text(
+                '确认后才开始合并与上传。空的一端不会覆盖另一端；独立新增记录按原 ID 保留，冲突需要逐项选择。取消会保留两端现状。',
+              ),
+              if (preview.conflicts.isNotEmpty)
+                Text('${preview.conflicts.length} 个习惯需要进一步核对差异。'),
+              for (final id
+                  in {...preview.local.keys, ...preview.remote.keys}
+                      .where((key) => key.startsWith('h/'))
+                      .map((key) => key.substring(2)))
+                ExpansionTile(
+                  title: Text(
+                    _syncHabitTitle(id, preview.local, preview.remote),
+                  ),
+                  subtitle: Text(
+                    preview.local['h/$id'] == null
+                        ? '仅远端存在'
+                        : preview.remote['h/$id'] == null
+                        ? '仅本机存在'
+                        : '两端均有内容',
+                  ),
+                  children: [
+                    SelectableText(
+                      const JsonEncoder.withIndent('  ').convert({
+                        for (final side in {
+                          '本机': preview.local,
+                          '远端': preview.remote,
+                        }.entries)
+                          side.key: {
+                            for (final e in side.value.entries)
+                              if (SyncEntities.habitId(e.key, e.value) == id)
+                                e.key: e.value,
+                          },
+                      }),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => answer(false), child: const Text('取消')),
+        FilledButton(
+          onPressed: () => answer(true),
+          child: const Text('确认并继续同步'),
+        ),
+      ],
+    );
+  }
+}
+
+class SyncConflictDialog extends StatefulWidget {
+  const SyncConflictDialog({
+    super.key,
+    required this.decision,
+    required this.onApply,
+  });
+  final MergeDecision decision;
+  final Future<void> Function(Map<String, SyncSelection>) onApply;
+  @override
+  State<SyncConflictDialog> createState() => _SyncConflictDialogState();
+}
+
+class _SyncConflictDialogState extends State<SyncConflictDialog> {
+  final _guard = GlobalKey<UnsavedChangesGuardState>();
+  final _choices = <String, SyncChoice>{};
+  final _texts = <String, String>{};
+  bool _saving = false;
+  String? _error;
+  String _source(SyncConflict item, bool remote) {
+    final sources = widget.decision.sources(item, remoteSide: remote);
+    return sources.isEmpty ? '来源设备未知' : '设备 ${sources.join('、')}';
+  }
+
+  String _value(SyncConflict item, dynamic value) {
+    if (value == null) return '此项不存在 / 已删除';
+    if (item.isNote) return '${value['date']}：${value['text']}';
+    if (item.logicalId.startsWith('r/')) {
+      final data = value['data'] as Map;
+      final habit =
+          widget.decision.local['h/${item.habitId}'] ??
+          widget.decision.remote['h/${item.habitId}'] ??
+          widget.decision.base['h/${item.habitId}'];
+      final amount = data['value'] as int;
+      final label = habit == null
+          ? '原始数值 $amount（单位未知）'
+          : habit['recordType'] == 'duration'
+          ? '$amount 秒'
+          : '${formatFixed(amount, scale: habit['scale'] as int)} ${habit['unit']}';
+      return '${data['date']} · $label · ${data['deleted'] == true ? '已撤销' : '有效'}\n录入：${data['recordedAtUtc'] ?? '历史时间未知'}';
+    }
+    return value is String
+        ? value
+        : const JsonEncoder.withIndent('  ').convert(value);
+  }
+
+  Future<void> _apply() async {
+    if (!mounted || _saving || ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    final route = ModalRoute.of(context);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.onApply({
+        for (final item in widget.decision.items)
+          item.id: SyncSelection(_choices[item.id]!, text: _texts[item.id]),
+      });
+      if (mounted && route?.isCurrent == true) Navigator.pop(context, true);
+    } on FormatException catch (e) {
+      if (mounted) setState(() => _error = '${e.message}。选择与输入仍保留，请调整后重试。');
+    } on Object {
+      if (mounted) setState(() => _error = '合并尚未保存，原内容与输入仍保留，请重试。');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+    key: _guard,
+    dirty: _choices.isNotEmpty || _texts.isNotEmpty,
+    isDirty: () => _choices.isNotEmpty || _texts.isNotEmpty,
+    saving: _saving,
+    isSaving: () => _saving,
+    child: AlertDialog(
+      title: const Text('逐项合并同步差异'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '双方独立新增记录会保留。只处理下面列出的冲突；应用前会保存本机原数据与远端候选副本。计划和删除状态需保持一致，不能留下无所属习惯的记录。',
+              ),
+              const Text('来源由共享密钥内的客户端标注，并非独立设备签名。旧版或未保留标注的内容会显示来源未知。'),
+              for (final item in widget.decision.items)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_syncHabitTitle(item.habitId, widget.decision.local, widget.decision.remote)} · ${item.label}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SelectableText(
+                        '本机（${_source(item, false)}）：${_value(item, item.local)}',
+                      ),
+                      SelectableText(
+                        '远端（${_source(item, true)}）：${_value(item, item.remote)}',
+                      ),
+                      DropdownButtonFormField<SyncChoice>(
+                        key: ValueKey(item.id),
+                        initialValue: _choices[item.id],
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: '选择此项的合并方式',
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: SyncChoice.local,
+                            child: Text('保留本机此项'),
+                          ),
+                          const DropdownMenuItem(
+                            value: SyncChoice.remote,
+                            child: Text('采用远端此项'),
+                          ),
+                          if (item.canKeepBoth)
+                            const DropdownMenuItem(
+                              value: SyncChoice.both,
+                              child: Text('两者都保留'),
+                            ),
+                          if (item.isNote)
+                            const DropdownMenuItem(
+                              value: SyncChoice.manual,
+                              child: Text('手工合并备注'),
+                            ),
+                        ],
+                        onChanged: _saving
+                            ? null
+                            : (choice) =>
+                                  setState(() => _choices[item.id] = choice!),
+                      ),
+                      if (item.canKeepBoth && item.logicalId.startsWith('r/'))
+                        const Text(
+                          '两者都保留会给远端候选分配新记录 ID，两个有效数值都会计入当天总量；若是同一次行为，请只选一项。',
+                        ),
+                      if (_choices[item.id] == SyncChoice.manual)
+                        TextFormField(
+                          key: ValueKey('manual-${item.id}'),
+                          initialValue: _texts[item.id],
+                          minLines: 2,
+                          maxLines: 6,
+                          enabled: !_saving,
+                          decoration: const InputDecoration(
+                            labelText: '合并后的备注',
+                          ),
+                          onChanged: (text) => _texts[item.id] = text,
+                        ),
+                    ],
+                  ),
+                ),
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              if (_saving) const LinearProgressIndicator(),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => _guard.currentState?.leave(),
+          child: const Text('稍后处理'),
+        ),
+        FilledButton(
+          onPressed: _saving || _choices.length != widget.decision.items.length
+              ? null
+              : _apply,
+          child: const Text('保护副本并应用合并'),
+        ),
+      ],
+    ),
+  );
+}
+
+class SyncRecoveryPasswordDialog extends StatefulWidget {
+  const SyncRecoveryPasswordDialog({super.key, required this.onContinue});
+  final Future<bool> Function(String password) onContinue;
+  @override
+  State<SyncRecoveryPasswordDialog> createState() =>
+      _SyncRecoveryPasswordDialogState();
+}
+
+class _SyncRecoveryPasswordDialogState
+    extends State<SyncRecoveryPasswordDialog> {
   final first = TextEditingController(), second = TextEditingController();
+  final _guard = GlobalKey<UnsavedChangesGuardState>();
   String? error;
+  bool saving = false;
+  bool get dirty => first.text.isNotEmpty || second.text.isNotEmpty;
   @override
   void dispose() {
     first.dispose();
@@ -710,47 +978,79 @@ class _RecoveryPasswordDialogState extends State<_RecoveryPasswordDialog> {
     super.dispose();
   }
 
+  Future<void> _save() async {
+    if (!mounted || saving || ModalRoute.of(context)?.isCurrent != true) return;
+    final route = ModalRoute.of(context);
+    if (first.text.runes.length < 12 || first.text != second.text) {
+      setState(() => error = '密码至少 12 个字符，两次输入需一致');
+      return;
+    }
+    setState(() {
+      saving = true;
+      error = null;
+    });
+    try {
+      final success = await widget.onContinue(first.text);
+      if (!mounted) return;
+      if (success) {
+        if (route?.isCurrent == true) Navigator.pop(context, true);
+      } else {
+        setState(() => error = '恢复文件尚未保存。密码输入仍保留，可以重试或取消。');
+      }
+    } on Object {
+      if (mounted) setState(() => error = '恢复文件保存失败。密码输入仍保留，请检查存储后重试。');
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('保护同步恢复文件'),
-    content: SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('至少 12 个字符。遗失密码和所有已授权设备后，服务器无法帮你解密记录。'),
-          TextField(
-            controller: first,
-            obscureText: true,
-            autocorrect: false,
-            enableSuggestions: false,
-            decoration: const InputDecoration(labelText: '恢复密码'),
-          ),
-          TextField(
-            controller: second,
-            obscureText: true,
-            autocorrect: false,
-            enableSuggestions: false,
-            decoration: const InputDecoration(labelText: '再次输入'),
-          ),
-          if (error != null) Text(error!),
-        ],
+  Widget build(BuildContext context) => UnsavedChangesGuard(
+    key: _guard,
+    dirty: dirty,
+    isDirty: () => dirty,
+    saving: saving,
+    isSaving: () => saving,
+    child: AlertDialog(
+      title: const Text('保护同步恢复文件'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('至少 12 个字符。遗失密码和所有已授权设备后，服务器无法帮你解密记录。'),
+            TextField(
+              key: const Key('sync-recovery-password'),
+              controller: first,
+              enabled: !saving,
+              obscureText: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: const InputDecoration(labelText: '恢复密码'),
+            ),
+            TextField(
+              key: const Key('sync-recovery-confirm'),
+              controller: second,
+              enabled: !saving,
+              obscureText: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: const InputDecoration(labelText: '再次输入'),
+            ),
+            if (error != null) Text(error!),
+            if (saving) const LinearProgressIndicator(),
+          ],
+        ),
       ),
+      actions: [
+        TextButton(
+          onPressed: saving ? null : () => _guard.currentState?.leave(),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: saving ? null : _save,
+          child: const Text('加密并保存'),
+        ),
+      ],
     ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('取消'),
-      ),
-      FilledButton(
-        onPressed: () {
-          if (first.text.runes.length < 12 || first.text != second.text) {
-            setState(() => error = '密码至少 12 个字符，两次输入需一致');
-            return;
-          }
-          Navigator.pop(context, first.text);
-        },
-        child: const Text('加密并保存'),
-      ),
-    ],
   );
 }

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/sync-recovery-v1.schema.json",
+  "title": "Haoxiguan encrypted sync recovery envelope v1",
+  "description": "The nine-field .hgr JSON envelope emitted by SyncRecoveryCodec. The 128 KiB raw-file limit, 64 KiB decrypted-plaintext limit, password rules, AAD and AEAD authentication remain runtime checks. This contains encrypted key material rather than habit data or authentication tokens.",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "suite",
+    "memoryKiB",
+    "iterations",
+    "parallelism",
+    "salt",
+    "nonce",
+    "payload"
+  ],
+  "properties": {
+    "format": {
+      "const": "haoxiguan-sync-recovery"
+    },
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "suite": {
+      "const": "argon2id-xchacha20poly1305-v1"
+    },
+    "memoryKiB": {
+      "type": "integer",
+      "const": 65536
+    },
+    "iterations": {
+      "type": "integer",
+      "const": 3
+    },
+    "parallelism": {
+      "type": "integer",
+      "const": 1
+    },
+    "salt": {
+      "$ref": "backup-encrypted-v1.schema.json#/properties/crypto/properties/salt"
+    },
+    "nonce": {
+      "$ref": "backup-encrypted-v1.schema.json#/properties/crypto/properties/nonce"
+    },
+    "payload": {
+      "type": "string",
+      "minLength": 24,
+      "maxLength": 87404,
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/][AQgw]==|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=)?(?![\\s\\S])",
+      "contentEncoding": "base64",
+      "allOf": [
+        {
+          "if": {
+            "minLength": 87404
+          },
+          "then": {
+            "pattern": "=(?![\\s\\S])"
+          }
+        }
+      ],
+      "description": "Canonical padded Base64 of 16..65552 ciphertext bytes including the 16-byte authentication tag. At the maximum encoded length padding is required, excluding the otherwise equal-length 65553-byte encoding. Decoding, decryption and keyring validation still occur at runtime."
+    }
+  },
+  "additionalProperties": false
+}

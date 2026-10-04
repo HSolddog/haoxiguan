@@ -1,0 +1,93 @@
+{
+  "checkedAtUtc": "2026-10-04 05:55:46 UTC",
+  "status": "published-and-public-download-verified",
+  "release": {
+    "id": 402864050,
+    "url": "https://github.com/HSolddog/haoxiguan/releases/tag/v1.2.1-test.20261004.fixed-signing",
+    "tag": "v1.2.1-test.20261004.fixed-signing",
+    "source": "b8eea8c30b7c1fc25d7a860f0fd374cb3f9d5844",
+    "draft": false,
+    "prerelease": true,
+    "publishedAt": "2026-10-04T05:50:02Z",
+    "assets": [
+      {
+        "id": 609226269,
+        "name": "build-info.json",
+        "bytes": 7032,
+        "sha256": "4746a4073586d01de345d53838e5724c1bd8b6e312abbba4341f256f88b65b97",
+        "url": "https://github.com/HSolddog/haoxiguan/releases/download/v1.2.1-test.20261004.fixed-signing/build-info.json",
+        "githubDigestMatched": true,
+        "publicDownloadMatched": true
+      },
+      {
+        "id": 609226267,
+        "name": "haoxiguan-1.2.1-build7-fixed-release.apk",
+        "bytes": 68723833,
+        "sha256": "1ff80c7d78b50929892a7f2a2082139a7c03421089151dd013d97d2411e0a90b",
+        "url": "https://github.com/HSolddog/haoxiguan/releases/download/v1.2.1-test.20261004.fixed-signing/haoxiguan-1.2.1-build7-fixed-release.apk",
+        "githubDigestMatched": true,
+        "publicDownloadMatched": true
+      },
+      {
+        "id": 609226268,
+        "name": "SHA256SUMS",
+        "bytes": 191,
+        "sha256": "57d976c6140b2346e23365c2864c63ae9b94a60276126671389a56be4bd87d9f",
+        "url": "https://github.com/HSolddog/haoxiguan/releases/download/v1.2.1-test.20261004.fixed-signing/SHA256SUMS",
+        "githubDigestMatched": true,
+        "publicDownloadMatched": true
+      }
+    ]
+  },
+  "apk": {
+    "versionName": "1.2.1",
+    "versionCode": 7,
+    "package": "com.haoxiguan.haoxiguan",
+    "signerCertificateSha256": "D675D16E4C0CC72C862DB337E2A6B2D7D92AFDF61135B014B95B44A016FC5ABC",
+    "versionAndSignerBinding": "Publicly downloaded APK SHA256 equals the locally inspected normal product Release; downloaded build-info matches version, package, and signer."
+  },
+  "oldRelease": {
+    "id": 402262545,
+    "tag": "v1.1.0-dev.20261003.8e390aa",
+    "url": "https://github.com/HSolddog/haoxiguan/releases/tag/v1.1.0-dev.20261003.8e390aa",
+    "source": "8e390aa8bc1bf438e6f6a6c7cdf7ee10d773776a",
+    "preserved": true,
+    "assets": [
+      {
+        "id": 606893340,
+        "name": "build-info.json",
+        "bytes": 1131,
+        "sha256": "cab510677906ace46195cc74bdbf57bcff1b68bc7ac503b84fb59b1617d82dab"
+      },
+      {
+        "id": 606893339,
+        "name": "haoxiguan-1.1.0-dev.20261003-8e390aa-debug.apk",
+        "bytes": 170102865,
+        "sha256": "f75b807b093f0ef88a66db41d7236c50f6ee8e2d860e92e8352042a6488cc1bb"
+      },
+      {
+        "id": 606893341,
+        "name": "SHA256SUMS",
+        "bytes": 113,
+        "sha256": "765e333561781e87d902e5432aba0b243833bef5318702fdbad1751fe409b1ca"
+      }
+    ]
+  },
+  "boundaries": {
+    "releaseAssetsLimitedTo": [
+      "APK",
+      "build-info.json",
+      "SHA256SUMS"
+    ],
+    "signingSecretsUploaded": false,
+    "newSigningKeyCreated": false,
+    "insecureCredentialStorage": false,
+    "physicalDeviceAcceptance": false,
+    "externalKeyBackupVerified": false,
+    "pullRequestMerged": false,
+    "serviceDeployed": false,
+    "designExternalAcceptanceComplete": false
+  },
+  "historicalBuildRecord": "fixed-release-1.2.1-build7.json retains its publicationStatusAtPreparation; current publication status is recorded here.",
+  "evidence": "Independent GitHub release API read and unauthenticated public asset downloads with verified TLS; all three public asset byte counts and SHA256 hashes equal local artifacts and API digests."
+}

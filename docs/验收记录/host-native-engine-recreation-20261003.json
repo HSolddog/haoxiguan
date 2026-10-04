@@ -1,0 +1,62 @@
+{
+  "scope": "Isolated acceptance fixture and host-only synthetic regression tests; no production device data.",
+  "sourceFiles": [
+    {
+      "repositoryPath": "tools/android_acceptance.dart",
+      "sha256": "c6a7e0fbb53911bbe4632cbcc9faabb65f75cf7c8900d473b1561c86fc6934cf"
+    },
+    {
+      "repositoryPath": "tools/build_android_acceptance.py",
+      "sha256": "7a29d35105e5d2c4d6c2dd107c0ed243ddb13038332dded7c08ede02ae7dc4f6"
+    },
+    {
+      "repositoryPath": "tools/run_android_acceptance.py",
+      "sha256": "af6ebd0311f2df721d3815ff5d2e15d6c363cf257038b8cf1f0c4055dd8917f6"
+    },
+    {
+      "repositoryPath": "tools/test_android_acceptance.py",
+      "sha256": "93e63ee5d0e54b261510183f18e04828b05a9188a21e10307941f4eb0c061521"
+    },
+    {
+      "repositoryPath": "tools/fixtures/acceptance_engine_host.kt.txt",
+      "sha256": "ab5f5e39d04d715d50fe07a1cd9d0a34b93ac4763fee7e7db6a454cb50cf7383"
+    },
+    {
+      "repositoryPath": "tools/test_android_acceptance_builder.py",
+      "sha256": "994c9b92b0426bae75df531570a28a8f2c13a51084e15993bf12f38638c3b87f"
+    },
+    {
+      "repositoryPath": "test/android_acceptance_engine_test.dart",
+      "sha256": "fb28c12e388b2131ec1051c655356798a29a44a2a7b1218af5c7707bdf1ee2b6"
+    },
+    {
+      "repositoryPath": "test/android_acceptance_checkpoint_test.dart",
+      "sha256": "d209028c996fff363b21f365489586c6847058cbce88474bbc49c8894208e8bb"
+    }
+  ],
+  "validation": {
+    "dartPassed": 24,
+    "dartExitCode": 0,
+    "newEngineProtocolTests": 8,
+    "pythonPassed": 74,
+    "pythonExitCode": 0,
+    "driverTests": 70,
+    "builderTests": 4,
+    "analyzeIssues": 0,
+    "analyzeExitCode": 0,
+    "formattedFiles": 3,
+    "formatterChangedFiles": 2,
+    "formatExitCode": 0
+  },
+  "verifiedHostBoundaries": [
+    "A recreation request must have executed on its exact old host before a new visible host can establish a proof.",
+    "The host requires the original process, cached engine, Dart owner and first running report to survive recreation.",
+    "An unresponsive retained owner fails without stealing ownership or replaying business operations.",
+    "All passed phases and schema2 predecessors require the same engine proof.",
+    "Four real SQLite scenarios retain exact database/model comparisons; intervening writes are rejected.",
+    "The builder restores all four temporary product inputs byte for byte on success and either build failure."
+  ],
+  "frozenSchema2Sha256": "6b3f9879ef38e4c874f2bd1efe310d2307e44ec5b48f823604d91f68dc69e3dc",
+  "boundary": "MethodChannel and compiler calls were mocked in host tests. The Kotlin fixture has not been compiled locally; actual engine recreation, UI survival and all four Android API matrices still require the next CI run.",
+  "fullLocalEvidenceSha256": "3acc2138e2cdb66364ed090d4e801549f552857dc56f346ccedab9018707b5b4"
+}

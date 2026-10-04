@@ -6,6 +6,9 @@ on:
       - '.github/workflows/server.yml'
       - 'tools/container_smoke.py'
       - 'tools/generate_server_notices.py'
+      - 'tools/server_https_capacity.py'
+      - 'tools/test_server_https_capacity.py'
+      - 'tools/sync_test_certificate.go'
   push:
     branches: [main]
     paths:
@@ -13,6 +16,9 @@ on:
       - '.github/workflows/server.yml'
       - 'tools/container_smoke.py'
       - 'tools/generate_server_notices.py'
+      - 'tools/server_https_capacity.py'
+      - 'tools/test_server_https_capacity.py'
+      - 'tools/sync_test_certificate.go'
   workflow_dispatch:
 permissions:
   contents: read
@@ -52,4 +58,82 @@ jobs:
         with:
           name: sync-server-${{ github.sha }}
           path: server/dist/
+          retention-days: 14
+
+  # Standard ARM64 runners are free for public repositories. Keep this guard
+  # if repository visibility ever changes; no paid/larger runner is requested.
+  arm64-smoke:
+    needs: verify
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: sync-server-${{ github.sha }}
+          path: server/dist/
+      - name: Verify native ARM64 and the same checked server artifact
+        working-directory: server
+        run: |
+          test "$RUNNER_ARCH" = "ARM64"
+          test "$(uname -m)" = "aarch64"
+          sha256sum --check dist/SHA256SUMS
+          docker build --platform=linux/arm64 --build-arg TARGETARCH=arm64 -t haoxiguan-sync:arm64-smoke .
+          test "$(docker image inspect --format '{{.Architecture}}' haoxiguan-sync:arm64-smoke)" = "arm64"
+      - name: Native ARM64 non-root restart and offline restore
+        run: |
+          python3 tools/container_smoke.py --image haoxiguan-sync:arm64-smoke --output server/dist/container-smoke-arm64.json
+          python3 - <<'PY'
+          import json, os, platform
+          from pathlib import Path
+          report = Path('server/dist/container-smoke-arm64.json')
+          result = json.loads(report.read_text())
+          result.update({'sourceCommit': os.environ['GITHUB_SHA'],
+                         'runnerArchitecture': os.environ['RUNNER_ARCH'],
+                         'kernelArchitecture': platform.machine(),
+                         'imageArchitecture': 'arm64',
+                         'scope': 'native ARM64 lifecycle smoke; not an ARM64 capacity benchmark'})
+          report.write_text(json.dumps(result, indent=2)+'\n')
+          print('ARM64_SMOKE_REPORT=' + json.dumps(result, separators=(',', ':')))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('Native ARM64 lifecycle evidence\n\n```json\n'+report.read_text()+'```\n')
+          PY
+      # JSON is retained in logs/summary, which do not consume artifact storage.
+
+  capacity:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: sync-server-${{ github.sha }}
+          path: server/dist/
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: server/go.sum
+      - name: Build the same unprivileged server image
+        working-directory: server
+        run: |
+          sha256sum --check dist/SHA256SUMS
+          docker build --build-arg TARGETARCH=amd64 -t haoxiguan-sync:capacity .
+      - name: C07 isolated HTTPS capacity and interrupted recovery
+        run: |
+          python3 -m py_compile tools/server_https_capacity.py
+          python3 -m unittest discover -s tools -p test_server_https_capacity.py -v
+          python3 tools/server_https_capacity.py --image haoxiguan-sync:capacity --output build/server-https-capacity/report.json
+      - name: Preserve capacity observations and verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: server-https-capacity-${{ github.sha }}
+          path: build/server-https-capacity/report.json
+          if-no-files-found: warn
           retention-days: 14

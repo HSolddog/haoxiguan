@@ -20,7 +20,11 @@ class MemorySecrets implements SecretStore {
 /// Deliberately dumb opaque relay. Protocol/auth/SQLite are independently tested
 /// against the real Go server; this injects deterministic client crash windows.
 class TestSyncRelay implements SyncTransport {
+  TestSyncRelay({String? vaultId, String? epochId})
+    : vaultId = vaultId ?? vault,
+      epochId = epochId ?? epoch;
   static final epoch = 'e' * 32, vault = 'v' * 32;
+  final String vaultId, epochId;
   final objects = <String, Map<String, dynamic>>{};
   final operations = <String, Map<String, dynamic>>{};
   final requests = <String, String>{};
@@ -37,10 +41,12 @@ class TestSyncRelay implements SyncTransport {
     Map<String, String>? headers,
   }) async {
     final uri = Uri.parse(path);
-    if (uri.path == '/v1/capabilities') return {'protocol': 1, 'epoch': epoch};
+    if (uri.path == '/v1/capabilities') {
+      return {'protocol': 1, 'epoch': epochId};
+    }
     if (uri.path == '/v1/vault') {
       return {
-        'vaultId': vault,
+        'vaultId': vaultId,
         'readOnly': readOnly,
         'objects': objects.length,
         'highWater': '${changes.length}',
@@ -100,7 +106,7 @@ class TestSyncRelay implements SyncTransport {
       afterNextPull = null;
       await callback?.call();
       return {
-        'epoch': epoch,
+        'epoch': epochId,
         'cursor': '$next',
         'highWater': '$high',
         'more': next < high,

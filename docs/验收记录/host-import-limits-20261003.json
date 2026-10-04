@@ -1,0 +1,61 @@
+{
+  "recordedUtc": "2026-10-03T17:37:32.4595258Z",
+  "baseCommit": "61bd1cca205c2d7130ef3e1c48040fe4db9c226f",
+  "auditSnapshotCommit": "2454e7259b8c0609b8516e85c00d79a96c57e9d4",
+  "sourceState": "Working tree import-limit changes, before root formatting and full regression; file hashes bind the targeted test inputs.",
+  "testedFileSha256": {
+    "lib/data/snapshot_codec.dart": "b0c01246c82cbf2030dc64de033b4dc821ebde81d5ac9945e4485c8ca5e78fac",
+    "lib/services/backup_preview.dart": "b28f9c8693c3d3c6e25f02c1a1e5ac255a65292bfd83795280c57719a24c1f82",
+    "lib/state/habit_controller.dart": "e4273e38de8213dfbef87abc7ceed6873e308b168c6452c666880d0c49fb0636",
+    "lib/services/sync_engine.dart": "9acd2c207c03f0642a25584d88320588371aea05adcc999bbdb2541300a48967",
+    "test/external_import_limits_test.dart": "f30aab2fe2a84de6ea0ba2fd673c2a5d64be6cbe013a5e0083c6edaf3b31bc35",
+    "test/sync_import_limits_test.dart": "78a1692ea3d569d9b10ecab416892f75187fb1904eee1a355933d49549280947"
+  },
+  "validation": {
+    "environmentSetup": ". ..\\tools\\toolchain\\environment.ps1",
+    "command": "flutter test --no-pub test/external_import_limits_test.dart test/sync_import_limits_test.dart test/backup_codec_test.dart test/data_restore_test.dart test/legacy_restore_dialog_test.dart test/schema_upgrade_test.dart test/storage_integrity_test.dart test/sync_engine_test.dart",
+    "exitCode": 0,
+    "passed": 77,
+    "newCases": 15,
+    "newCasesByFile": {
+      "test/external_import_limits_test.dart": 10,
+      "test/sync_import_limits_test.dart": 5
+    },
+    "terminalResult": "00:15 +77: All tests passed!",
+    "hostLog": "../external-import-limits-targeted.log",
+    "hostLogSha256": "712e8d3cea6c133893251472c9c4f64c3d40809956e27cfd545422b7fb7fc6a4"
+  },
+  "inputPolicy": {
+    "requirement": "docs/产品规划.md:44: title 1–80 characters, daily notes at most 2000; external imports obey the same limits.",
+    "strictEntryPoints": [
+      "SnapshotCodec.decodeImport",
+      "BackupPreview.fromSnapshot",
+      "HabitController.importJson",
+      "SyncEngine._receive: decrypted non-null h/title and n/text before remote shadow assignment"
+    ],
+    "fileRestorePaths": [
+      "Pasted legacy JSON",
+      "Plain JSON or plaintext backup envelope",
+      "Decrypted encrypted HGB through restore preview and controller import",
+      "WebDAV decrypted raw through restore preview and controller import"
+    ],
+    "lengthSemantics": "Dart String.length, consistent with existing UI/controller text limits. Title must be nonblank; imported facts are never trimmed or truncated.",
+    "cryptoBoundary": "BackupCodec decrypt and WebDavClient.restore return compatible raw snapshots. Backup/export upload readback and pruning share this decode path; strict restore preview and controller import enforce external input limits before any replacement."
+  },
+  "verifiedScenarios": [
+    "Accept title lengths 1 and 80 and note lengths 0 and 2000, preserving future metadata fields.",
+    "Reject title 81 and note 2001 in both preview and direct controller import before replacement/protection; memory snapshot, persisted state, backup and exact pasted draft remain intact.",
+    "Accepted boundary import preserves full title/note text, protects original facts, and can retry after protection failure.",
+    "Old SharedPreferences facts with title 1000 and note 2001 migrate to SQLite, allow ordinary settings edits, reopen intact and survive compatible sync encode/assemble; rejected reimport changes neither business revision nor protection/change-log counts.",
+    "Frozen SQLite schema 1 migrates with title 1000 and note 2001 intact; explicit recovery of a local protection backup also preserves these facts.",
+    "Encrypted backup export/decrypt stays lossless for oversized legacy facts; encrypted-file and mocked WebDAV restore preview reject them and leave target storage intact.",
+    "Authenticated remote title 80 and note 2000 reach initial sync preview without truncation.",
+    "A remote title 81 or note 2001 rejects a page containing earlier valid objects: snapshot, business revision, shadow, cursor, highWater, base and pending remain unchanged; only allowlisted failure metadata is persisted.",
+    "Null habit/note tombstones remain valid.",
+    "Invalid authenticated push-conflict input preserves frozen outbox ciphertext, acknowledged remote/base state and local facts."
+  ],
+  "remainingVerification": [
+    "Root-owned formatting, analyzer and full Flutter regression pending at recording time.",
+    "WebDAV limit case uses a mocked HTTP client; no additional real-service or Android device acceptance claimed."
+  ]
+}

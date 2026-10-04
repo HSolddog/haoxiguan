@@ -1,0 +1,758 @@
+{
+  "observedAtUtc": "2026-10-03T18:32:05.111147+00:00",
+  "sourceHead": "809045fd41259241dcfa40130d2c81589fbf3dc0",
+  "mergeSha": "a2da89465b3d69b5f492139765cc4ee89863ffe1",
+  "sourceTree": "4c2dbc5bb9e119bdf6c9264e687bbd52349eefe1",
+  "mergeTree": "4c2dbc5bb9e119bdf6c9264e687bbd52349eefe1",
+  "sourceEqualsMergeTree": true,
+  "androidRunId": 37142406656,
+  "androidRunUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37142406656",
+  "status": "completed",
+  "conclusion": "failure",
+  "verifyEvidence": "docs/验收记录/verify-809045f.json",
+  "nativeSyncEvidence": "docs/验收记录/native-sync-ci-809045f.json",
+  "checkpointIsIncludedInThisSource": false,
+  "crossApiCompletedRunIdsUnique": true,
+  "allFourNativePassed": false,
+  "native": [
+    {
+      "api": 24,
+      "jobId": 111261668521,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37142406656/job/111261668521",
+      "status": "completed",
+      "conclusion": "success",
+      "artifactId": 11281780504,
+      "artifactName": "android-native-api-24-a2da89465b3d69b5f492139765cc4ee89863ffe1",
+      "artifactDigest": "sha256:b531a74c590bdf9670c4de2bef8398187cfcef32d14783b0071775f47e83bb61",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-24.zip",
+        "bytes": 604110,
+        "sha256": "b531a74c590bdf9670c4de2bef8398187cfcef32d14783b0071775f47e83bb61"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-24-raw-manifest.json",
+        "bytes": 8558,
+        "sha256": "23f36ad2c71157429b73203d9f9ef6e1f87b2890a8836ddedfad4fc0ba36deb8"
+      },
+      "completedPhases": 4,
+      "fourPhaseEvidence": true,
+      "issues": [],
+      "reports": [
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051066395070",
+          "phase": "create",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "2460cb0eccf1f5e21189fc213aa27a88dbc63f770307752d0c654c842a69288c",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        },
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051071463680",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "6285363034b71b75e659dac243d9a12d5577821c64b7a8d6d9e0f2784fa3c05f",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        },
+        {
+          "build": "10002",
+          "status": "passed",
+          "runId": "1791051082654564",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 3,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "notificationApiLevel": 24,
+          "nativeChannelDiagnosis": "notApplicable",
+          "nativeChannelRecovery": "notApplicable",
+          "safExportReadback": true,
+          "safOpenDecrypt": true,
+          "safSizeLimit": true,
+          "nativeReminderScheduling": true,
+          "workManagerRenewal": true,
+          "periodicTasksRegistered": true,
+          "nativeDeniedHabitSaved": true,
+          "nativeAppPermissionDiagnosis": true,
+          "nativeAppPermissionRecovery": true,
+          "nativeRestorePreviewCancel": true,
+          "nativeRestoreProtection": true,
+          "nativeRestoreConfirm": true,
+          "nativeRestoreReopen": true,
+          "originalReportSemanticSha256": "3bff269e8d862a17dc251cf06cecc8b7b0bb67ed10769f7b1398ca7e8c844ae0",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "documentName",
+            "nativeRestoreStorageEvidence",
+            "nativeRestorePreviewCancel",
+            "nativeRestoreProtection",
+            "nativeRestoreConfirm",
+            "nativeRestoreReopen",
+            "safExportReadback",
+            "safOpenDecrypt",
+            "safSizeLimit",
+            "nativeReminderScheduling",
+            "nativeReminderStorageEvidence",
+            "notificationApiLevel",
+            "nativeDeniedHabitSaved",
+            "nativeAppPermissionDiagnosis",
+            "nativeAppPermissionRecovery",
+            "nativeChannelDiagnosis",
+            "nativeChannelRecovery",
+            "workManagerRenewal",
+            "periodicTasksRegistered",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ],
+          "restoreStorage": {
+            "evidenceSemanticSha256": "fc6b8dd107916478d664255605b9f8125f671f5c1a28412fcc914e59fc61ba68",
+            "cancelSnapshotDifferencePaths": [],
+            "cancelTableDifferencePaths": [],
+            "representationDifferencePaths": [
+              "/habits/0/completions"
+            ],
+            "tableNames": [
+              "app_state",
+              "daily_notes",
+              "habits",
+              "legacy_sources",
+              "local_changes",
+              "plans",
+              "protections",
+              "records",
+              "sqlite_sequence",
+              "sync_protections",
+              "sync_state"
+            ],
+            "beforeEqualsAfterCancel": true,
+            "protectedSnapshotEqualsStoredBefore": true,
+            "fullConfirmedModelEqualsReopenedModel": true,
+            "beforeSemanticSha256": "3f59ca2462c961cb745fcf05bddb7d4b348692e5da160ad79606866d23f4b993",
+            "afterCancelSemanticSha256": "3f59ca2462c961cb745fcf05bddb7d4b348692e5da160ad79606866d23f4b993"
+          },
+          "reminderStorage": {
+            "evidenceSemanticSha256": "93433ae8197b9145410df825155343e2ebe684296de03d4743080ddec1b1bd45",
+            "settingsSnapshotDifferencePaths": [],
+            "settingsTableDifferencePaths": [],
+            "tableNames": [
+              "app_state",
+              "daily_notes",
+              "habits",
+              "legacy_sources",
+              "local_changes",
+              "plans",
+              "protections",
+              "records",
+              "sqlite_sequence",
+              "sync_protections",
+              "sync_state"
+            ],
+            "createdStoredEqualsAfterSettings": true,
+            "fullCreatedModelEqualsFreshControllerModel": true,
+            "cleanupSnapshotEqualsStoredOriginal": true
+          }
+        },
+        {
+          "build": "10002",
+          "status": "passed",
+          "runId": "1791051173817302",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 3,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "notificationApiLevel": 24,
+          "nativeChannelDiagnosis": "notApplicable",
+          "nativeChannelRecovery": "notApplicable",
+          "safExportReadback": true,
+          "safOpenDecrypt": true,
+          "safSizeLimit": true,
+          "nativeReminderScheduling": true,
+          "workManagerRenewal": true,
+          "periodicTasksRegistered": true,
+          "nativeDeniedHabitSaved": true,
+          "nativeAppPermissionDiagnosis": true,
+          "nativeAppPermissionRecovery": true,
+          "nativeRestorePreviewCancel": true,
+          "nativeRestoreProtection": true,
+          "nativeRestoreConfirm": true,
+          "nativeRestoreReopen": true,
+          "originalReportSemanticSha256": "5ee90d8f9d1084fe76a350ba8fc3fd0a47c63ea23eca264c08a4424d0f7a5414",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "documentName",
+            "nativeRestoreStorageEvidence",
+            "nativeRestorePreviewCancel",
+            "nativeRestoreProtection",
+            "nativeRestoreConfirm",
+            "nativeRestoreReopen",
+            "safExportReadback",
+            "safOpenDecrypt",
+            "safSizeLimit",
+            "nativeReminderScheduling",
+            "nativeReminderStorageEvidence",
+            "notificationApiLevel",
+            "nativeDeniedHabitSaved",
+            "nativeAppPermissionDiagnosis",
+            "nativeAppPermissionRecovery",
+            "nativeChannelDiagnosis",
+            "nativeChannelRecovery",
+            "workManagerRenewal",
+            "periodicTasksRegistered",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ],
+          "restoreStorage": {
+            "evidenceSemanticSha256": "58df894e572f6a752f455c7695d54af80967e774d4e86764c9fb9b0ba08a0346",
+            "cancelSnapshotDifferencePaths": [],
+            "cancelTableDifferencePaths": [],
+            "representationDifferencePaths": [
+              "/habits/0/completions"
+            ],
+            "tableNames": [
+              "app_state",
+              "daily_notes",
+              "habits",
+              "legacy_sources",
+              "local_changes",
+              "plans",
+              "protections",
+              "records",
+              "sqlite_sequence",
+              "sync_protections",
+              "sync_state"
+            ],
+            "beforeEqualsAfterCancel": true,
+            "protectedSnapshotEqualsStoredBefore": true,
+            "fullConfirmedModelEqualsReopenedModel": true,
+            "beforeSemanticSha256": "4d38294ed405d95f6eb87267d8f325f2b5f65143112f7c5933f435dfe9f6a28a",
+            "afterCancelSemanticSha256": "4d38294ed405d95f6eb87267d8f325f2b5f65143112f7c5933f435dfe9f6a28a"
+          },
+          "reminderStorage": {
+            "evidenceSemanticSha256": "0e3fef4fb4de6ca064de63e591f5497d15760a5fc1e1ba26b7662f9672e458cd",
+            "settingsSnapshotDifferencePaths": [],
+            "settingsTableDifferencePaths": [],
+            "tableNames": [
+              "app_state",
+              "daily_notes",
+              "habits",
+              "legacy_sources",
+              "local_changes",
+              "plans",
+              "protections",
+              "records",
+              "sqlite_sequence",
+              "sync_protections",
+              "sync_state"
+            ],
+            "createdStoredEqualsAfterSettings": true,
+            "fullCreatedModelEqualsFreshControllerModel": true,
+            "cleanupSnapshotEqualsStoredOriginal": true
+          }
+        }
+      ],
+      "processIdentityProof": [
+        {
+          "build": 10001,
+          "before": "processes-001-before-stop.txt",
+          "finalHealthyReads": [
+            "processes-002-after-stop.txt",
+            "processes-003-after-stop.txt"
+          ],
+          "originalIdentitiesGone": true
+        },
+        {
+          "build": 10002,
+          "before": "processes-004-before-stop.txt",
+          "finalHealthyReads": [
+            "processes-005-after-stop.txt",
+            "processes-006-after-stop.txt"
+          ],
+          "originalIdentitiesGone": true
+        }
+      ],
+      "actualApkIdentityProof": [
+        {
+          "build": 10001,
+          "rawBadging": "apk-10001-badging.txt",
+          "sha256": "be9902c4d3eb7007af69011309409864f710c5e81847eb327cde14acc833c689",
+          "exactIsolatedIdentity": true
+        },
+        {
+          "build": 10002,
+          "rawBadging": "apk-10002-badging.txt",
+          "sha256": "4b8b0e3a139d0c48bccd9196ccedb95f8a73ff5d7bed8e29bcd20080504d6029",
+          "exactIsolatedIdentity": true
+        }
+      ]
+    },
+    {
+      "api": 33,
+      "jobId": 111261668586,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37142406656/job/111261668586",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifactId": 11281555770,
+      "artifactName": "android-native-api-33-a2da89465b3d69b5f492139765cc4ee89863ffe1",
+      "artifactDigest": "sha256:dd9ed988582b4d830245372a903b76c4ccdada9f945eacf31f70b3f63d0d6efd",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-33.zip",
+        "bytes": 297639,
+        "sha256": "dd9ed988582b4d830245372a903b76c4ccdada9f945eacf31f70b3f63d0d6efd"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-33-raw-manifest.json",
+        "bytes": 5821,
+        "sha256": "f4f000fc28997a344ff4d806aebd149d13abcac1ac5f1049a2580ce832c79865"
+      },
+      "completedPhases": 2,
+      "fourPhaseEvidence": false,
+      "issues": [
+        "results.json is absent: complete four-phase acceptance is unproven",
+        "expected four reports, observed 2",
+        "failure.json exists"
+      ],
+      "reports": [
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051104742051",
+          "phase": "create",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "1e4abd2ce881d9ee9284c3320ccef731baf815cab6965f5fbb96f88e1209bc36",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        },
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051109402964",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "f58464a10f5ea650ad2e4b5a473f8c4592955342e7abeb2548f1d248ca1ebff4",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        }
+      ],
+      "processIdentityProof": [],
+      "actualApkIdentityProof": [],
+      "failure": {
+        "rawLastReport": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-33\\last-report.json",
+          "bytes": 85045,
+          "sha256": "642c5a6dedf25c3f11896a7a31d505061b0c62a42f2a785e81e2e225c053ae24"
+        },
+        "rawFailure": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-33\\failure.json",
+          "bytes": 187806,
+          "sha256": "70e43308cfd047c036bcb478d2cae4d254cf91fa9609c31b294b4e457b6a98a9"
+        },
+        "oldLogicalRunIdAtRealDenial": "1791051112267260",
+        "newLogicalRunIdAfterKill": "1791051153781877",
+        "realDenialTap": {
+          "event": "notification-ui-tap",
+          "time": 157.52898656,
+          "runId": "1791051112267260",
+          "stage": "awaitingNotificationDeny",
+          "desiredChecked": false
+        },
+        "observedDisabledState": {
+          "event": "notification-ui-state",
+          "time": 161.503600797,
+          "runId": "1791051112267260",
+          "stage": "awaitingNotificationDeny",
+          "checked": false
+        },
+        "acknowledgementCount": 0,
+        "permissionHelperKill": "10-03 18:12:25.353   557   605 I ActivityManager: Killing 2511:com.haoxiguan.haoxiguan.acceptance/u0a126 (adj 700): PermissionHelper",
+        "firstReplacementProcess": "10-03 18:12:33.243   557   586 I ActivityManager: Start proc 3034:com.haoxiguan.haoxiguan.acceptance/u0a126 for top-activity {com.haoxiguan.haoxiguan.acceptance/com.haoxiguan.haoxiguan.MainActivity}",
+        "lastStage": "awaitingOversizeOpen",
+        "error": "提醒未获权限，习惯和记录已保存。请在系统通知设置中允许好习惯发送通知。",
+        "topStackFrames": [
+          "#0      LocalReminderService._requireAccess (package:haoxiguan/services/reminder_service.dart:188:41)",
+          "<asynchronous suspension>",
+          "#1      LocalReminderService.syncAll.perform (package:haoxiguan/services/reminder_service.dart:235:50)",
+          "<asynchronous suspension>",
+          "#2      DatabaseConnectionUser.transaction.<anonymous closure>.<anonymous closure> (package:drift/src/runtime/api/connection_user.dart:519:26)"
+        ],
+        "restoreFlagsBeforeReplacementFailure": {
+          "nativeRestorePreviewCancel": true,
+          "nativeRestoreProtection": true,
+          "nativeRestoreConfirm": true,
+          "nativeRestoreReopen": true
+        },
+        "nativeReminderScheduling": null,
+        "cause": "actual app notification revocation killed the old process; unchanged old fixture generated a fresh logical run and replayed initial scheduling while permission remained denied",
+        "evidenceLimit": "pre-kill original running business report was overwritten by the old fixture; raw Settings/events/runtime establish denial/kill/restart and distinct logical run IDs, not completion of denied habit save"
+      }
+    },
+    {
+      "api": 35,
+      "jobId": 111261668499,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37142406656/job/111261668499",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifactId": 11281615624,
+      "artifactName": "android-native-api-35-a2da89465b3d69b5f492139765cc4ee89863ffe1",
+      "artifactDigest": "sha256:3af871a0e2480f454539d6b315552515f9f9ce9581589b2b742e30f70809e765",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-35.zip",
+        "bytes": 300305,
+        "sha256": "3af871a0e2480f454539d6b315552515f9f9ce9581589b2b742e30f70809e765"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-35-raw-manifest.json",
+        "bytes": 5821,
+        "sha256": "3a4a4410c4273d12c03fe99ed81dc62024f328a3815a4729ee8970f8633c9b72"
+      },
+      "completedPhases": 2,
+      "fourPhaseEvidence": false,
+      "issues": [
+        "results.json is absent: complete four-phase acceptance is unproven",
+        "expected four reports, observed 2",
+        "failure.json exists"
+      ],
+      "reports": [
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051101881093",
+          "phase": "create",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "984a45351fda84c047c07eaea2cf09a7aeb7b4e610d0205590510af80b0d47ef",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        },
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051108013481",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "7932f0871442a1e3ad7b2820c81b316de4718f71463ac47d3c8574b93496055d",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        }
+      ],
+      "processIdentityProof": [],
+      "actualApkIdentityProof": [],
+      "failure": {
+        "rawLastReport": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-35\\last-report.json",
+          "bytes": 85045,
+          "sha256": "aa0d9531f9530fd7f76331fb0865d7f8cbc098dbda87471df7c36075d219819b"
+        },
+        "rawFailure": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-35\\failure.json",
+          "bytes": 187806,
+          "sha256": "661b9c5f36e279c85f695cb577cc69b06238906511b3e94bb5933d9ef7cf1837"
+        },
+        "oldLogicalRunIdAtRealDenial": "1791051113673546",
+        "newLogicalRunIdAfterKill": "1791051158435386",
+        "realDenialTap": {
+          "event": "notification-ui-tap",
+          "time": 170.651748668,
+          "runId": "1791051113673546",
+          "stage": "awaitingNotificationDeny",
+          "desiredChecked": false
+        },
+        "observedDisabledState": {
+          "event": "notification-ui-state",
+          "time": 174.868420216,
+          "runId": "1791051113673546",
+          "stage": "awaitingNotificationDeny",
+          "checked": false
+        },
+        "acknowledgementCount": 0,
+        "permissionHelperKill": "10-03 18:12:28.918   540   618 I ActivityManager: Killing 2511:com.haoxiguan.haoxiguan.acceptance/u0a148 (adj 700): PermissionHelper",
+        "firstReplacementProcess": "10-03 18:12:37.220   540   595 I ActivityManager: Start proc 2946:com.haoxiguan.haoxiguan.acceptance/u0a148 for top-activity {com.haoxiguan.haoxiguan.acceptance/com.haoxiguan.haoxiguan.MainActivity}",
+        "lastStage": "awaitingOversizeOpen",
+        "error": "提醒未获权限，习惯和记录已保存。请在系统通知设置中允许好习惯发送通知。",
+        "topStackFrames": [
+          "#0      LocalReminderService._requireAccess (package:haoxiguan/services/reminder_service.dart:188:41)",
+          "<asynchronous suspension>",
+          "#1      LocalReminderService.syncAll.perform (package:haoxiguan/services/reminder_service.dart:235:50)",
+          "<asynchronous suspension>",
+          "#2      DatabaseConnectionUser.transaction.<anonymous closure>.<anonymous closure> (package:drift/src/runtime/api/connection_user.dart:519:26)"
+        ],
+        "restoreFlagsBeforeReplacementFailure": {
+          "nativeRestorePreviewCancel": true,
+          "nativeRestoreProtection": true,
+          "nativeRestoreConfirm": true,
+          "nativeRestoreReopen": true
+        },
+        "nativeReminderScheduling": null,
+        "cause": "actual app notification revocation killed the old process; unchanged old fixture generated a fresh logical run and replayed initial scheduling while permission remained denied",
+        "evidenceLimit": "pre-kill original running business report was overwritten by the old fixture; raw Settings/events/runtime establish denial/kill/restart and distinct logical run IDs, not completion of denied habit save"
+      }
+    },
+    {
+      "api": 36,
+      "jobId": 111261668582,
+      "jobUrl": "https://github.com/HSolddog/haoxiguan/actions/runs/37142406656/job/111261668582",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifactId": 11281186739,
+      "artifactName": "android-native-api-36-a2da89465b3d69b5f492139765cc4ee89863ffe1",
+      "artifactDigest": "sha256:6580916a62b1f6222f760f904d7a43ad3893274085b6c3f2b8dcde2f3f542d8b",
+      "downloadedZip": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-36.zip",
+        "bytes": 303609,
+        "sha256": "6580916a62b1f6222f760f904d7a43ad3893274085b6c3f2b8dcde2f3f542d8b"
+      },
+      "rawFileManifest": {
+        "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-36-raw-manifest.json",
+        "bytes": 5821,
+        "sha256": "737ccd135d5f954c4c1e4bab71894bf10c9e6df0d542e6718dd10bf866d3392d"
+      },
+      "completedPhases": 2,
+      "fourPhaseEvidence": false,
+      "issues": [
+        "results.json is absent: complete four-phase acceptance is unproven",
+        "expected four reports, observed 2",
+        "failure.json exists"
+      ],
+      "reports": [
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051094858238",
+          "phase": "create",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "ab1f73fd5006f6b33e521ad0cdb1e04df5375b5198c950bc90dada9783cf2198",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        },
+        {
+          "build": "10001",
+          "status": "passed",
+          "runId": "1791051102021202",
+          "phase": "reopen",
+          "habits": 3,
+          "schema": 2,
+          "nativeCrypto": true,
+          "keystore": true,
+          "backupConfigured": false,
+          "syncConfigured": false,
+          "originalReportSemanticSha256": "069512f41cba17ea6771b23f9bbd2b9c693ebf24f013c7790c1c0cdbe642e06f",
+          "originalReportFields": [
+            "build",
+            "status",
+            "runId",
+            "phase",
+            "habits",
+            "schema",
+            "nativeCrypto",
+            "keystore",
+            "backupConfigured",
+            "syncConfigured"
+          ]
+        }
+      ],
+      "processIdentityProof": [],
+      "actualApkIdentityProof": [],
+      "failure": {
+        "rawLastReport": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-36\\last-report.json",
+          "bytes": 85045,
+          "sha256": "85e8b685f12dd0b24e2b5f0682da16f3bec5b88dc2eb2d71e99742865b45bc05"
+        },
+        "rawFailure": {
+          "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-36\\failure.json",
+          "bytes": 187806,
+          "sha256": "9735fc33fcdf2e478771ab4ec8f6cc9c1469860f2a5b19c2eb24a8e00f9f9811"
+        },
+        "oldLogicalRunIdAtRealDenial": "1791051107558365",
+        "newLogicalRunIdAfterKill": "1791051150874722",
+        "realDenialTap": {
+          "event": "notification-ui-tap",
+          "time": 342.168481913,
+          "runId": "1791051107558365",
+          "stage": "awaitingNotificationDeny",
+          "desiredChecked": false
+        },
+        "observedDisabledState": {
+          "event": "notification-ui-state",
+          "time": 346.276771923,
+          "runId": "1791051107558365",
+          "stage": "awaitingNotificationDeny",
+          "checked": false
+        },
+        "acknowledgementCount": 0,
+        "permissionHelperKill": "10-03 18:12:21.789   645   704 I ActivityManager: Killing 2612:com.haoxiguan.haoxiguan.acceptance/u0a150 (adj 700): PermissionHelper",
+        "firstReplacementProcess": "10-03 18:12:29.940   645   679 I ActivityManager: Start proc 3021:com.haoxiguan.haoxiguan.acceptance/u0a150 for top-activity {com.haoxiguan.haoxiguan.acceptance/com.haoxiguan.haoxiguan.MainActivity}",
+        "lastStage": "awaitingOversizeOpen",
+        "error": "提醒未获权限，习惯和记录已保存。请在系统通知设置中允许好习惯发送通知。",
+        "topStackFrames": [
+          "#0      LocalReminderService._requireAccess (package:haoxiguan/services/reminder_service.dart:188:41)",
+          "<asynchronous suspension>",
+          "#1      LocalReminderService.syncAll.perform (package:haoxiguan/services/reminder_service.dart:235:50)",
+          "<asynchronous suspension>",
+          "#2      DatabaseConnectionUser.transaction.<anonymous closure>.<anonymous closure> (package:drift/src/runtime/api/connection_user.dart:519:26)"
+        ],
+        "restoreFlagsBeforeReplacementFailure": {
+          "nativeRestorePreviewCancel": true,
+          "nativeRestoreProtection": true,
+          "nativeRestoreConfirm": true,
+          "nativeRestoreReopen": true
+        },
+        "nativeReminderScheduling": null,
+        "cause": "actual app notification revocation killed the old process; unchanged old fixture generated a fresh logical run and replayed initial scheduling while permission remained denied",
+        "evidenceLimit": "pre-kill original running business report was overwritten by the old fixture; raw Settings/events/runtime establish denial/kill/restart and distinct logical run IDs, not completion of denied habit save"
+      }
+    }
+  ],
+  "rawMetadata": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-final-metadata.json",
+    "bytes": 32278,
+    "sha256": "ab34af7fa2040c0359bb10ae225270de3e6e966302e5226dd9e2f11ad749ca4e"
+  },
+  "treeProof": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-tree-proof.json",
+    "bytes": 4317,
+    "sha256": "7fc1a5e4efaaf9b3911e0da3f2cec4ba7b2a55e507a9a4e676a93da2962253e6"
+  },
+  "evidenceReader": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-evidence-reader.py",
+    "bytes": 17813,
+    "sha256": "f7c7eb84c5151ab384fc2d9d48a0c79fb2643854c4d11c2e63492b9a200118ec"
+  },
+  "pinnedSourceDriver": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\source-driver-809045f.py",
+    "bytes": 36001,
+    "sha256": "79855647d28dbbed20e17bf92889db23172e30fa78dcd4e857bcf63ad777c898"
+  },
+  "reviewOutput": {
+    "path": "C:\\Users\\ych\\Documents\\Codex\\2026-10-03\\task-2\\ci-followup-809045f\\native-evidence-review.json",
+    "bytes": 33342,
+    "sha256": "9e3e27fce3204b3354dfcab6a626cb259e69cb9e3e44004ca09dda04f0d9982a"
+  },
+  "scope": "API24 has complete four-phase original reports. API33/35/36 each have two schema2 passes and the known permission-revocation process-kill failure. This pre-checkpoint source does not verify continuation; root will push checkpoint source separately."
+}

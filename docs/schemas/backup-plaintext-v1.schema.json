@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/backup-plaintext-v1.schema.json",
+  "title": "Haoxiguan plaintext JSON backup v1 export",
+  "description": "Current DataScreen exporter wrapper. Older accepted wrappers may omit creation time; use the version-aware importer.",
+  "type": "object",
+  "required": [
+    "format",
+    "formatVersion",
+    "encrypted",
+    "createdAtUtc",
+    "data"
+  ],
+  "properties": {
+    "format": {
+      "const": "haoxiguan-backup"
+    },
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "encrypted": {
+      "const": false
+    },
+    "createdAtUtc": {
+      "$ref": "logical-snapshot-v7.schema.json#/$defs/utcDateTime"
+    },
+    "data": {
+      "$ref": "logical-snapshot-v7.schema.json"
+    }
+  },
+  "additionalProperties": false
+}

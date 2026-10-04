@@ -1,0 +1,476 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HSolddog/haoxiguan/main/docs/schemas/logical-snapshot-v7.schema.json",
+  "title": "Haoxiguan logical snapshot v7 export",
+  "description": "Structural export contract; not the complete migration or external-input policy.",
+  "type": "object",
+  "required": [
+    "version",
+    "habits"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 7
+    },
+    "habits": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/habit"
+      }
+    },
+    "vaultId": {
+      "$ref": "#/$defs/id"
+    },
+    "restoredFromVaultId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "categories": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/category"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "darkMode": {
+      "type": "boolean"
+    },
+    "appearanceMode": {
+      "enum": [
+        "system",
+        "light",
+        "dark"
+      ]
+    },
+    "themeColorValue": {
+      "type": "integer"
+    },
+    "reviewDays": {
+      "type": "integer"
+    },
+    "collapsedTodayCategories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "collapsedHabitCategories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Retains legacy seed/microsecond IDs as well as new UUIDs."
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "format": "date"
+    },
+    "utcDateTime": {
+      "type": "string",
+      "pattern": "Z$",
+      "format": "date-time"
+    },
+    "legacyDateTime": {
+      "type": "string",
+      "description": "Original legacy/local DateTime.parse text is preserved, including spaces, local times and offsets. Runtime parsing supplies calendar validation."
+    },
+    "weekdays": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 7
+      }
+    },
+    "sortKey": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "nullableLegacyDateTime": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/legacyDateTime"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "category": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "sortKey"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "sortKey": {
+          "$ref": "#/$defs/sortKey"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "additionalProperties": true,
+      "description": "Unknown fields are flattened extensions and round-trip."
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "id",
+        "from",
+        "kind",
+        "weekdays",
+        "periodTarget",
+        "dailyTarget"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/date"
+        },
+        "kind": {
+          "enum": [
+            "daily",
+            "weekdays",
+            "week",
+            "month"
+          ]
+        },
+        "weekdays": {
+          "$ref": "#/$defs/weekdays"
+        },
+        "periodTarget": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31
+        },
+        "dailyTarget": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        },
+        "legacyInferred": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "id",
+        "date",
+        "value",
+        "recordedAtUtc",
+        "recordedLocalDate",
+        "timezoneId",
+        "utcOffsetMinutes",
+        "legacyTimestamp",
+        "revision",
+        "deleted",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "date": {
+          "$ref": "#/$defs/date"
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        },
+        "recordedAtUtc": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/legacyDateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recordedLocalDate": {
+          "$ref": "#/$defs/date"
+        },
+        "timezoneId": {
+          "type": "string"
+        },
+        "utcOffsetMinutes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -1440,
+              "maximum": 1440
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "legacyTimestamp": {
+          "$ref": "#/$defs/nullableLegacyDateTime"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "habit": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "emoji",
+        "colorValue",
+        "weekdays",
+        "createdAt",
+        "recordType",
+        "unit",
+        "scale",
+        "dailyTarget",
+        "entries",
+        "plans"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "pattern": "\\S",
+          "description": "Storage/export bound; external-input policy is separate."
+        },
+        "emoji": {
+          "type": "string"
+        },
+        "colorValue": {
+          "type": "integer"
+        },
+        "weekdays": {
+          "$ref": "#/$defs/weekdays"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/utcDateTime"
+        },
+        "reminderTime": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completions": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/date"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/legacyDateTime"
+          },
+          "description": "Compatibility projection, not an independent fact table."
+        },
+        "notes": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/date"
+          },
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Retains existing storage/export text; external-input limit is separate."
+        },
+        "exemptions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/date"
+          }
+        },
+        "pausedAt": {
+          "$ref": "#/$defs/nullableLegacyDateTime"
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "category": {
+          "type": "string"
+        },
+        "effortEnabled": {
+          "type": "boolean"
+        },
+        "rewardPoints": {
+          "type": "integer"
+        },
+        "penaltyPoints": {
+          "type": "integer"
+        },
+        "targetCount": {
+          "type": "integer"
+        },
+        "rewardPeriod": {
+          "type": "string"
+        },
+        "wishEnabled": {
+          "type": "boolean"
+        },
+        "wishTitle": {
+          "type": "string"
+        },
+        "wishTarget": {
+          "type": "integer"
+        },
+        "scheduleType": {
+          "enum": [
+            "daily",
+            "weekdays",
+            "week",
+            "month"
+          ]
+        },
+        "scheduleCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31
+        },
+        "recordType": {
+          "enum": [
+            "boolean",
+            "count",
+            "duration"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "scale": {
+          "enum": [
+            1,
+            10,
+            100,
+            1000
+          ]
+        },
+        "dailyTarget": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "plans": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/plan"
+          }
+        },
+        "archivedAt": {
+          "$ref": "#/$defs/nullableLegacyDateTime"
+        },
+        "deletedAt": {
+          "$ref": "#/$defs/nullableLegacyDateTime"
+        },
+        "legacyRewardBalance": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "categoryId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sortKey": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sortKey"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "categoryInfo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/category"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true,
+      "description": "Unknown Habit fields round-trip as flattened extensions. Canonical record/plan serializers emit only known fields."
+    }
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "recordedUtc": "2026-10-03T17:57:05.4723535Z",
+  "baseCommit": "4b75247e4491dfde9fbed0e6d9df554dfe783f98",
+  "baseTree": "4c2dbc5bb9e119bdf6c9264e687bbd52349eefe1",
+  "frozenDesignCommit": "2454e7259b8c0609b8516e85c00d79a96c57e9d4",
+  "frozenAContractsCommit": "973920da755fe4ce311968d95142eb9a13937ce9",
+  "priorAEvidence": "host-schema-20261003.json",
+  "requirement": "docs/数据与同步规范.md:3,94-146,160: current A/C JSON contracts, with existing OpenAPI covering HTTP",
+  "scope": "Four C protocol structural contracts plus existing A4/OpenAPI: .hgr envelope, keyring, decoded AEAD envelope, generic plaintext with separate current h/r/p/n entity and AAD-context definitions. No runtime format, migration or application behavior changes.",
+  "contractFileSha256": {
+    "docs/schemas/sync-recovery-v1.schema.json": "9833e75005b6ef57d8fa67a47d0716449d14b9d7865ecd653b4ce30704b9db4c",
+    "docs/schemas/sync-keyring-v1.schema.json": "fd64be59feaeaf62eaa814dca1636fbadd0e8d479ad0fd422b2ac42a8bd6d95c",
+    "docs/schemas/sync-encrypted-object-v1.schema.json": "f2d304a36e5671ea605e69c9631ad6b0b91a4e48c580fd54dc8e8bdd2bbf49a2",
+    "docs/schemas/sync-decrypted-object-v1.schema.json": "e9c5a47a7eb304b4993ed4cd1e11de03ef3665c1e33ab54d2d05e1a5916d7784",
+    "docs/schemas/examples/sync-recovery-v1.json": "814ef675d448a81abdd8bd7f0758eb37de08a75e7535e4ea8edf6830e02e41a6",
+    "docs/schemas/examples/sync-keyring-v1.json": "dc2611f950edafc2727b6abde4245e8066e435e40ebd24e362dc11598c86e193",
+    "docs/schemas/examples/sync-encrypted-object-v1.json": "0fd7e5000e477b65e6975f17cf0bf606bc2656791540ee6a1cda943f841ddd68",
+    "docs/schemas/examples/sync-decrypted-object-v1.json": "1c464a1a6a56c9acc40318e2128ec02242a675b588efe140b81d21ed1991300e",
+    "docs/schemas/examples/sync-entity-plaintexts-v1.json": "45c48311c6305f0ae20365a64f2a7ad026ec133c937eae230b9a935e021c4c68",
+    "docs/schemas/examples/sync-object-context-v1.json": "f54962e4d39d6540636bf62a120a5a69a3ddd96e20dd8f93f1b6df9105a72dc7",
+    "docs/schemas/examples/sync-wire-string-v1.json": "8979b3c16b218f7a8f838b308f663893ef3265bee32498db737a9767e801e8fe",
+    "docs/schemas/README.md": "44caed0571118fd7ef496a3f6abf8095e7aeaf42ce96487a5c66fe59c0d3b433",
+    "tools/test_json_schemas.py": "abf0307fa970f36d63439ce6765221527484c001b1d3e47d378477fb137fc03c",
+    "tools/generate_sync_schema_examples_test.dart": "bfe6e9420a945fdfdc3a01fd1a9b119425a3b89c705c127f1312230e1c8174a5",
+    "tools/json-schema-test-requirements.txt": "4cd8b58c4bec8599e7c5fef9d1119485e92e50ab917944d2f1b529418da28af3"
+  },
+  "contractFileGitBlob": {
+    "docs/schemas/sync-recovery-v1.schema.json": "4019bb6d4bfd51ed7691ad382aaea68e2d4662d4",
+    "docs/schemas/sync-keyring-v1.schema.json": "2135b30e9962a7844f26f328cf8f71e1791f080a",
+    "docs/schemas/sync-encrypted-object-v1.schema.json": "1453f74c8e4e137dd0772bfee2bb90ecc6f76576",
+    "docs/schemas/sync-decrypted-object-v1.schema.json": "754613e4443b2f7fb57f500ba1f0a6fa3c7faf87",
+    "docs/schemas/examples/sync-recovery-v1.json": "873de5c6feea9bf920436453b53395f38c0b0f82",
+    "docs/schemas/examples/sync-keyring-v1.json": "c363b79d03f60b8399415521f49c42a09a5f1660",
+    "docs/schemas/examples/sync-encrypted-object-v1.json": "cf169cf59745f1c5b2403d369ea5e6451b1a3b90",
+    "docs/schemas/examples/sync-decrypted-object-v1.json": "560abc704cd2b339be63f188c37069ecf4192ee7",
+    "docs/schemas/examples/sync-entity-plaintexts-v1.json": "a5cf9f962d3a2df0139542b4a524713ba4c72b23",
+    "docs/schemas/examples/sync-object-context-v1.json": "8cf8be6b3f7a7fa361445f37e4cd63ef331ff5fb",
+    "docs/schemas/examples/sync-wire-string-v1.json": "0f56e24f2dc638b64a81e7aeacdb900431968520",
+    "docs/schemas/README.md": "04e054349b9cb0ad263986a4a35e3601933881d8",
+    "tools/test_json_schemas.py": "594eb076129ae430f88434f4a7e337e4ee224e44",
+    "tools/generate_sync_schema_examples_test.dart": "2fc6dae3b2cbd40895d2d22a0aaa18ddee0b4808",
+    "tools/json-schema-test-requirements.txt": "504ec7c0ffa7606bbac86f92101f40d0eaa65417"
+  },
+  "sourceFilesObservedAtRecording": {
+    "lib/services/sync_crypto.dart": {
+      "sha256": "8b34feb899e066dc404bab3907f23962bc22518368c6465c93471c045e070ca8",
+      "gitBlob": "3d447f65c4af851eab5df55751dd5efbede0b874"
+    },
+    "lib/services/sync_recovery.dart": {
+      "sha256": "7897b9bfe58541d6b5f3a420218030580df3309f85dd3c56bdca1f314c5b2a98",
+      "gitBlob": "3f6755b753718afe5401f754d76e9a9d8e7bd9c3"
+    },
+    "lib/services/sync_entities.dart": {
+      "sha256": "a386354f1f9234658f894716e6de25d91f60e7782e2462171e1021a528ad7bc6",
+      "gitBlob": "b0b9bb3caf049ffbf19d54b1b2bba2f9f31771af"
+    },
+    "lib/services/sync_engine.dart": {
+      "sha256": "56089538a94f91022d8c677ca292295741a5dc2619bade110554eb0e22544303",
+      "gitBlob": "740046dc80b6d5e539f78926f28360e5bb25a1a7"
+    },
+    "lib/data/snapshot_codec.dart": {
+      "sha256": "30f90213589d940c21a134357241a8bb54942b798f9656b85e88cd83401c1a19",
+      "gitBlob": "84203ce89f0031e7127c920661b72f31cbb42968"
+    },
+    "lib/state/habit_controller.dart": {
+      "sha256": "d9f3a83bd1c4353e6e5fe9348e599e3a261d62474c0a91a3c37e80ec94affe75",
+      "gitBlob": "683acccd23909615e9172a301c756c2e51278851"
+    },
+    "test/fixtures/sync-v1-vector.json": {
+      "sha256": "211783458f29fa9353085486ca6b9166c5258c66f75aca7bc2e0acd710ab6fc6",
+      "gitBlob": "068309a5eef87159868f94485e636594fb614420"
+    },
+    "docs/schemas/logical-snapshot-v7.schema.json": {
+      "sha256": "96193e3cbb77eb1d509b7b44313000edc8b5edeb2bdfe215394056f128873df5",
+      "gitBlob": "af1d0fd78a7015a58236c1ce0be0ebcd15a14dc5"
+    },
+    "docs/schemas/backup-encrypted-v1.schema.json": {
+      "sha256": "bc22caac6eb78869b60109a0778d33e4d15aa27664a38989236a3f7d180aa02b",
+      "gitBlob": "03783c25d0eee04b6db8268e382a965ec954b17b"
+    },
+    "docs/schemas/examples/logical-snapshot-v7.json": {
+      "sha256": "6eb1f0163219e5263fe7de0f49e16fec199ee6b005b0a276d5f7a5914357059e",
+      "gitBlob": "061563f8a137d95cbf2776eeaba2c4bd767a10c1"
+    },
+    "server/openapi.yaml": {
+      "sha256": "4cf47ad5a8f37d80d87bed4c68bb833229b24099e207050baf7cd94d8acd58e8",
+      "gitBlob": "5d2c8073214fea59cdf59ca0240935b4edaf42ab"
+    }
+  },
+  "frozenASchemasAndExamplesUnchanged": true,
+  "generation": {
+    "environmentSetup": ". ..\\tools\\toolchain\\environment.ps1",
+    "command": "flutter test --no-pub tools/generate_sync_schema_examples_test.dart --reporter expanded",
+    "flutter": "3.44.6",
+    "dart": "3.12.2",
+    "exitCode": 0,
+    "passed": 1,
+    "log": "../schema-sync-examples-generation.log",
+    "logSha256": "d18bf5f867d5d327a0039d34ae562eb2747a38c0934caecdd7a209d64f8e0650",
+    "path": "Real SyncEntities from existing synthetic controller-export facts; real SyncCrypto encrypt/decrypt and native libsodium authenticated raw plaintext; real SyncRecoveryCodec .hgr encrypt/decrypt; public fixed vector keys and a public generation2 key",
+    "sampleFiles": 7,
+    "businessEntityExamples": 21,
+    "syntheticOnly": true,
+    "golden": false
+  },
+  "validation": {
+    "command": "python tools/test_json_schemas.py",
+    "requirements": "tools/json-schema-test-requirements.txt",
+    "localInterpreter": "../tools/schema-venv/Scripts/python.exe",
+    "python": "3.14.4",
+    "validator": "jsonschema==4.25.1",
+    "formatDependency": "rfc3339-validator==0.1.4",
+    "offlineRefRegistry": true,
+    "exitCode": 0,
+    "testMethods": 25,
+    "schemas": 8,
+    "positiveCases": 69,
+    "negativeCases": 119,
+    "aCases": {
+      "positive": 16,
+      "negative": 46
+    },
+    "cCases": {
+      "positive": 53,
+      "negative": 73,
+      "entityExamples": 21
+    },
+    "log": "../schema-contract-all-validation.log",
+    "logSha256": "84b832d62567c34369e89cd35344ed4d361860a3216fd50ced088d4c0aa06889"
+  },
+  "independentReview": {
+    "agent": "schema_review",
+    "aContracts": "Passed before commit973920d",
+    "cEarlySourceReview": "Passed for decoded envelope/plaintext/entity/context; implementation agent recovery/keyring independently reviewed in return",
+    "cFinalReview": "Passed: independent final source, sample, README, all recorded file/blob/log hashes and offline Python suite verified; 25 tests, 8 schemas, 69 positive and 119 negative cases, exit 0; no repeated Flutter generation.",
+    "contractSetSha256": "b1adb842521f83920c854f3f992f40e2d659e1ce37b612ebb902b8add6c85bbd",
+    "contractSetDigestMethod": "Sort the 15 contractFileSha256 items by path; UTF-8 lines of path + space + SHA256 + LF, then SHA256."
+  },
+  "limits": [
+    "JSON Schema structure does not authenticate files, execute KDF/AEAD, prove exact raw-file/plaintext UTF-8 byte limits, membership of current key generation, identity/HMAC/parent agreement or complete business graph validity.",
+    "wireString contentEncoding/contentSchema are annotations; the suite explicitly decodes actual HTTP ciphertext samples before envelope validation.",
+    "Existing generic crypto vector uses records:synthetic-record; production h/r/p/n validation is the separate entity definition, including null tombstones.",
+    "HGB encoded cipher bound remains coarse; HGR precise16..65552 and sync precise16..131088 canonical-base64 cipher bounds are tested separately.",
+    "Dart UTF-16 String.length and lexical is-int checks remain separate from JSON Schema Unicode-length and mathematical-integer semantics.",
+    "This host evidence does not mark Android native sync/SQLite/Keystore/SAF, complete protocol behavior or formal release gates passed."
+  ]
+}

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:haoxiguan/services/backup_codec.dart';
+import 'package:haoxiguan/services/backup_preview.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -97,7 +98,11 @@ void main() {
           );
         }
         Future<SyncOutcome> sync(int i) async {
-          final result = await engines[i].run();
+          var result = await engines[i].run();
+          if (result.preview != null) {
+            await engines[i].confirmInitialSync(result.preview!);
+            result = await engines[i].run();
+          }
           await controllers[i].load();
           return result;
         }
@@ -124,8 +129,8 @@ void main() {
         await sync(1);
         await sync(0);
         expect(
-          SyncEntities.encode(a.exportJson()),
-          SyncEntities.encode(b.exportJson()),
+          SyncEntities.encodeFacts(a.exportJson()),
+          SyncEntities.encodeFacts(b.exportJson()),
         );
         expect(a.habits.single.entries.length, 2);
         await a.setNote(id, today, '设备甲');
@@ -184,7 +189,10 @@ void main() {
             dataBackup,
             'public synthetic data backup password',
           );
-          expect(SyncEntities.encode(recovered), SyncEntities.encode(prepared));
+          expect(
+            SyncEntities.encodeFacts(recovered),
+            SyncEntities.encodeFacts(prepared),
+          );
           expect(
             Process.killPid(int.parse(serverPid), ProcessSignal.sigterm),
             true,
@@ -272,8 +280,8 @@ void main() {
           );
           expect((await sync(0)).complete, true);
           expect(
-            SyncEntities.encode(a.exportJson()),
-            SyncEntities.encode(prepared),
+            SyncEntities.encodeFacts(a.exportJson()),
+            SyncEntities.encodeFacts(prepared),
           );
           final page = await engines[0].session.request(
             'GET',
@@ -344,8 +352,8 @@ void main() {
           await b.load();
           await sync(1);
           expect(
-            SyncEntities.encode(b.exportJson()),
-            SyncEntities.encode(prepared),
+            SyncEntities.encodeFacts(b.exportJson()),
+            SyncEntities.encodeFacts(prepared),
           );
         }
         final before = a.exportJson();
@@ -356,8 +364,8 @@ void main() {
         );
         await a.load();
         expect(
-          SyncEntities.encode(a.exportJson()),
-          SyncEntities.encode(before),
+          SyncEntities.encodeFacts(a.exportJson()),
+          SyncEntities.encodeFacts(before),
         );
       } finally {
         replacementServer?.kill(ProcessSignal.sigterm);
@@ -378,5 +386,324 @@ void main() {
       }
     },
     skip: endpoint.isEmpty ? '需要隔离的真实 HTTPS Go 服务与两个一次性测试邀请' : false,
+  );
+  test(
+    'two independent HTTPS services: verified backup restore and fresh pairing migration',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'haoxiguan-migrate-e2e-',
+      );
+      final processes = <Process>[];
+      final transports = <HttpSyncTransport>[];
+      final repositories = <SqliteHabitRepository>[];
+      final controllers = <HabitController>[];
+      final keys = <SyncKeyring>[];
+      final stores = <SyncSettingsStore>[];
+      try {
+        final endpoints = <String>[];
+        final tokens = <Map<String, dynamic>>[];
+        final users = <String>[];
+        final databases = <String>[];
+        for (var index = 0; index < 2; index++) {
+          final db = '${root.path}/service-$index.sqlite';
+          databases.add(db);
+          final invitation = '${root.path}/service-$index-invitation.json';
+          final create = await Process.run(operator, [
+            'create-user',
+            '--db',
+            db,
+            '--name',
+            'migration-synthetic-$index',
+            '--out',
+            invitation,
+          ]);
+          expect(create.exitCode, 0, reason: create.stderr.toString());
+          final account =
+              jsonDecode(await File(invitation).readAsString()) as Map;
+          users.add(account['userId'] as String);
+          final reservation = await ServerSocket.bind(
+            InternetAddress.loopbackIPv4,
+            0,
+          );
+          final port = reservation.port;
+          await reservation.close();
+          final endpoint = 'https://localhost:$port';
+          endpoints.add(endpoint);
+          final process = await Process.start(operator, [
+            'serve',
+            '--db',
+            db,
+            '--listen',
+            '127.0.0.1:$port',
+            '--tls-cert',
+            certificate,
+            '--tls-key',
+            tlsKey,
+          ]);
+          processes.add(process);
+          process.stdout.drain<void>();
+          process.stderr.drain<void>();
+          final transport = HttpSyncTransport(
+            endpoint,
+            client: HttpClient(
+              context: SecurityContext(withTrustedRoots: true)
+                ..setTrustedCertificates(certificate),
+            ),
+          );
+          transports.add(transport);
+          for (var retry = 0; retry < 100; retry++) {
+            try {
+              await transport.request('GET', '/v1/capabilities');
+              break;
+            } on SocketException {
+              if (retry == 99) rethrow;
+              await Future<void>.delayed(const Duration(milliseconds: 100));
+            } on HttpException {
+              if (retry == 99) rethrow;
+              await Future<void>.delayed(const Duration(milliseconds: 100));
+            }
+          }
+          tokens.add(
+            await transport.request(
+              'POST',
+              '/v1/auth/enroll',
+              body: {
+                'invite': account['invite'],
+                'deviceName': 'migration-device-$index',
+              },
+            ),
+          );
+          keys.add(await SyncKeyring.create(tokens.last['vaultId'] as String));
+        }
+        Future<HabitController> makeController(int index) async {
+          final repository = SqliteHabitRepository(
+            HabitDatabase(
+              NativeDatabase(File('${root.path}/device-$index.sqlite')),
+            ),
+          );
+          repositories.add(repository);
+          final controller = HabitController(repository);
+          controllers.add(controller);
+          await controller.load();
+          return controller;
+        }
+
+        Future<SyncEngine> makeEngine(
+          int device,
+          int service,
+          SyncKeyring key,
+          Map<String, dynamic> token,
+        ) async {
+          final store = SyncSettingsStore(MemorySecrets());
+          stores.add(store);
+          final settings = SyncSettings(
+            id: const Uuid().v4(),
+            endpoint: endpoints[service],
+            localVault:
+                jsonDecode(controllers[device].exportJson())['vaultId']
+                    as String,
+            keys: key,
+            tokens: token,
+            recoveryExported: true,
+          );
+          await store.save(settings);
+          return SyncEngine(
+            repositories[device],
+            SyncSession(settings, store, transports[service]),
+          );
+        }
+
+        Future<void> confirmedSync(
+          SyncEngine engine,
+          HabitController controller,
+        ) async {
+          var result = await engine.run();
+          if (result.preview != null) {
+            await engine.confirmInitialSync(result.preview!);
+            result = await engine.run();
+          }
+          expect(result.complete, true);
+          await controller.load();
+        }
+
+        final source = await makeController(0);
+        expect(
+          await source.addHabit(
+            title: '完整迁出阅读',
+            emoji: '📚',
+            colorValue: 0xff123456,
+            weekdays: {1, 2, 3, 4, 5, 6, 7},
+            recordType: 'count',
+            scale: 1,
+            dailyTarget: 3,
+          ),
+          true,
+        );
+        final id = source.habits.single.id;
+        await source.addValue(id, source.today, 1);
+        await source.setNote(id, source.today, '记录与备注均迁出');
+        final sourceEngine = await makeEngine(0, 0, keys[0], tokens[0]);
+        await confirmedSync(sourceEngine, source);
+        final oldStatus = await sourceEngine.session.request(
+          'GET',
+          '/v1/vault',
+        );
+        await source.addValue(
+          id,
+          source.today,
+          2,
+        ); // Local unsent facts also travel.
+        final expected = SyncEntities.encodeFacts(source.exportJson());
+        final backup = await BackupCodec.encrypt(
+          source.exportJson(),
+          'synthetic migration data password',
+        );
+        final restored = await BackupCodec.decrypt(
+          backup,
+          'synthetic migration data password',
+        );
+        expect(SyncEntities.encodeFacts(restored), expected);
+        final destination = await makeController(1);
+        expect(await destination.importJson(restored), true);
+        expect(
+          jsonDecode(destination.exportJson())['vaultId'],
+          isNot(sourceEngine.settings.localVault),
+        );
+        final destinationEngine = await makeEngine(1, 1, keys[1], tokens[1]);
+        final preview = (await destinationEngine.run()).preview!;
+        expect(preview.remote, isEmpty);
+        expect(
+          (await destinationEngine.session.request(
+            'GET',
+            '/v1/vault',
+          ))['objects'],
+          0,
+        );
+        await destinationEngine.confirmInitialSync(preview);
+        await confirmedSync(destinationEngine, destination);
+        expect(SyncEntities.encodeFacts(destination.exportJson()), expected);
+        expect(keys[1].vault, isNot(keys[0].vault));
+        expect(keys[1].idKey, isNot(keys[0].idKey));
+        expect(tokens[1]['accessToken'], isNot(tokens[0]['accessToken']));
+        final recovery = await SyncRecoveryCodec.encrypt(
+          keys[1],
+          'synthetic migration pairing password',
+        );
+        final peerKey = await SyncRecoveryCodec.decrypt(
+          recovery,
+          'synthetic migration pairing password',
+        );
+        keys.add(peerKey);
+        final inviteFile = '${root.path}/destination-peer.json';
+        final invite = await Process.run(operator, [
+          'invite',
+          '--db',
+          databases[1],
+          '--user',
+          users[1],
+          '--out',
+          inviteFile,
+        ]);
+        expect(invite.exitCode, 0, reason: invite.stderr.toString());
+        final invited =
+            jsonDecode(await File(inviteFile).readAsString()) as Map;
+        final peerToken = await transports[1].request(
+          'POST',
+          '/v1/auth/enroll',
+          body: {
+            'invite': invited['invite'],
+            'deviceName': 'destination-independent-peer',
+          },
+        );
+        final peer = await makeController(2);
+        final peerEngine = await makeEngine(2, 1, peerKey, peerToken);
+        await confirmedSync(peerEngine, peer);
+        expect(SyncEntities.encodeFacts(peer.exportJson()), expected);
+        expect(
+          peer.habits.single.entries.map((e) => e.id).toSet(),
+          source.habits.single.entries.map((e) => e.id).toSet(),
+        );
+        expect(
+          peer.habits.single.plans.length,
+          source.habits.single.plans.length,
+        );
+        expect(peer.habits.single.notes, source.habits.single.notes);
+        expect(
+          (await sourceEngine.session.request('GET', '/v1/vault'))['highWater'],
+          oldStatus['highWater'],
+        );
+        await stores.first
+            .disconnect(); // Stop old service only after destination verification.
+        expect(await stores.first.load(), isNull);
+        expect(SyncEntities.encodeFacts(source.exportJson()), expected);
+        final existingIds = source.habits.single.entries
+            .map((e) => e.id)
+            .toSet();
+        expect(await source.addValue(id, source.today, 4), true);
+        expect(
+          await source.setNote(id, source.today, '记录与备注均迁出\n断开旧服务后继续离线记录'),
+          true,
+        );
+        final newId = source.habits.single.entries
+            .map((e) => e.id)
+            .toSet()
+            .difference(existingIds)
+            .single;
+        final offlineSnapshot = source.exportJson();
+        final offlineFile = File('${root.path}/disconnected-local.hgbak');
+        await offlineFile.writeAsBytes(
+          await BackupCodec.encrypt(
+            offlineSnapshot,
+            'synthetic offline data password',
+          ),
+          flush: true,
+        );
+        final offlineContents = await BackupCodec.decryptWithMetadata(
+          await offlineFile.readAsBytes(),
+          'synthetic offline data password',
+        );
+        final offlinePreview = BackupPreview.fromSnapshot(
+          offlineContents.snapshot,
+          createdAtUtc: offlineContents.createdAtUtc,
+        );
+        expect(offlinePreview.createdAtUtc, isNotNull);
+        expect(offlinePreview.habits, 1);
+        expect(offlinePreview.records, existingIds.length + 1);
+        expect(offlinePreview.notes, 1);
+        final offlineFacts = SyncEntities.encodeFacts(offlineContents.snapshot);
+        expect(offlineFacts, SyncEntities.encodeFacts(offlineSnapshot));
+        expect(offlineFacts['r/$newId']['data']['value'], 4);
+        expect(
+          offlineFacts.entries
+              .singleWhere((e) => e.key.startsWith('n/'))
+              .value['text'],
+          '记录与备注均迁出\n断开旧服务后继续离线记录',
+        );
+        expect(
+          (await sourceEngine.session.request('GET', '/v1/vault'))['highWater'],
+          oldStatus['highWater'],
+        );
+      } finally {
+        for (final controller in controllers) {
+          controller.dispose();
+        }
+        for (final repository in repositories) {
+          await repository.close();
+        }
+        for (final transport in transports) {
+          transport.close();
+        }
+        for (final key in keys) {
+          key.dispose();
+        }
+        for (final process in processes) {
+          process.kill(ProcessSignal.sigterm);
+          await process.exitCode.timeout(const Duration(seconds: 20));
+        }
+        await root.delete(recursive: true);
+      }
+    },
+    skip: operator.isEmpty ? '需要隔离 Go 可执行文件及已信任的合成 HTTPS 证书' : false,
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }

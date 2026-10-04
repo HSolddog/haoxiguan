@@ -1,0 +1,11 @@
+{
+  "format": "haoxiguan-sync-keyring",
+  "version": 1,
+  "vault": "synthetic-vault",
+  "idKey": "ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8=",
+  "currentGeneration": 2,
+  "contentKeys": {
+    "1": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+    "2": "gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp8="
+  }
+}

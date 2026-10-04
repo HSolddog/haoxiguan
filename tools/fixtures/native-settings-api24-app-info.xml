@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='utf-8'?>
+<hierarchy rotation="0">
+  <node text="" resource-id="" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,0][720,1184]" scrollable="false">
+    <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,0][720,1184]" scrollable="false">
+      <node text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,0][720,1184]" scrollable="false">
+        <node text="" resource-id="com.android.settings:id/drawer_layout" class="android.support.v4.widget.DrawerLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,0][720,1184]" scrollable="false">
+          <node text="" resource-id="com.android.settings:id/content_parent" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,0][720,1184]" scrollable="false">
+            <node text="" resource-id="" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,48][720,160]" scrollable="false">
+              <node text="" resource-id="com.android.settings:id/action_bar" class="android.view.ViewGroup" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,48][720,160]" scrollable="false">
+                <node text="App info" resource-id="" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,77][183,131]" scrollable="false" />
+              </node>
+            </node>
+            <node text="" resource-id="com.android.settings:id/content_frame" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,1184]" scrollable="false">
+              <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,1184]" scrollable="false">
+                <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,1184]" scrollable="false">
+                  <node text="" resource-id="com.android.settings:id/main_content" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,1184]" scrollable="false">
+                    <node text="" resource-id="com.android.settings:id/container_material" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,1184]" scrollable="false">
+                      <node text="" resource-id="android:id/list_container" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,1184]" scrollable="false">
+                        <node text="" resource-id="com.android.settings:id/list" class="android.support.v7.widget.RecyclerView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,1184]" scrollable="true">
+                          <node text="" resource-id="" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,449]" scrollable="false">
+                            <node text="" resource-id="com.android.settings:id/all_details" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,160][720,449]" scrollable="false">
+                              <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,160][688,449]" scrollable="false">
+                                <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,170][688,315]" scrollable="false">
+                                  <node text="" resource-id="" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,170][688,315]" scrollable="false">
+                                    <node text="" resource-id="com.android.settings:id/app_snippet" class="android.widget.RelativeLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,170][688,315]" scrollable="false">
+                                      <node text="" resource-id="android:id/icon" class="android.widget.ImageView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,202][112,282]" scrollable="false" />
+                                      <node text="好习惯隔离验收" resource-id="android:id/title" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,202][368,245]" scrollable="false" />
+                                      <node text="" resource-id="android:id/summary" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[380,202][688,245]" scrollable="false" />
+                                      <node text="" resource-id="android:id/widget_frame" class="android.widget.FrameLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,245][688,283]" scrollable="false">
+                                        <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,245][688,283]" scrollable="false">
+                                          <node text="" resource-id="com.android.settings:id/widget_text1" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,245][408,283]" scrollable="false" />
+                                          <node text="" resource-id="com.android.settings:id/widget_text2" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[424,245][688,283]" scrollable="false" />
+                                        </node>
+                                        <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,245][688,283]" scrollable="false">
+                                          <node text="version 1.2.0" resource-id="com.android.settings:id/widget_text1" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,245][487,283]" scrollable="false" />
+                                          <node text="" resource-id="com.android.settings:id/widget_text2" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[503,245][688,283]" scrollable="false" />
+                                        </node>
+                                        <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,245][688,283]" scrollable="false">
+                                          <node text="" resource-id="com.android.settings:id/widget_text1" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[144,245][408,283]" scrollable="false" />
+                                          <node text="" resource-id="com.android.settings:id/widget_text2" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[424,245][688,283]" scrollable="false" />
+                                        </node>
+                                      </node>
+                                    </node>
+                                  </node>
+                                </node>
+                                <node text="" resource-id="com.android.settings:id/control_buttons_panel" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,325][688,429]" scrollable="false">
+                                  <node text="UNINSTALL" resource-id="com.android.settings:id/left_button" class="android.widget.Button" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" bounds="[32,333][342,429]" scrollable="false" />
+                                  <node text="FORCE STOP" resource-id="com.android.settings:id/right_button" class="android.widget.Button" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" bounds="[377,333][687,429]" scrollable="false" />
+                                </node>
+                              </node>
+                            </node>
+                          </node>
+                          <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" bounds="[0,449][720,594]" scrollable="false">
+                            <node text="" resource-id="" class="android.widget.RelativeLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,449][688,594]" scrollable="false">
+                              <node text="Storage" resource-id="android:id/title" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,481][142,524]" scrollable="false" />
+                              <node text="181 MB used in Internal storage" resource-id="android:id/summary" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,524][425,562]" scrollable="false" />
+                            </node>
+                          </node>
+                          <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" bounds="[0,596][720,741]" scrollable="false">
+                            <node text="" resource-id="" class="android.widget.RelativeLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,596][688,741]" scrollable="false">
+                              <node text="Data usage" resource-id="android:id/title" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,628][192,671]" scrollable="false" />
+                              <node text="No data used" resource-id="android:id/summary" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,671][197,709]" scrollable="false" />
+                            </node>
+                          </node>
+                          <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="false" bounds="[0,743][720,888]" scrollable="false">
+                            <node text="" resource-id="" class="android.widget.RelativeLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="false" bounds="[32,743][688,888]" scrollable="false">
+                              <node text="Permissions" resource-id="android:id/title" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="false" bounds="[32,775][211,818]" scrollable="false" />
+                              <node text="No permissions requested" resource-id="android:id/summary" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="false" bounds="[32,818][358,856]" scrollable="false" />
+                            </node>
+                          </node>
+                          <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" bounds="[0,890][720,997]" scrollable="false">
+                            <node text="" resource-id="" class="android.widget.RelativeLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,890][688,997]" scrollable="false">
+                              <node text="Notifications" resource-id="android:id/title" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,922][214,965]" scrollable="false" />
+                            </node>
+                          </node>
+                          <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" bounds="[0,999][720,1144]" scrollable="false">
+                            <node text="" resource-id="" class="android.widget.RelativeLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,999][688,1144]" scrollable="false">
+                              <node text="Open by default" resource-id="android:id/title" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,1031][255,1074]" scrollable="false" />
+                              <node text="No defaults set" resource-id="android:id/summary" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[32,1074][221,1112]" scrollable="false" />
+                            </node>
+                          </node>
+                          <node text="" resource-id="" class="android.widget.LinearLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="true" enabled="false" bounds="[0,1146][720,1184]" scrollable="false">
+                            <node text="" resource-id="" class="android.widget.RelativeLayout" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="false" bounds="[32,1146][688,1184]" scrollable="false">
+                              <node text="Battery" resource-id="android:id/title" class="android.widget.TextView" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="false" bounds="[32,1178][132,1184]" scrollable="false" />
+                            </node>
+                          </node>
+                        </node>
+                      </node>
+                    </node>
+                  </node>
+                </node>
+              </node>
+            </node>
+          </node>
+        </node>
+      </node>
+    </node>
+    <node text="" resource-id="android:id/statusBarBackground" class="android.view.View" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,0][720,48]" scrollable="false" />
+    <node text="" resource-id="android:id/navigationBarBackground" class="android.view.View" package="com.android.settings" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" bounds="[0,0][0,0]" scrollable="false" />
+  </node>
+</hierarchy>

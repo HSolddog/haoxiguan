@@ -1,0 +1,567 @@
+{
+  "kind": "original-design-targeted-acceptance",
+  "dateUtc": "2026-10-04",
+  "result": "passed",
+  "designBaseline": "2454e7259b8c0609b8516e85c00d79a96c57e9d4",
+  "designClause": "docs/技术架构.md L106",
+  "source": {
+    "executionCommit": "ca85d82e8e8946a2febcf6fab7633ee2e5c8e5f4",
+    "workBranchSourceCommit": "3596a4f9727e64c904b020dac3614779379145ef",
+    "localCommit": "39dcb163be09d14afe5c1f245ca07a1bbf77dfe1",
+    "tree": "de544965b36e8791979cf5769126c8622560beb7",
+    "sourceFilesGitBlobSha256Matched": 146,
+    "sourceAggregateSha256": "b52648ed6f45baf6c01241347f0d672af73fe9eb05564c4e67f6548c5edc12af",
+    "nativeCriticalSources": [
+      {
+        "repositoryPath": "tools/run_android_acceptance.py",
+        "blobSha": "33f9112070c047aa457e413ba773edd99950f45c",
+        "sha256": "fee4e4460eef2cc8dfb041a2b5b6c02f81ad9d8ccb73e6ebae1b73d78fa7e79d"
+      },
+      {
+        "repositoryPath": "tools/android_acceptance.dart",
+        "blobSha": "decbdeddd4fecd27838e97da9c626d059508201a",
+        "sha256": "31c74ce24587e9eac5fc00253927a74308c24db85ce016a3aacfd8218d756961"
+      },
+      {
+        "repositoryPath": "tools/build_android_acceptance.py",
+        "blobSha": "d6a923914063ff410c7cd4a3ac16b1654af1b692",
+        "sha256": "a10f9868e3ad35bb26471753d2504d2e8f5c8411771e7938b3d2e64cbc1ae99b"
+      },
+      {
+        "repositoryPath": "tools/fixtures/acceptance_engine_host.kt.txt",
+        "blobSha": "2a7cda8d72a5968855a97d72d65d157ad919936c",
+        "sha256": "af25b2e542e3d6ebca48b5bbc9a84c69458093c2a10853d64e86077b4356834f"
+      },
+      {
+        "repositoryPath": "tools/acceptance_semantics.dart",
+        "blobSha": "5de0feec7d38138b26157012c429643eea04677c",
+        "sha256": "8fa07a86a5c8dea2363c6b8bdff17b83eef3129b92f62afc333d13a46c8fbb6a"
+      },
+      {
+        "repositoryPath": "lib/data/sqlite_habit_repository.dart",
+        "blobSha": "cb091314fb4734efe2f8a3e78abf7cf68276b2cc",
+        "sha256": "92ab97ab0c28aeb99c2b443640f66e1f5fadc71846f24e3b890d91634c48d374"
+      },
+      {
+        "repositoryPath": "lib/services/backup_codec.dart",
+        "blobSha": "d95a18ea1e774a007fadd2e57596583e1f66ce3b",
+        "sha256": "32508c30b7d057ec00b3f460da587fb2f5be22aa56d3b2dbf8f11bee6c5c6c83"
+      },
+      {
+        "repositoryPath": "pubspec.yaml",
+        "blobSha": "f315465ff164268110eca9431d8109a83cdf9984",
+        "sha256": "9e41a4fca7f554d18b4e26e90f8d60b83e4c5c42a12b2245f88b9b813e602b49"
+      },
+      {
+        "repositoryPath": ".github/workflows/design-targeted-acceptance.yml",
+        "blobSha": "35b5ba8228e644d24aadc4a3e5335fa8926dd713",
+        "sha256": "77240b84f3d5d6f967a43bceb6a4a0d26a41199781a8398c23890db8031caf86"
+      }
+    ]
+  },
+  "workflow": {
+    "runId": 37170134852,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37170134852",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 111341242769,
+        "name": "Current-source Nextcloud interoperability",
+        "conclusion": "success"
+      },
+      {
+        "id": 111341242621,
+        "name": "Official 16 KiB emulator runtime",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "targetedRegression": {
+    "clientAndCapability": {
+      "total": 31,
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0
+    },
+    "nextcloudRunner": {
+      "total": 10,
+      "passed": 10
+    },
+    "nativeDriverAndBuilder": {
+      "actualTests": 86,
+      "passed": 86,
+      "failed": 0,
+      "jobLogObserved": "Ran 86 tests in 0.257s"
+    },
+    "targetedDartFormattingAndAnalysis": "passed"
+  },
+  "nextcloud": {
+    "service": {
+      "tag": "nextcloud:33.0.9-apache",
+      "expectedVersion": "33.0.9",
+      "officialImages": "https://github.com/docker-library/official-images/blob/master/library/nextcloud",
+      "imageSource": "https://github.com/nextcloud/docker/tree/a1206d2467689ecb8597b7e5b753b49dda29b773/33/apache",
+      "imageSourceCommit": "a1206d2467689ecb8597b7e5b753b49dda29b773",
+      "digest": "nextcloud@sha256:a97666d6ae931bde78a80cfba8abdf46d436d7b540f31895803f6fb0a012d689",
+      "imageId": "sha256:6b5e34d205fc845a7245db3a6f81b4e1227d6d75ce05ebf34744f4901a65a3ab",
+      "architecture": "amd64",
+      "os": "linux",
+      "actualVersion": "33.0.9"
+    },
+    "actualTests": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "artifact": {
+      "id": 11289944744,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37170134852/artifacts/11289944744",
+      "zipSha256": "a8f6794967797a246860eaeee25d64987ee18a69976c6b6347e040a91724abbe",
+      "files": {
+        "cleanup.log": {
+          "sha256": "ce65c31bf4bb95e4d9d3e98441d7abc5f8a56e08ba5c8f1a3784ce2ab2c4602a",
+          "bytes": 65
+        },
+        "proxy.log": {
+          "sha256": "4bfcbaa3df6b41983807c9b893fccba41668176ec3c902b3434513ba350be9a0",
+          "bytes": 33360
+        },
+        "results.json": {
+          "sha256": "5a45a120b2b9bf2525ad93e1acb7d3e938ec29370bb10f68a3c8e76edf0177ae",
+          "bytes": 1414
+        },
+        "service.json": {
+          "sha256": "f4bc13ec4c3dbac37461ceee72f78579392bdf99bb0c03d22a61f83203704fb5",
+          "bytes": 610
+        },
+        "source-files.json": {
+          "sha256": "2e48cc6d076b040bf7c44c6b08ba275e6d350d6d721b2622db54174a8d100fe4",
+          "bytes": 15454
+        },
+        "sqlite-evidence/compatible-text-PNWBOM/evidence.json": {
+          "sha256": "fc040bb101a9490e5bfecd685107fa8279ea1422f8138d52d3b07639b9241d0c",
+          "bytes": 128608
+        },
+        "sqlite-evidence/compatible-text-PNWBOM/target.sqlite": {
+          "sha256": "66e181eb8c660b8e950ee5fc112a6d8f858cb9bd04007525edd45bc588ede661",
+          "bytes": 110592
+        },
+        "sqlite-evidence/ordinary-ROJODA/evidence.json": {
+          "sha256": "ba39d90a2a093a4a4d891c36efb4d6753ea81c7006bc44dacd4f3d02c54989d3",
+          "bytes": 95037
+        },
+        "sqlite-evidence/ordinary-ROJODA/target.sqlite": {
+          "sha256": "2c4203c6278caa0abe17c888ec85c1156ffa14581eb00bb617c9a6745f817838",
+          "bytes": 94208
+        },
+        "sqlite-evidence/retention-BJJZYK/evidence.json": {
+          "sha256": "8b2f537aced9605c643a977b0e3b73f1d57958df85760b4e6ee3941f8a8c8849",
+          "bytes": 274
+        },
+        "test.log": {
+          "sha256": "ae076011edbaae60f85a4cd3e0b23ba09f3bd267a8d4886d3c7f4a22e54e1149",
+          "bytes": 927
+        }
+      }
+    },
+    "markerRepresentations": [
+      {
+        "responseContentEncoded": false,
+        "responseEtagHasGzipSuffix": false,
+        "responseStrongEtag": true
+      },
+      {
+        "responseContentEncoded": false,
+        "responseEtagHasGzipSuffix": false,
+        "responseStrongEtag": true
+      }
+    ],
+    "sqliteScenarios": {
+      "compatible-text": {
+        "downloadedExactly": true,
+        "downloadAndWrongPasswordNoMutation": true,
+        "cancelAllTablesUnchanged": true,
+        "explicitCompatibilitySelection": true,
+        "protectedCompleteStoredSnapshot": true,
+        "importedEverySourceFactExceptDocumentedSpaceFields": true,
+        "reopenedControllerExactly": true,
+        "reopenAllTablesUnchanged": true,
+        "actualSqliteSchema": 3,
+        "actualSqliteRowsMatchEvidence": true,
+        "tableRowCounts": {
+          "app_state": 1,
+          "daily_notes": 1,
+          "habits": 3,
+          "legacy_sources": 0,
+          "local_changes": 20,
+          "plans": 3,
+          "protections": 1,
+          "records": 3,
+          "sqlite_sequence": 2,
+          "sync_protections": 0,
+          "sync_state": 0
+        }
+      },
+      "ordinary": {
+        "downloadedExactly": true,
+        "downloadAndWrongPasswordNoMutation": true,
+        "cancelAllTablesUnchanged": true,
+        "explicitCompatibilitySelection": null,
+        "protectedCompleteStoredSnapshot": true,
+        "importedEverySourceFactExceptDocumentedSpaceFields": true,
+        "reopenedControllerExactly": true,
+        "reopenAllTablesUnchanged": true,
+        "actualSqliteSchema": 3,
+        "actualSqliteRowsMatchEvidence": true,
+        "tableRowCounts": {
+          "app_state": 1,
+          "daily_notes": 1,
+          "habits": 3,
+          "legacy_sources": 0,
+          "local_changes": 20,
+          "plans": 3,
+          "protections": 1,
+          "records": 3,
+          "sqlite_sequence": 2,
+          "sync_protections": 0,
+          "sync_state": 0
+        }
+      }
+    },
+    "compatibleActualLengths": {
+      "habitTitleCharacters": 1000,
+      "noteCharacters": 2001
+    },
+    "productionPrune": {
+      "actualConditionalDeletes204": 2,
+      "oldMarkerAndData404": true,
+      "newestAndOtherDeviceRestoredExactly": true,
+      "ifMatchAndOriginalEtagsPreserved": true
+    },
+    "accessProbe": {
+      "bytes": 32,
+      "conditionalCreate201": true,
+      "conditionalDelete204": true,
+      "read404": true
+    },
+    "cleanup": "owned-container-and-anonymous-volumes-removed",
+    "scope": "Real TLS host Flutter production BackupRestoreDialog and actual SQLite; not complete native WebDavScreen or long-term background behavior."
+  },
+  "wsgidav": {
+    "service": {
+      "WsgiDAV": "4.3.3",
+      "cheroot": "11.1.2"
+    },
+    "actualTests": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "artifact": {
+      "id": 11289769989,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37170134852/artifacts/11289769989",
+      "zipSha256": "3c359a465865b153dbe6e822bda162870fde01c15768fcef828b7efc114a27d7",
+      "files": {
+        "results.json": {
+          "sha256": "8fffa361e46cb507411e4d6b61b0acd2bb01f3d6fa22328840300d6745c6a387",
+          "bytes": 453
+        },
+        "test.log": {
+          "sha256": "894c8540b63d9a664931f8a08889e5d44536b4511c0e589f6f8ea5618899c9b1",
+          "bytes": 221
+        }
+      }
+    },
+    "sourceBinding": "Same ca85d82 checkout/job and verified Nextcloud manifest cover shared client/test; WsgiDAV runner records commit and has no separate source hash manifest."
+  },
+  "page16k": {
+    "artifact": {
+      "id": 11291785957,
+      "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37170134852/artifacts/11291785957",
+      "zipSha256": "fe5fe94b437946a51deb78be4658f334f70d780e4f877185181973eb1c76f43c",
+      "files": {
+        "completed-phases.json": {
+          "sha256": "6509469f69a1d0dff3736ed86d5829992d24f5d767ccd9ad5d15315cc9cf0c64",
+          "bytes": 541763
+        },
+        "device-environment.json": {
+          "sha256": "787b75ea6d08cfb4b4c0edfb9c514d890a2698ff7b7a4f5d5d74b807c467ad5b",
+          "bytes": 389
+        },
+        "device-page-size.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "device-page-size.txt": {
+          "sha256": "33f50728129313570f6b953c08b559d9cb5f673e981e647cee4dc10d6cd48e99",
+          "bytes": 6
+        },
+        "driver-events.jsonl": {
+          "sha256": "beca6e104f5a4b69117bd42ec48d82ce94d8de4996a9ea966b86eb4258320dc2",
+          "bytes": 16159
+        },
+        "processes-001-before-stop.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "processes-001-before-stop.txt": {
+          "sha256": "dd2e80e31271e6d63a0dc84c201df01a2d08257530cbfdb67eac8aed4c2b0cf8",
+          "bytes": 26459
+        },
+        "processes-002-after-stop.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "processes-002-after-stop.txt": {
+          "sha256": "4d42df82e8c57548a7fa72151863ecac2762911c0110ae0dfa4e1bfa428deec8",
+          "bytes": 26425
+        },
+        "processes-003-after-stop.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "processes-003-after-stop.txt": {
+          "sha256": "9d500fd61f9ac981428a485ab4f88732fdb27e1cb234b3457b8ec2f74b843362",
+          "bytes": 26642
+        },
+        "processes-004-before-stop.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "processes-004-before-stop.txt": {
+          "sha256": "37a3789c0b4626e5fbe97cff51948068b03f67ca3b32946dd3f13507a4b9a02a",
+          "bytes": 26825
+        },
+        "processes-005-after-stop.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "processes-005-after-stop.txt": {
+          "sha256": "da93758817c77763e295d1bf493715a1137e1c9dcb5c1447f0a05f9a955b0ce5",
+          "bytes": 26724
+        },
+        "processes-006-after-stop.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "processes-006-after-stop.txt": {
+          "sha256": "45a9846b42ea80f7645525cd90b6eb48219f126781f0410a47aace48b15638b8",
+          "bytes": 26723
+        },
+        "product-activities.txt": {
+          "sha256": "2933e53dbd227abef79cfd0c8db39b4371c19c1bc5803cbe0a63f1fae6e2372a",
+          "bytes": 30530
+        },
+        "product-apk-identity.json": {
+          "sha256": "7f1996811069ed413796351a57262b5eb6c46f4a10f2046e6f60acfcd31f7050",
+          "bytes": 273
+        },
+        "product-logcat-0.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "product-logcat-0.txt": {
+          "sha256": "c3fa9cab974555d07efe490b8f01e3d42270d79a992667f5912f13fac4b0759f",
+          "bytes": 8896
+        },
+        "product-logcat-1.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "product-logcat-1.txt": {
+          "sha256": "d3a7ed019acbc0ce90d2f163f9d552732db91f544e1bf55ad373b0d401efce1e",
+          "bytes": 9233
+        },
+        "product-logcat-2.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "product-logcat-2.txt": {
+          "sha256": "53e52469fb772c02227e3cc14f6fc0434a128d6942422b2abf06d18d6bc88cee",
+          "bytes": 12431
+        },
+        "product-processes-0.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "product-processes-0.txt": {
+          "sha256": "29cadd110c72f671bd7ac0f3fee75b05c31cd5e2e863b6878b968608a7671cd5",
+          "bytes": 26102
+        },
+        "product-processes-1.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "product-processes-1.txt": {
+          "sha256": "0403082807849601079a6340c166a9141e20656c5d04eca7dfad9d999d392b8f",
+          "bytes": 26000
+        },
+        "product-processes-2.stderr.txt": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "product-processes-2.txt": {
+          "sha256": "4039564d2712d7e835a085af18b3bd65573da8576731916d8cb28c56de0e85d5",
+          "bytes": 25971
+        },
+        "product-start.txt": {
+          "sha256": "4bca3a894e22f59396b19f9f1167a33bf3d504862ad90956b4568d54867c11d9",
+          "bytes": 182
+        },
+        "product-startup.json": {
+          "sha256": "23df50ef06215ab7f084a0a86cc4851d7ecb76a3c6dec4923f22a077d95f8123",
+          "bytes": 627
+        },
+        "product-startup.png": {
+          "sha256": "a172c746e8617f3c0d4d4563de93b586b114138f156b2355698d82bcea9a0207",
+          "bytes": 66202
+        },
+        "report-1791080240651515-passed-passed.json": {
+          "sha256": "16aa78be959f39f0bb224192743236a4da62ff2c9e0397c442790e3997878934",
+          "bytes": 2791
+        },
+        "report-1791080252024816-passed-passed.json": {
+          "sha256": "94c2992cf6fb67a909c4e2579702250c4942f9f8ec01d05853b295aceb087cf1",
+          "bytes": 3553
+        },
+        "report-1791080265343868-passed-passed.json": {
+          "sha256": "1655c60be34086c18c9f372cfbf1169961e791246337a0664174e312c2533065",
+          "bytes": 236195
+        },
+        "report-1791080390229138-passed-passed.json": {
+          "sha256": "1f87a02702f2f9137fd10c57c00e3ba33c4327abcb17b5f715a719ec5b097b29",
+          "bytes": 278867
+        },
+        "results.json": {
+          "sha256": "d2567c6760387220d3ae303677ce21374f92f49900cda33f686d7048475363b9",
+          "bytes": 530593
+        },
+        "runtime.log": {
+          "sha256": "3df05c05444c861577b4a5207ff988767dbd2b865130400395cad071dc57682e",
+          "bytes": 384363
+        },
+        "system-image-package.xml": {
+          "sha256": "0b27beb4f4ce1d0f3b20c1ca8077c611819a60a947658df4aa533e6c84d1c700",
+          "bytes": 18839
+        },
+        "system-image-source.properties": {
+          "sha256": "ed5a16eb74b8bc0e58c938eb9d3159a986855e3aebbd53f79a3273962630f663",
+          "bytes": 401
+        }
+      }
+    },
+    "runtimeEnvironment": {
+      "image": "system-images;android-35;google_apis_ps16k;x86_64",
+      "api": 35,
+      "serial": "emulator-5554",
+      "pageSize": 16384,
+      "expectedPageSize": 16384,
+      "properties": {
+        "ro.build.version.sdk": "35",
+        "ro.product.cpu.abi": "x86_64",
+        "ro.build.fingerprint": "google/sdk_gphone16k_x86_64/emu64xa16k:15/AE3A.240806.043/12960925:userdebug/dev-keys"
+      },
+      "memoryMiB": 4096
+    },
+    "imageRevision": "5",
+    "product": {
+      "package": "com.haoxiguan.haoxiguan",
+      "versionCode": "6",
+      "versionName": "1.2.0",
+      "label": "好习惯",
+      "activity": "com.haoxiguan.haoxiguan/com.haoxiguan.haoxiguan.MainActivity",
+      "sha256": "271a941d68359dddd752d7bd163a01830070572d867a7db6ea296f7c272cf7ff",
+      "status": "passed",
+      "pageSize": 16384,
+      "observations": [
+        {
+          "pid": 2554,
+          "user": "u0_a207",
+          "time": 628.952403704
+        },
+        {
+          "pid": 2554,
+          "user": "u0_a207",
+          "time": 631.154243868
+        },
+        {
+          "pid": 2554,
+          "user": "u0_a207",
+          "time": 633.265535896
+        }
+      ],
+      "nativeCrashObserved": false
+    },
+    "productFirstScreenVisuallyVerified": true,
+    "phases": [
+      {
+        "build": "10001",
+        "phase": "create",
+        "schema": 2,
+        "runId": "1791080240651515",
+        "nativeCrypto": true,
+        "keystore": true,
+        "enginePredicatePassed": true
+      },
+      {
+        "build": "10001",
+        "phase": "reopen",
+        "schema": 2,
+        "runId": "1791080252024816",
+        "nativeCrypto": true,
+        "keystore": true,
+        "enginePredicatePassed": true
+      },
+      {
+        "build": "10002",
+        "phase": "reopen",
+        "schema": 3,
+        "runId": "1791080265343868",
+        "nativeCrypto": true,
+        "keystore": true,
+        "enginePredicatePassed": true,
+        "nativeFlags13": true,
+        "sqlTables": 11,
+        "cancelExactSqlModel": true,
+        "restoreReopenExactSqlModel": true,
+        "protectionExactPayloadAndDigest": true
+      },
+      {
+        "build": "10002",
+        "phase": "reopen",
+        "schema": 3,
+        "runId": "1791080390229138",
+        "nativeCrypto": true,
+        "keystore": true,
+        "enginePredicatePassed": true,
+        "nativeFlags13": true,
+        "sqlTables": 11,
+        "cancelExactSqlModel": true,
+        "restoreReopenExactSqlModel": true,
+        "protectionExactPayloadAndDigest": true
+      }
+    ],
+    "coldStartSingleObservationMs": 11220,
+    "memoryBoundary": "The regular product foreground PID remained stable during bounded observation. Later background SystemJobService processes were still killed by LMK; this run does not demonstrate absence of memory pressure or physical-device P95.",
+    "scope": "Official API35 x86_64 16 KiB userspace simulation. Bounded regular Debug startup is separate from isolated current-source SQLite/libsodium FFI/Keystore/upgrade/reopen four-phase evidence. No ARM64 physical device or real 16 KiB kernel claim."
+  },
+  "retainedEarlierFailures": "design-targeted-first-runs-20261004.json",
+  "previousFullSuiteSource": "beb2b2470276ff790166c08246f7ebe50c770841",
+  "newProductChangeSincePreviousFullSuite": "lib/services/webdav_client.dart requests Accept-Encoding: identity; original ETag/If-Match and safe prune remain unchanged.",
+  "remainingExternalAcceptance": [
+    "Real historical installation/signing compatibility",
+    "Physical-device TalkBack/OEM/long-term reminders and WebDAV background",
+    "Physical-device performance and task usability samples",
+    "Independent security review",
+    "Formal domain/terms/operations/deployment"
+  ],
+  "publication": {
+    "draftPr": "https://github.com/HSolddog/haoxiguan/pull/3",
+    "merged": false,
+    "productionDeployment": false,
+    "apkReleased": false,
+    "signingSecretsRead": false
+  }
+}

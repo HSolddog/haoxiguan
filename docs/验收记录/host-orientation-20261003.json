@@ -1,0 +1,123 @@
+{
+  "observedAtUtc": "2026-10-03T12:13:18.686546+00:00",
+  "baseLocalCommit": "6b4f8e1dc8654a83da553cb4b798df2e50d238ff",
+  "sourceScope": "Uncommitted M10 orientation/display follow-up on 6b4f8e1; only the three source files identified below; no claim that prior CI contains these changes.",
+  "sourceFiles": [
+    {
+      "path": "lib/ui/record_editor.dart",
+      "sha256": "5764bcb14c5b53c44cb6afccf6efb2f9b4c28965ceec1f8c736021d698af7e3e"
+    },
+    {
+      "path": "lib/ui/note_editor.dart",
+      "sha256": "8de437ec6b4e7c1533cb809bc8d80117d3df85b7ba2a3ff40c6258a68278f7cb"
+    },
+    {
+      "path": "test/orientation_display_flow_test.dart",
+      "sha256": "a7b4299cebc19500a507bda746046af5ae635b4d3ce63b38d52d9e64e89fcb6a"
+    }
+  ],
+  "environment": {
+    "flutter": "3.44.6",
+    "dart": "3.12.2",
+    "host": "Authorized task-isolated Windows workspace",
+    "logicalViewports": [
+      {
+        "width": 800,
+        "height": 360,
+        "devicePixelRatio": 1,
+        "textScale": 2
+      },
+      {
+        "width": 640,
+        "height": 288,
+        "devicePixelRatio": 2.5,
+        "physicalWidth": 1600,
+        "physicalHeight": 720,
+        "textScale": 2
+      }
+    ]
+  },
+  "checks": [
+    {
+      "command": "flutter test --no-pub --concurrency=1 test/orientation_display_flow_test.dart --reporter expanded",
+      "passed": 8,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "orientation-display-final.log"
+    },
+    {
+      "command": "flutter test --no-pub --concurrency=1 test/record_draft_test.dart test/quick_record_accessibility_test.dart test/note_editor_test.dart --reporter expanded",
+      "passed": 12,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "orientation-display-specialists-final.log"
+    },
+    {
+      "command": "dart analyze lib/ui/record_editor.dart lib/ui/note_editor.dart test/orientation_display_flow_test.dart",
+      "result": "No issues found",
+      "exitCode": 0,
+      "log": "orientation-display-analyze-final.log"
+    }
+  ],
+  "failuresPreserved": [
+    {
+      "log": "orientation-display-first-run.log",
+      "finding": "At 640x288 logical viewport and 200% text, record-value-field could not be hit after ensuring visibility; 800x360 cases passed."
+    },
+    {
+      "log": "orientation-display-diagnosis.log",
+      "finding": "Record editor content viewport measured zero height because fixed title and actions used the available dialog height."
+    },
+    {
+      "log": "orientation-display-record-fix.log",
+      "finding": "After record dialog repair, actual note dialog overflowed bottom by 32 pixels in the same viewport."
+    }
+  ],
+  "fix": "AlertDialog.scrollable=true with title/content sharing the scrollable area; removed nested content-only scroll container. Actions and all save/exit/failure logic preserved.",
+  "flows": [
+    "Create via actual input and save",
+    "Count and duration numeric entry",
+    "Note input",
+    "Quick increment and targeted undo with unrelated facts and notes preserved",
+    "System-back retain or explicit discard",
+    "BackupFiles.open selected payload through actual DataScreen preview/cancel/back/confirm",
+    "Repository reload and protected original-snapshot reload after recovery"
+  ],
+  "boundaries": [
+    "Host widget tests with production MemoryHabitRepository and a fake BackupFiles.open selection, not a claim of physical Android SQLite/SAF execution.",
+    "High DPR tests change the effective logical viewport; actual system display-settings experience, TalkBack, physical rotation lifecycle and back gesture remain separate.",
+    "This targeted result is not the final whole-repository regression or official release."
+  ],
+  "logs": [
+    {
+      "path": "orientation-display-first-run.log",
+      "bytes": 5842,
+      "sha256": "ccb1f66e1b9ef2826ef4634c1755d5cf953eedf64f1c776689c27d7b89c13537"
+    },
+    {
+      "path": "orientation-display-diagnosis.log",
+      "bytes": 2839,
+      "sha256": "c175a26e24c33098a7bd2d04130f899863faa9e06c5f433da6def5dd6e7cc60b"
+    },
+    {
+      "path": "orientation-display-record-fix.log",
+      "bytes": 6820,
+      "sha256": "e1b55e2c60b300f32d66f52a0b37bda5430301a0f7c4c39f42cd5f2597dfede1"
+    },
+    {
+      "path": "orientation-display-final.log",
+      "bytes": 867,
+      "sha256": "f78eb666388dbfbc7ccb38bbe6b85d046332df238afcdfcfe71f2ab766f57a8a"
+    },
+    {
+      "path": "orientation-display-specialists-final.log",
+      "bytes": 2287,
+      "sha256": "519719b307df125030aba4800577549a7ddb723244f8681475ac7952c964e970"
+    },
+    {
+      "path": "orientation-display-analyze-final.log",
+      "bytes": 105,
+      "sha256": "14b926f8cf4fab41ee618197080e8bbf952747b05200160019579667f480cce2"
+    }
+  ]
+}

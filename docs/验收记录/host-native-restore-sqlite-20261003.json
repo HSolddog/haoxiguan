@@ -1,0 +1,1379 @@
+{
+  "observedAtUtc": "2026-10-03T12:08:05.452874+00:00",
+  "sourceBaseRemoteCommit": "641f2366b4f32c2f6a2d9ffe3dbdcf8bba3facad",
+  "sourceBaseLocalCommit": "60209ab68de080404d7930a92f2ca3a036badf46",
+  "sourceBaseTree": "2b2c1bf9bd9e31bddeebb3a5060428d7e55b1a63",
+  "candidateCommit": "uncommitted at this host verification; exact executed file SHA256 values retained below",
+  "sourceFiles": {
+    "tools/android_acceptance.dart": {
+      "sha256": "0297a41ed4ababcf761007c1529937e2263a1b3f5aeb80da1c51457727efeb38",
+      "bytes": 34099
+    },
+    "test/android_acceptance_restore_sqlite_test.dart": {
+      "sha256": "a1ff15e54b4109b6674ed579088622fea3b9c0e8d49abeba766da646ec110a48",
+      "bytes": 13377
+    },
+    "test/android_acceptance_protocol_test.dart": {
+      "sha256": "71a016e99e5b0e427cc5292b7704472d444082dab21d51fefe34439caa2e7b0b",
+      "bytes": 1493
+    },
+    "lib/data/sqlite_habit_repository.dart": {
+      "sha256": "340ab16a06e7e184143714c798a45878a9cef954352c271ec876dfd7fbcfc90b",
+      "bytes": 25869
+    },
+    "lib/state/habit_controller.dart": {
+      "sha256": "6e474e924f6b915e5aae83bfd86fda9d42f3a4eaa19dc8390b78427e0aaf1d1b",
+      "bytes": 47523
+    },
+    "lib/models/habit.dart": {
+      "sha256": "4c074590427d9b08c45b9efbf037a9cb8279f35b75feb3768d7ab535efeae673",
+      "bytes": 17004
+    },
+    "lib/ui/backup_restore_dialog.dart": {
+      "sha256": "b19207b45a4317e42decd75ad8b54f26510e910c3c5de7e96cff640f7fe77bdc",
+      "bytes": 2765
+    }
+  },
+  "verification": {
+    "tests": {
+      "passed": 6,
+      "failed": 0,
+      "exitCode": 0,
+      "sqliteCases": 3,
+      "protocolCases": 3,
+      "command": "flutter test --no-pub --concurrency=1 test/android_acceptance_restore_sqlite_test.dart test/android_acceptance_protocol_test.dart",
+      "log": {
+        "file": "ci-followup-641f236\\host-sqlite-sequence-final.log",
+        "sha256": "d6fb06698df355dbf33c20e050322acbc214f60c52f76a0e175fb9693d1e2324"
+      }
+    },
+    "analysis": {
+      "result": "No issues found",
+      "exitCode": 0,
+      "command": "dart analyze tools/android_acceptance.dart test/android_acceptance_restore_sqlite_test.dart",
+      "log": {
+        "file": "ci-followup-641f236\\host-sqlite-sequence-final-analyze.log",
+        "sha256": "71c0db2a18869c51b5357c0146c541649a8379240ea77b132138a4d0c49c4dff"
+      }
+    },
+    "independentReadOnlyReview": "restore_cancel_review: no weakened assertion or ignored field; sequence and consistent-read transaction gaps closed",
+    "database": "real native SQLite files; production repository/controller and real restore dialog; no MemoryHabitRepository",
+    "atomicObservation": "nativeDatabaseEvidence reads snapshot and all SQLite tables in one transaction, including sqlite_sequence; nested repository.load succeeded in real SQLite tests",
+    "evidenceIsolation": "Each case creates a unique directory and preserves earlier attempts; no previous database is reused or deleted"
+  },
+  "diagnosis": {
+    "archivedCiFailure": "ci-641f236.json",
+    "reproducedDifferencePaths": [
+      "/habits/0/completions"
+    ],
+    "difference": "Habit.toJson exports completions:{} for the empty sentinel; SqliteHabitRepository already omits this derived field from stored habits. The prior fixture compared controller export against stored SQL representation.",
+    "cancelDatabaseAndControllerUnchangedInHostReproduction": true,
+    "cancelTablesObserved": [
+      "app_state",
+      "daily_notes",
+      "habits",
+      "legacy_sources",
+      "local_changes",
+      "plans",
+      "protections",
+      "records",
+      "sqlite_sequence",
+      "sync_protections",
+      "sync_state"
+    ],
+    "cancelSequenceBefore": [
+      {
+        "name": "local_changes",
+        "seq": 6
+      }
+    ],
+    "cancelSequenceAfter": [
+      {
+        "name": "local_changes",
+        "seq": 6
+      }
+    ],
+    "scope": "This is a separate host reproduction. Archived native 641f236 did not capture pre/post SQLite raw snapshots; host success does not replace its failed native status or prove that archived cancellation did not write. A new API24/35/36 run remains required."
+  },
+  "retainedRawEvidence": {
+    "cancel": {
+      "file": "ci-followup-641f236\\host-sqlite-sequence-final\\cancel-705e5e2e\\evidence.json",
+      "sha256": "b028f0cb96d082421db66277c9cbe7ba3099bc91c3c152b65cc17359b2a39e68",
+      "bytes": 17997,
+      "sqliteFiles": {
+        "restore.sqlite": {
+          "sha256": "dfbfbda2702918fdcafa2e5df1abb7e51552140781da139a559845e52528a797",
+          "bytes": 86016
+        }
+      }
+    },
+    "reminder-storage": {
+      "file": "ci-followup-641f236\\host-sqlite-sequence-final\\reminder-storage-b68be849\\evidence.json",
+      "sha256": "08c729275eb06c412210fd88a3accc6ea52b1e3a401680fcf0086e4574de3de5",
+      "bytes": 93360,
+      "sqliteFiles": {
+        "reminders.sqlite": {
+          "sha256": "cda5edb911e2b6a43eb19ee72513e299a355abc9b8a910ae9f5cd5c6d20bc85f",
+          "bytes": 98304
+        }
+      }
+    },
+    "confirm-reopen": {
+      "file": "ci-followup-641f236\\host-sqlite-sequence-final\\confirm-reopen-60dc621b\\evidence.json",
+      "sha256": "8288bd21d338e03e19a8d43ebef647c37b0dc1aa80b4b99ddb9674026d058df2",
+      "bytes": 50500,
+      "sqliteFiles": {
+        "source.sqlite": {
+          "sha256": "9c371edd3656c3f2a6889b3ac7b887bf5807e01f151a6b7d55f35df3106b91be",
+          "bytes": 94208
+        },
+        "target.sqlite": {
+          "sha256": "1e9d9162e1455c4a91fa6c0fe8cb27cf2067320f28f25f22f12c781c0fa78130",
+          "bytes": 98304
+        }
+      }
+    }
+  },
+  "rawCases": {
+    "cancel": {
+      "controllerBeforeRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{},\"notes\":{\"2026-07-13\":\"must survive in the protected snapshot\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[],\"plans\":[{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}",
+      "before": {
+        "snapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[],\"plans\":[{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"must survive in the protected snapshot\"}}]}",
+        "tables": {
+          "app_state": [
+            {
+              "id": 1,
+              "settings": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "revision": 4
+            }
+          ],
+          "daily_notes": [
+            {
+              "id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a:2026-07-13",
+              "habit_id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "local_date": "2026-07-13",
+              "content": "must survive in the protected snapshot",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"must survive in the protected snapshot\"}"
+            }
+          ],
+          "habits": [
+            {
+              "id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 0
+            }
+          ],
+          "legacy_sources": [],
+          "local_changes": [
+            {
+              "sequence": 1,
+              "op_id": "ceac05e0-1580-41b3-8f75-1ac9d9a1443b",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7}",
+              "local_revision": 1
+            },
+            {
+              "sequence": 2,
+              "op_id": "0ff9e588-8dcb-4430-95a5-4828df4652bc",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 2
+            },
+            {
+              "sequence": 3,
+              "op_id": "afd67af9-b799-4d39-b70b-f14497981ba2",
+              "entity_id": "habit:7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 4,
+              "op_id": "6b23eaa6-48a3-41d8-9077-4f95b32fd8c3",
+              "entity_id": "plans:fd8214fa-61eb-4c53-aa02-8abca0b98a48",
+              "payload": "{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 5,
+              "op_id": "4c7b3b74-f1d6-4f44-bcda-fa7a1c774432",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 6,
+              "op_id": "f32e0af6-39aa-4f3c-8584-1b43c026243d",
+              "entity_id": "daily_notes:7969b9b2-efbd-4d0c-8ce8-7ac62815327a:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"must survive in the protected snapshot\"}",
+              "local_revision": 4
+            }
+          ],
+          "plans": [
+            {
+              "id": "fd8214fa-61eb-4c53-aa02-8abca0b98a48",
+              "habit_id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            }
+          ],
+          "protections": [],
+          "records": [],
+          "sqlite_sequence": [
+            {
+              "name": "local_changes",
+              "seq": 6
+            }
+          ],
+          "sync_protections": [],
+          "sync_state": []
+        }
+      },
+      "afterCancel": {
+        "snapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[],\"plans\":[{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"must survive in the protected snapshot\"}}]}",
+        "tables": {
+          "app_state": [
+            {
+              "id": 1,
+              "settings": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "revision": 4
+            }
+          ],
+          "daily_notes": [
+            {
+              "id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a:2026-07-13",
+              "habit_id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "local_date": "2026-07-13",
+              "content": "must survive in the protected snapshot",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"must survive in the protected snapshot\"}"
+            }
+          ],
+          "habits": [
+            {
+              "id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 0
+            }
+          ],
+          "legacy_sources": [],
+          "local_changes": [
+            {
+              "sequence": 1,
+              "op_id": "ceac05e0-1580-41b3-8f75-1ac9d9a1443b",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7}",
+              "local_revision": 1
+            },
+            {
+              "sequence": 2,
+              "op_id": "0ff9e588-8dcb-4430-95a5-4828df4652bc",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 2
+            },
+            {
+              "sequence": 3,
+              "op_id": "afd67af9-b799-4d39-b70b-f14497981ba2",
+              "entity_id": "habit:7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 4,
+              "op_id": "6b23eaa6-48a3-41d8-9077-4f95b32fd8c3",
+              "entity_id": "plans:fd8214fa-61eb-4c53-aa02-8abca0b98a48",
+              "payload": "{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 5,
+              "op_id": "4c7b3b74-f1d6-4f44-bcda-fa7a1c774432",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 6,
+              "op_id": "f32e0af6-39aa-4f3c-8584-1b43c026243d",
+              "entity_id": "daily_notes:7969b9b2-efbd-4d0c-8ce8-7ac62815327a:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"must survive in the protected snapshot\"}",
+              "local_revision": 4
+            }
+          ],
+          "plans": [
+            {
+              "id": "fd8214fa-61eb-4c53-aa02-8abca0b98a48",
+              "habit_id": "7969b9b2-efbd-4d0c-8ce8-7ac62815327a",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            }
+          ],
+          "protections": [],
+          "records": [],
+          "sqlite_sequence": [
+            {
+              "name": "local_changes",
+              "seq": 6
+            }
+          ],
+          "sync_protections": [],
+          "sync_state": []
+        }
+      },
+      "representationDifferencePaths": [
+        "/habits/0/completions"
+      ],
+      "cancelDifferencePaths": [],
+      "controllerAfterCancelRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"f9f7f6e7-0e13-42fc-b69f-312d4858ae30\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"7969b9b2-efbd-4d0c-8ce8-7ac62815327a\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{},\"notes\":{\"2026-07-13\":\"must survive in the protected snapshot\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[],\"plans\":[{\"id\":\"fd8214fa-61eb-4c53-aa02-8abca0b98a48\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}"
+    },
+    "reminder-storage": {
+      "originalControllerRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{\"2026-07-13\":\"preserved source note\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"entries\":[{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"entries\":[{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}",
+      "originalStored": {
+        "snapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"preserved source note\"}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"notes\":{}}]}",
+        "tables": {
+          "app_state": [
+            {
+              "id": 1,
+              "settings": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "revision": 10
+            }
+          ],
+          "daily_notes": [
+            {
+              "id": "49620156-1313-4ea4-bccd-21c0d5dcff14:2026-07-13",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "content": "preserved source note",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}"
+            }
+          ],
+          "habits": [
+            {
+              "id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 0
+            },
+            {
+              "id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 1
+            },
+            {
+              "id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 2
+            }
+          ],
+          "legacy_sources": [],
+          "local_changes": [
+            {
+              "sequence": 1,
+              "op_id": "6143f0a1-50fb-4d78-b6d6-f115f5779151",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7}",
+              "local_revision": 1
+            },
+            {
+              "sequence": 2,
+              "op_id": "34c9980e-abb3-48da-9dee-29f8b9580667",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 2
+            },
+            {
+              "sequence": 3,
+              "op_id": "3a35e7ac-fd6e-43de-bac5-d3fda894e465",
+              "entity_id": "habit:3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 4,
+              "op_id": "bdecc24a-dc0f-4b99-bbce-100cafab2838",
+              "entity_id": "plans:a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7",
+              "payload": "{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 5,
+              "op_id": "c3a0e2b8-be5c-4c01-8264-639ea52e7500",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 6,
+              "op_id": "0c1cd5a9-8bec-439e-ad7f-d8671e3d273b",
+              "entity_id": "habit:49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 4
+            },
+            {
+              "sequence": 7,
+              "op_id": "a181074c-bc3f-4b8c-b26b-da9e2455cb5c",
+              "entity_id": "plans:93b0334d-4acf-4f8f-ab38-a81233a0a827",
+              "payload": "{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}",
+              "local_revision": 4
+            },
+            {
+              "sequence": 8,
+              "op_id": "a2bc855f-8492-49b5-9e0f-5bc29d1cd7e2",
+              "entity_id": "habit:d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 9,
+              "op_id": "f96a0fc0-5977-4a45-9cf7-099d0551dc72",
+              "entity_id": "plans:ce8a0958-4f19-4b99-944b-b619245dccbc",
+              "payload": "{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 10,
+              "op_id": "ede2dd90-e113-4e82-8e51-dd6e89b91826",
+              "entity_id": "records:8d092e71-3d68-5d15-b4d4-3636705e962d",
+              "payload": "{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 6
+            },
+            {
+              "sequence": 11,
+              "op_id": "92ff65ad-5002-486e-8751-9b9429502caa",
+              "entity_id": "records:0c9ec327-4650-48d4-994a-517ad2bf1c3f",
+              "payload": "{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 7
+            },
+            {
+              "sequence": 12,
+              "op_id": "d690452a-c642-43cd-820d-a7c5507f9659",
+              "entity_id": "records:94ad6aef-462f-44ee-8944-f36507609010",
+              "payload": "{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 8
+            },
+            {
+              "sequence": 13,
+              "op_id": "a893eb87-474e-4dc7-8286-bddf426eb443",
+              "entity_id": "records:1f98abdc-c358-471b-be8e-2cbf4415aaa9",
+              "payload": "{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 9
+            },
+            {
+              "sequence": 14,
+              "op_id": "04a6ad20-79ae-4d5b-815c-8d3dd2698629",
+              "entity_id": "daily_notes:49620156-1313-4ea4-bccd-21c0d5dcff14:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}",
+              "local_revision": 10
+            }
+          ],
+          "plans": [
+            {
+              "id": "a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7",
+              "habit_id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            },
+            {
+              "id": "93b0334d-4acf-4f8f-ab38-a81233a0a827",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "effective_from": "2026-07-13",
+              "daily_target": 300,
+              "payload": "{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}"
+            },
+            {
+              "id": "ce8a0958-4f19-4b99-944b-b619245dccbc",
+              "habit_id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "effective_from": "2026-07-13",
+              "daily_target": 90,
+              "payload": "{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}"
+            }
+          ],
+          "protections": [],
+          "records": [
+            {
+              "id": "8d092e71-3d68-5d15-b4d4-3636705e962d",
+              "habit_id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "local_date": "2026-07-13",
+              "value": 1,
+              "deleted": 0,
+              "payload": "{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "0c9ec327-4650-48d4-994a-517ad2bf1c3f",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "value": 100,
+              "deleted": 0,
+              "payload": "{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "94ad6aef-462f-44ee-8944-f36507609010",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "value": 200,
+              "deleted": 0,
+              "payload": "{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "1f98abdc-c358-471b-be8e-2cbf4415aaa9",
+              "habit_id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "local_date": "2026-07-13",
+              "value": 90,
+              "deleted": 0,
+              "payload": "{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            }
+          ],
+          "sqlite_sequence": [
+            {
+              "name": "local_changes",
+              "seq": 14
+            }
+          ],
+          "sync_protections": [],
+          "sync_state": []
+        }
+      },
+      "createdControllerRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{\"2026-07-13\":\"preserved source note\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"entries\":[{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"entries\":[{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[],\"plans\":[{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}",
+      "createdStored": {
+        "snapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"preserved source note\"}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"notes\":{}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[],\"plans\":[{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{}}]}",
+        "tables": {
+          "app_state": [
+            {
+              "id": 1,
+              "settings": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "revision": 11
+            }
+          ],
+          "daily_notes": [
+            {
+              "id": "49620156-1313-4ea4-bccd-21c0d5dcff14:2026-07-13",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "content": "preserved source note",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}"
+            }
+          ],
+          "habits": [
+            {
+              "id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 0
+            },
+            {
+              "id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 1
+            },
+            {
+              "id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 2
+            },
+            {
+              "id": "0ae1d132-ac76-48e8-8463-7e47b641d903",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 3
+            }
+          ],
+          "legacy_sources": [],
+          "local_changes": [
+            {
+              "sequence": 1,
+              "op_id": "6143f0a1-50fb-4d78-b6d6-f115f5779151",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7}",
+              "local_revision": 1
+            },
+            {
+              "sequence": 2,
+              "op_id": "34c9980e-abb3-48da-9dee-29f8b9580667",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 2
+            },
+            {
+              "sequence": 3,
+              "op_id": "3a35e7ac-fd6e-43de-bac5-d3fda894e465",
+              "entity_id": "habit:3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 4,
+              "op_id": "bdecc24a-dc0f-4b99-bbce-100cafab2838",
+              "entity_id": "plans:a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7",
+              "payload": "{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 5,
+              "op_id": "c3a0e2b8-be5c-4c01-8264-639ea52e7500",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 6,
+              "op_id": "0c1cd5a9-8bec-439e-ad7f-d8671e3d273b",
+              "entity_id": "habit:49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 4
+            },
+            {
+              "sequence": 7,
+              "op_id": "a181074c-bc3f-4b8c-b26b-da9e2455cb5c",
+              "entity_id": "plans:93b0334d-4acf-4f8f-ab38-a81233a0a827",
+              "payload": "{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}",
+              "local_revision": 4
+            },
+            {
+              "sequence": 8,
+              "op_id": "a2bc855f-8492-49b5-9e0f-5bc29d1cd7e2",
+              "entity_id": "habit:d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 9,
+              "op_id": "f96a0fc0-5977-4a45-9cf7-099d0551dc72",
+              "entity_id": "plans:ce8a0958-4f19-4b99-944b-b619245dccbc",
+              "payload": "{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 10,
+              "op_id": "ede2dd90-e113-4e82-8e51-dd6e89b91826",
+              "entity_id": "records:8d092e71-3d68-5d15-b4d4-3636705e962d",
+              "payload": "{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 6
+            },
+            {
+              "sequence": 11,
+              "op_id": "92ff65ad-5002-486e-8751-9b9429502caa",
+              "entity_id": "records:0c9ec327-4650-48d4-994a-517ad2bf1c3f",
+              "payload": "{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 7
+            },
+            {
+              "sequence": 12,
+              "op_id": "d690452a-c642-43cd-820d-a7c5507f9659",
+              "entity_id": "records:94ad6aef-462f-44ee-8944-f36507609010",
+              "payload": "{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 8
+            },
+            {
+              "sequence": 13,
+              "op_id": "a893eb87-474e-4dc7-8286-bddf426eb443",
+              "entity_id": "records:1f98abdc-c358-471b-be8e-2cbf4415aaa9",
+              "payload": "{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 9
+            },
+            {
+              "sequence": 14,
+              "op_id": "04a6ad20-79ae-4d5b-815c-8d3dd2698629",
+              "entity_id": "daily_notes:49620156-1313-4ea4-bccd-21c0d5dcff14:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}",
+              "local_revision": 10
+            },
+            {
+              "sequence": 15,
+              "op_id": "34188650-4eb7-420d-93f8-798a64c20cbb",
+              "entity_id": "habit:0ae1d132-ac76-48e8-8463-7e47b641d903",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 11
+            },
+            {
+              "sequence": 16,
+              "op_id": "db7abb9e-2be5-444a-913b-3f1cedd98111",
+              "entity_id": "plans:a86b13c8-d835-4359-b47c-0f639391941d",
+              "payload": "{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 11
+            }
+          ],
+          "plans": [
+            {
+              "id": "a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7",
+              "habit_id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            },
+            {
+              "id": "93b0334d-4acf-4f8f-ab38-a81233a0a827",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "effective_from": "2026-07-13",
+              "daily_target": 300,
+              "payload": "{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}"
+            },
+            {
+              "id": "ce8a0958-4f19-4b99-944b-b619245dccbc",
+              "habit_id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "effective_from": "2026-07-13",
+              "daily_target": 90,
+              "payload": "{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}"
+            },
+            {
+              "id": "a86b13c8-d835-4359-b47c-0f639391941d",
+              "habit_id": "0ae1d132-ac76-48e8-8463-7e47b641d903",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            }
+          ],
+          "protections": [],
+          "records": [
+            {
+              "id": "8d092e71-3d68-5d15-b4d4-3636705e962d",
+              "habit_id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "local_date": "2026-07-13",
+              "value": 1,
+              "deleted": 0,
+              "payload": "{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "0c9ec327-4650-48d4-994a-517ad2bf1c3f",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "value": 100,
+              "deleted": 0,
+              "payload": "{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "94ad6aef-462f-44ee-8944-f36507609010",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "value": 200,
+              "deleted": 0,
+              "payload": "{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "1f98abdc-c358-471b-be8e-2cbf4415aaa9",
+              "habit_id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "local_date": "2026-07-13",
+              "value": 90,
+              "deleted": 0,
+              "payload": "{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            }
+          ],
+          "sqlite_sequence": [
+            {
+              "name": "local_changes",
+              "seq": 16
+            }
+          ],
+          "sync_protections": [],
+          "sync_state": []
+        }
+      },
+      "freshControllerRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{\"2026-07-13\":\"preserved source note\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"entries\":[{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"entries\":[{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[],\"plans\":[{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}",
+      "afterRead": {
+        "snapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"preserved source note\"}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"notes\":{}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[],\"plans\":[{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{}}]}",
+        "tables": {
+          "app_state": [
+            {
+              "id": 1,
+              "settings": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "revision": 11
+            }
+          ],
+          "daily_notes": [
+            {
+              "id": "49620156-1313-4ea4-bccd-21c0d5dcff14:2026-07-13",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "content": "preserved source note",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}"
+            }
+          ],
+          "habits": [
+            {
+              "id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 0
+            },
+            {
+              "id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 1
+            },
+            {
+              "id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 2
+            },
+            {
+              "id": "0ae1d132-ac76-48e8-8463-7e47b641d903",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 3
+            }
+          ],
+          "legacy_sources": [],
+          "local_changes": [
+            {
+              "sequence": 1,
+              "op_id": "6143f0a1-50fb-4d78-b6d6-f115f5779151",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7}",
+              "local_revision": 1
+            },
+            {
+              "sequence": 2,
+              "op_id": "34c9980e-abb3-48da-9dee-29f8b9580667",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 2
+            },
+            {
+              "sequence": 3,
+              "op_id": "3a35e7ac-fd6e-43de-bac5-d3fda894e465",
+              "entity_id": "habit:3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 4,
+              "op_id": "bdecc24a-dc0f-4b99-bbce-100cafab2838",
+              "entity_id": "plans:a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7",
+              "payload": "{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 5,
+              "op_id": "c3a0e2b8-be5c-4c01-8264-639ea52e7500",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 6,
+              "op_id": "0c1cd5a9-8bec-439e-ad7f-d8671e3d273b",
+              "entity_id": "habit:49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 4
+            },
+            {
+              "sequence": 7,
+              "op_id": "a181074c-bc3f-4b8c-b26b-da9e2455cb5c",
+              "entity_id": "plans:93b0334d-4acf-4f8f-ab38-a81233a0a827",
+              "payload": "{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}",
+              "local_revision": 4
+            },
+            {
+              "sequence": 8,
+              "op_id": "a2bc855f-8492-49b5-9e0f-5bc29d1cd7e2",
+              "entity_id": "habit:d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 9,
+              "op_id": "f96a0fc0-5977-4a45-9cf7-099d0551dc72",
+              "entity_id": "plans:ce8a0958-4f19-4b99-944b-b619245dccbc",
+              "payload": "{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 10,
+              "op_id": "ede2dd90-e113-4e82-8e51-dd6e89b91826",
+              "entity_id": "records:8d092e71-3d68-5d15-b4d4-3636705e962d",
+              "payload": "{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 6
+            },
+            {
+              "sequence": 11,
+              "op_id": "92ff65ad-5002-486e-8751-9b9429502caa",
+              "entity_id": "records:0c9ec327-4650-48d4-994a-517ad2bf1c3f",
+              "payload": "{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 7
+            },
+            {
+              "sequence": 12,
+              "op_id": "d690452a-c642-43cd-820d-a7c5507f9659",
+              "entity_id": "records:94ad6aef-462f-44ee-8944-f36507609010",
+              "payload": "{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 8
+            },
+            {
+              "sequence": 13,
+              "op_id": "a893eb87-474e-4dc7-8286-bddf426eb443",
+              "entity_id": "records:1f98abdc-c358-471b-be8e-2cbf4415aaa9",
+              "payload": "{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 9
+            },
+            {
+              "sequence": 14,
+              "op_id": "04a6ad20-79ae-4d5b-815c-8d3dd2698629",
+              "entity_id": "daily_notes:49620156-1313-4ea4-bccd-21c0d5dcff14:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}",
+              "local_revision": 10
+            },
+            {
+              "sequence": 15,
+              "op_id": "34188650-4eb7-420d-93f8-798a64c20cbb",
+              "entity_id": "habit:0ae1d132-ac76-48e8-8463-7e47b641d903",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":3072,\"id\":\"0ae1d132-ac76-48e8-8463-7e47b641d903\",\"title\":\"acceptance-denied-synthetic\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 11
+            },
+            {
+              "sequence": 16,
+              "op_id": "db7abb9e-2be5-444a-913b-3f1cedd98111",
+              "entity_id": "plans:a86b13c8-d835-4359-b47c-0f639391941d",
+              "payload": "{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 11
+            }
+          ],
+          "plans": [
+            {
+              "id": "a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7",
+              "habit_id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            },
+            {
+              "id": "93b0334d-4acf-4f8f-ab38-a81233a0a827",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "effective_from": "2026-07-13",
+              "daily_target": 300,
+              "payload": "{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}"
+            },
+            {
+              "id": "ce8a0958-4f19-4b99-944b-b619245dccbc",
+              "habit_id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "effective_from": "2026-07-13",
+              "daily_target": 90,
+              "payload": "{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}"
+            },
+            {
+              "id": "a86b13c8-d835-4359-b47c-0f639391941d",
+              "habit_id": "0ae1d132-ac76-48e8-8463-7e47b641d903",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"a86b13c8-d835-4359-b47c-0f639391941d\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            }
+          ],
+          "protections": [],
+          "records": [
+            {
+              "id": "8d092e71-3d68-5d15-b4d4-3636705e962d",
+              "habit_id": "3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf",
+              "local_date": "2026-07-13",
+              "value": 1,
+              "deleted": 0,
+              "payload": "{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "0c9ec327-4650-48d4-994a-517ad2bf1c3f",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "value": 100,
+              "deleted": 0,
+              "payload": "{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "94ad6aef-462f-44ee-8944-f36507609010",
+              "habit_id": "49620156-1313-4ea4-bccd-21c0d5dcff14",
+              "local_date": "2026-07-13",
+              "value": 200,
+              "deleted": 0,
+              "payload": "{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "1f98abdc-c358-471b-be8e-2cbf4415aaa9",
+              "habit_id": "d4b9b8af-321d-44a0-ba6f-f2daff74df6e",
+              "local_date": "2026-07-13",
+              "value": 90,
+              "deleted": 0,
+              "payload": "{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            }
+          ],
+          "sqlite_sequence": [
+            {
+              "name": "local_changes",
+              "seq": 16
+            }
+          ],
+          "sync_protections": [],
+          "sync_state": []
+        }
+      },
+      "restoredSnapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"b8a98ce5-0998-4984-8a0d-6ca2b3d51081\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"3ae02e7f-ac8e-4e7b-9357-0bef9c214dbf\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"8d092e71-3d68-5d15-b4d4-3636705e962d\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"a08e17c5-f653-4b6f-b0e0-4ea0ec9757a7\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"49620156-1313-4ea4-bccd-21c0d5dcff14\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"0c9ec327-4650-48d4-994a-517ad2bf1c3f\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"94ad6aef-462f-44ee-8944-f36507609010\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"93b0334d-4acf-4f8f-ab38-a81233a0a827\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"preserved source note\"}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"d4b9b8af-321d-44a0-ba6f-f2daff74df6e\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"1f98abdc-c358-471b-be8e-2cbf4415aaa9\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"ce8a0958-4f19-4b99-944b-b619245dccbc\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"notes\":{}}]}",
+      "representationDifferencePaths": [
+        "/habits/0/completions",
+        "/habits/1/completions",
+        "/habits/2/completions",
+        "/habits/3/completions"
+      ]
+    },
+    "confirm-reopen": {
+      "before": {
+        "snapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"9215eda9-3182-4931-aff8-c06a49eb3eec\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[],\"plans\":[{\"id\":\"668e0a57-43d4-4ab5-9b9a-25786ad517a3\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"must survive in the protected snapshot\"}}]}",
+        "tables": {
+          "app_state": [
+            {
+              "id": 1,
+              "settings": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "revision": 4
+            }
+          ],
+          "daily_notes": [
+            {
+              "id": "9215eda9-3182-4931-aff8-c06a49eb3eec:2026-07-13",
+              "habit_id": "9215eda9-3182-4931-aff8-c06a49eb3eec",
+              "local_date": "2026-07-13",
+              "content": "must survive in the protected snapshot",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"must survive in the protected snapshot\"}"
+            }
+          ],
+          "habits": [
+            {
+              "id": "9215eda9-3182-4931-aff8-c06a49eb3eec",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"9215eda9-3182-4931-aff8-c06a49eb3eec\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 0
+            }
+          ],
+          "legacy_sources": [],
+          "local_changes": [
+            {
+              "sequence": 1,
+              "op_id": "d6bf4a80-0626-4c42-82c2-d0f420ac1545",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7}",
+              "local_revision": 1
+            },
+            {
+              "sequence": 2,
+              "op_id": "a0455c55-a5af-4fca-9280-36d4d3f09c41",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 2
+            },
+            {
+              "sequence": 3,
+              "op_id": "99cf21a8-3e28-44b0-8822-028322c00d1a",
+              "entity_id": "habit:9215eda9-3182-4931-aff8-c06a49eb3eec",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"9215eda9-3182-4931-aff8-c06a49eb3eec\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 4,
+              "op_id": "b3e54e00-b5c1-400d-92d5-768228ddb055",
+              "entity_id": "plans:668e0a57-43d4-4ab5-9b9a-25786ad517a3",
+              "payload": "{\"id\":\"668e0a57-43d4-4ab5-9b9a-25786ad517a3\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 5,
+              "op_id": "166e1415-351b-4faa-aae5-75616f219d92",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 6,
+              "op_id": "628e36d2-e361-4404-9b0b-0bacb0182f7f",
+              "entity_id": "daily_notes:9215eda9-3182-4931-aff8-c06a49eb3eec:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"must survive in the protected snapshot\"}",
+              "local_revision": 4
+            }
+          ],
+          "plans": [
+            {
+              "id": "668e0a57-43d4-4ab5-9b9a-25786ad517a3",
+              "habit_id": "9215eda9-3182-4931-aff8-c06a49eb3eec",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"668e0a57-43d4-4ab5-9b9a-25786ad517a3\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            }
+          ],
+          "protections": [],
+          "records": [],
+          "sqlite_sequence": [
+            {
+              "name": "local_changes",
+              "seq": 6
+            }
+          ],
+          "sync_protections": [],
+          "sync_state": []
+        }
+      },
+      "sourceControllerRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"658c2533-6948-4dfd-929f-544406ad2f53\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"cec0210d-51b1-45c9-86b4-d29a10ae7453\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[{\"id\":\"8b23b205-c886-5d78-868f-7c18a9d29c2b\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"b37676bc-a858-4eec-8eba-4049e7eb3483\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"5d0f63f5-4738-4d9b-82ae-cacd79ee2572\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{\"2026-07-13\":\"preserved source note\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"entries\":[{\"id\":\"ec88c977-d70d-409e-9fb1-66d7b2504fb9\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"e37f43b7-48cd-4736-8539-d0b24fad03a6\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"cf9c11e5-807f-4f07-808a-1fd2189d0686\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"b3e36c9e-d557-444c-b4aa-d610dc9f1561\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"entries\":[{\"id\":\"df5725c4-e3d1-4fed-8cdb-74ceb134fa3b\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"1e01e8ca-3d8e-4aa7-8af8-e4b219758dae\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}",
+      "importedControllerRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"059fa1e8-9bb6-4943-b3d5-ac63f8d14430\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"restoredFromVaultId\":\"658c2533-6948-4dfd-929f-544406ad2f53\",\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"cec0210d-51b1-45c9-86b4-d29a10ae7453\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[{\"id\":\"8b23b205-c886-5d78-868f-7c18a9d29c2b\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"b37676bc-a858-4eec-8eba-4049e7eb3483\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"5d0f63f5-4738-4d9b-82ae-cacd79ee2572\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{\"2026-07-13\":\"preserved source note\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"entries\":[{\"id\":\"ec88c977-d70d-409e-9fb1-66d7b2504fb9\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"e37f43b7-48cd-4736-8539-d0b24fad03a6\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"cf9c11e5-807f-4f07-808a-1fd2189d0686\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"b3e36c9e-d557-444c-b4aa-d610dc9f1561\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"entries\":[{\"id\":\"df5725c4-e3d1-4fed-8cdb-74ceb134fa3b\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"1e01e8ca-3d8e-4aa7-8af8-e4b219758dae\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}",
+      "protectedSnapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"9215eda9-3182-4931-aff8-c06a49eb3eec\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[],\"plans\":[{\"id\":\"668e0a57-43d4-4ab5-9b9a-25786ad517a3\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"must survive in the protected snapshot\"}}]}",
+      "reopenedControllerRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"059fa1e8-9bb6-4943-b3d5-ac63f8d14430\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"restoredFromVaultId\":\"658c2533-6948-4dfd-929f-544406ad2f53\",\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"cec0210d-51b1-45c9-86b4-d29a10ae7453\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"entries\":[{\"id\":\"8b23b205-c886-5d78-868f-7c18a9d29c2b\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"b37676bc-a858-4eec-8eba-4049e7eb3483\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"5d0f63f5-4738-4d9b-82ae-cacd79ee2572\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{\"2026-07-13\":\"preserved source note\"},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"entries\":[{\"id\":\"e37f43b7-48cd-4736-8539-d0b24fad03a6\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"ec88c977-d70d-409e-9fb1-66d7b2504fb9\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"cf9c11e5-807f-4f07-808a-1fd2189d0686\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"b3e36c9e-d557-444c-b4aa-d610dc9f1561\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"completions\":{\"2026-07-13\":\"2026-07-13T02:30:00.000Z\"},\"notes\":{},\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"entries\":[{\"id\":\"df5725c4-e3d1-4fed-8cdb-74ceb134fa3b\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"1e01e8ca-3d8e-4aa7-8af8-e4b219758dae\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}]}",
+      "reopenedStored": {
+        "snapshotRaw": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"059fa1e8-9bb6-4943-b3d5-ac63f8d14430\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"restoredFromVaultId\":\"658c2533-6948-4dfd-929f-544406ad2f53\",\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"cec0210d-51b1-45c9-86b4-d29a10ae7453\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"8b23b205-c886-5d78-868f-7c18a9d29c2b\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"b37676bc-a858-4eec-8eba-4049e7eb3483\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"5d0f63f5-4738-4d9b-82ae-cacd79ee2572\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"e37f43b7-48cd-4736-8539-d0b24fad03a6\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"},{\"id\":\"ec88c977-d70d-409e-9fb1-66d7b2504fb9\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"cf9c11e5-807f-4f07-808a-1fd2189d0686\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"preserved source note\"}},{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"b3e36c9e-d557-444c-b4aa-d610dc9f1561\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[{\"id\":\"df5725c4-e3d1-4fed-8cdb-74ceb134fa3b\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}],\"plans\":[{\"id\":\"1e01e8ca-3d8e-4aa7-8af8-e4b219758dae\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}],\"notes\":{}}]}",
+        "tables": {
+          "app_state": [
+            {
+              "id": 1,
+              "settings": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"059fa1e8-9bb6-4943-b3d5-ac63f8d14430\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"restoredFromVaultId\":\"658c2533-6948-4dfd-929f-544406ad2f53\"}",
+              "revision": 5
+            }
+          ],
+          "daily_notes": [
+            {
+              "id": "5d0f63f5-4738-4d9b-82ae-cacd79ee2572:2026-07-13",
+              "habit_id": "5d0f63f5-4738-4d9b-82ae-cacd79ee2572",
+              "local_date": "2026-07-13",
+              "content": "preserved source note",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}"
+            }
+          ],
+          "habits": [
+            {
+              "id": "cec0210d-51b1-45c9-86b4-d29a10ae7453",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"cec0210d-51b1-45c9-86b4-d29a10ae7453\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 0
+            },
+            {
+              "id": "5d0f63f5-4738-4d9b-82ae-cacd79ee2572",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"5d0f63f5-4738-4d9b-82ae-cacd79ee2572\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 1
+            },
+            {
+              "id": "b3e36c9e-d557-444c-b4aa-d610dc9f1561",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"b3e36c9e-d557-444c-b4aa-d610dc9f1561\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "position": 2
+            }
+          ],
+          "legacy_sources": [],
+          "local_changes": [
+            {
+              "sequence": 1,
+              "op_id": "d6bf4a80-0626-4c42-82c2-d0f420ac1545",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7}",
+              "local_revision": 1
+            },
+            {
+              "sequence": 2,
+              "op_id": "a0455c55-a5af-4fca-9280-36d4d3f09c41",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 2
+            },
+            {
+              "sequence": 3,
+              "op_id": "99cf21a8-3e28-44b0-8822-028322c00d1a",
+              "entity_id": "habit:9215eda9-3182-4931-aff8-c06a49eb3eec",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"9215eda9-3182-4931-aff8-c06a49eb3eec\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 4,
+              "op_id": "b3e54e00-b5c1-400d-92d5-768228ddb055",
+              "entity_id": "plans:668e0a57-43d4-4ab5-9b9a-25786ad517a3",
+              "payload": "{\"id\":\"668e0a57-43d4-4ab5-9b9a-25786ad517a3\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 5,
+              "op_id": "166e1415-351b-4faa-aae5-75616f219d92",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[]}",
+              "local_revision": 3
+            },
+            {
+              "sequence": 6,
+              "op_id": "628e36d2-e361-4404-9b0b-0bacb0182f7f",
+              "entity_id": "daily_notes:9215eda9-3182-4931-aff8-c06a49eb3eec:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"must survive in the protected snapshot\"}",
+              "local_revision": 4
+            },
+            {
+              "sequence": 7,
+              "op_id": "23e530ee-74db-43fa-b3e5-c52925be9397",
+              "entity_id": "habit:cec0210d-51b1-45c9-86b4-d29a10ae7453",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"cec0210d-51b1-45c9-86b4-d29a10ae7453\",\"title\":\"acceptance-boolean\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":\"23:59\",\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 8,
+              "op_id": "c94166e3-c7ea-4894-a53d-dae551e073bd",
+              "entity_id": "records:8b23b205-c886-5d78-868f-7c18a9d29c2b",
+              "payload": "{\"id\":\"8b23b205-c886-5d78-868f-7c18a9d29c2b\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 9,
+              "op_id": "290d7ce3-f925-4a71-8334-0b4009616d2b",
+              "entity_id": "plans:b37676bc-a858-4eec-8eba-4049e7eb3483",
+              "payload": "{\"id\":\"b37676bc-a858-4eec-8eba-4049e7eb3483\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 10,
+              "op_id": "1bafee1e-a4ff-460a-9e3b-bedfcc0a5943",
+              "entity_id": "habit:5d0f63f5-4738-4d9b-82ae-cacd79ee2572",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":1024,\"id\":\"5d0f63f5-4738-4d9b-82ae-cacd79ee2572\",\"title\":\"acceptance-count\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"count\",\"unit\":\"次\",\"scale\":1000,\"dailyTarget\":300,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 11,
+              "op_id": "c93b6f11-f0c6-4c36-9466-943e11616934",
+              "entity_id": "records:ec88c977-d70d-409e-9fb1-66d7b2504fb9",
+              "payload": "{\"id\":\"ec88c977-d70d-409e-9fb1-66d7b2504fb9\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 12,
+              "op_id": "35907f7b-17c6-46ad-a4ed-22f00c0c3aa3",
+              "entity_id": "records:e37f43b7-48cd-4736-8539-d0b24fad03a6",
+              "payload": "{\"id\":\"e37f43b7-48cd-4736-8539-d0b24fad03a6\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 13,
+              "op_id": "58f2a8b0-2f88-4835-a51f-ec99b88ade74",
+              "entity_id": "plans:cf9c11e5-807f-4f07-808a-1fd2189d0686",
+              "payload": "{\"id\":\"cf9c11e5-807f-4f07-808a-1fd2189d0686\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 14,
+              "op_id": "3d438590-d147-41f0-a66e-3ce107b5f6d8",
+              "entity_id": "daily_notes:5d0f63f5-4738-4d9b-82ae-cacd79ee2572:2026-07-13",
+              "payload": "{\"date\":\"2026-07-13\",\"text\":\"preserved source note\"}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 15,
+              "op_id": "c019e5bb-7712-4aaa-9314-ada3d0805481",
+              "entity_id": "habit:b3e36c9e-d557-444c-b4aa-d610dc9f1561",
+              "payload": "{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":2048,\"id\":\"b3e36c9e-d557-444c-b4aa-d610dc9f1561\",\"title\":\"acceptance-duration\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"duration\",\"unit\":\"秒\",\"scale\":1,\"dailyTarget\":90,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 16,
+              "op_id": "1f648685-1d80-46a2-a33e-1807a6f549b0",
+              "entity_id": "records:df5725c4-e3d1-4fed-8cdb-74ceb134fa3b",
+              "payload": "{\"id\":\"df5725c4-e3d1-4fed-8cdb-74ceb134fa3b\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 17,
+              "op_id": "dc954151-f37f-41e8-bb7a-ddbe0558667d",
+              "entity_id": "plans:1e01e8ca-3d8e-4aa7-8af8-e4b219758dae",
+              "payload": "{\"id\":\"1e01e8ca-3d8e-4aa7-8af8-e4b219758dae\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}",
+              "local_revision": 5
+            },
+            {
+              "sequence": 18,
+              "op_id": "ba0abe8e-657f-4c47-9717-054b42741936",
+              "entity_id": "plans:668e0a57-43d4-4ab5-9b9a-25786ad517a3",
+              "payload": null,
+              "local_revision": 5
+            },
+            {
+              "sequence": 19,
+              "op_id": "6a2901e2-e2c7-46c7-a9e5-627449f049bd",
+              "entity_id": "daily_notes:9215eda9-3182-4931-aff8-c06a49eb3eec:2026-07-13",
+              "payload": null,
+              "local_revision": 5
+            },
+            {
+              "sequence": 20,
+              "op_id": "d844bb6b-31e1-4d28-812b-a2ae36e6638e",
+              "entity_id": "habit:9215eda9-3182-4931-aff8-c06a49eb3eec",
+              "payload": null,
+              "local_revision": 5
+            },
+            {
+              "sequence": 21,
+              "op_id": "cf4d52e9-1db7-4ccc-a21b-45e2097027ec",
+              "entity_id": "app-settings",
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"059fa1e8-9bb6-4943-b3d5-ac63f8d14430\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"restoredFromVaultId\":\"658c2533-6948-4dfd-929f-544406ad2f53\"}",
+              "local_revision": 5
+            }
+          ],
+          "plans": [
+            {
+              "id": "b37676bc-a858-4eec-8eba-4049e7eb3483",
+              "habit_id": "cec0210d-51b1-45c9-86b4-d29a10ae7453",
+              "effective_from": "2026-07-13",
+              "daily_target": 1,
+              "payload": "{\"id\":\"b37676bc-a858-4eec-8eba-4049e7eb3483\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}"
+            },
+            {
+              "id": "cf9c11e5-807f-4f07-808a-1fd2189d0686",
+              "habit_id": "5d0f63f5-4738-4d9b-82ae-cacd79ee2572",
+              "effective_from": "2026-07-13",
+              "daily_target": 300,
+              "payload": "{\"id\":\"cf9c11e5-807f-4f07-808a-1fd2189d0686\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":300,\"legacyInferred\":false}"
+            },
+            {
+              "id": "1e01e8ca-3d8e-4aa7-8af8-e4b219758dae",
+              "habit_id": "b3e36c9e-d557-444c-b4aa-d610dc9f1561",
+              "effective_from": "2026-07-13",
+              "daily_target": 90,
+              "payload": "{\"id\":\"1e01e8ca-3d8e-4aa7-8af8-e4b219758dae\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":90,\"legacyInferred\":false}"
+            }
+          ],
+          "protections": [
+            {
+              "sequence": 1,
+              "payload": "{\"version\":7,\"categories\":[{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1}],\"firstRecordBackupSuggestion\":\"dismissed\",\"vaultId\":\"8379be8e-c1af-49ce-9d2d-47a08e6d6994\",\"appearanceMode\":\"system\",\"darkMode\":false,\"themeColorValue\":4284448872,\"reviewDays\":30,\"collapsedTodayCategories\":[],\"collapsedHabitCategories\":[],\"habits\":[{\"categoryId\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"categoryInfo\":{\"id\":\"b6bfe84f-8217-515f-9bdf-789cb8fb39b3\",\"name\":\"未分类\",\"sortKey\":0,\"revision\":1},\"sortKey\":0,\"id\":\"9215eda9-3182-4931-aff8-c06a49eb3eec\",\"title\":\"acceptance-before-restore\",\"emoji\":\"📚\",\"colorValue\":4284448872,\"weekdays\":[1,2,3,4,5,6,7],\"createdAt\":\"2026-07-13T00:00:00.000Z\",\"reminderTime\":null,\"exemptions\":[],\"pausedAt\":null,\"archived\":false,\"category\":\"未分类\",\"effortEnabled\":false,\"rewardPoints\":10,\"penaltyPoints\":5,\"targetCount\":3,\"rewardPeriod\":\"week\",\"wishEnabled\":false,\"wishTitle\":\"\",\"wishTarget\":100,\"scheduleType\":\"daily\",\"scheduleCount\":1,\"recordType\":\"boolean\",\"unit\":\"次\",\"scale\":1,\"dailyTarget\":1,\"archivedAt\":null,\"deletedAt\":null,\"legacyRewardBalance\":null,\"entries\":[],\"plans\":[{\"id\":\"668e0a57-43d4-4ab5-9b9a-25786ad517a3\",\"from\":\"2026-07-13\",\"kind\":\"daily\",\"weekdays\":[1,2,3,4,5,6,7],\"periodTarget\":1,\"dailyTarget\":1,\"legacyInferred\":false}],\"notes\":{\"2026-07-13\":\"must survive in the protected snapshot\"}}]}",
+              "digest": "9ac8c87281b90b812ca70898ecd1e441d22785bd2539e2639a3df85fac3d26f5",
+              "created_at": "2026-10-03T12:05:22.191065Z"
+            }
+          ],
+          "records": [
+            {
+              "id": "8b23b205-c886-5d78-868f-7c18a9d29c2b",
+              "habit_id": "cec0210d-51b1-45c9-86b4-d29a10ae7453",
+              "local_date": "2026-07-13",
+              "value": 1,
+              "deleted": 0,
+              "payload": "{\"id\":\"8b23b205-c886-5d78-868f-7c18a9d29c2b\",\"date\":\"2026-07-13\",\"value\":1,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "ec88c977-d70d-409e-9fb1-66d7b2504fb9",
+              "habit_id": "5d0f63f5-4738-4d9b-82ae-cacd79ee2572",
+              "local_date": "2026-07-13",
+              "value": 100,
+              "deleted": 0,
+              "payload": "{\"id\":\"ec88c977-d70d-409e-9fb1-66d7b2504fb9\",\"date\":\"2026-07-13\",\"value\":100,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "e37f43b7-48cd-4736-8539-d0b24fad03a6",
+              "habit_id": "5d0f63f5-4738-4d9b-82ae-cacd79ee2572",
+              "local_date": "2026-07-13",
+              "value": 200,
+              "deleted": 0,
+              "payload": "{\"id\":\"e37f43b7-48cd-4736-8539-d0b24fad03a6\",\"date\":\"2026-07-13\",\"value\":200,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            },
+            {
+              "id": "df5725c4-e3d1-4fed-8cdb-74ceb134fa3b",
+              "habit_id": "b3e36c9e-d557-444c-b4aa-d610dc9f1561",
+              "local_date": "2026-07-13",
+              "value": 90,
+              "deleted": 0,
+              "payload": "{\"id\":\"df5725c4-e3d1-4fed-8cdb-74ceb134fa3b\",\"date\":\"2026-07-13\",\"value\":90,\"recordedAtUtc\":\"2026-07-13T02:30:00.000Z\",\"recordedLocalDate\":\"2026-07-13\",\"timezoneId\":\"Asia/Shanghai\",\"utcOffsetMinutes\":480,\"legacyTimestamp\":null,\"revision\":1,\"deleted\":false,\"source\":\"manual\"}"
+            }
+          ],
+          "sqlite_sequence": [
+            {
+              "name": "local_changes",
+              "seq": 21
+            },
+            {
+              "name": "protections",
+              "seq": 1
+            }
+          ],
+          "sync_protections": [],
+          "sync_state": []
+        }
+      }
+    }
+  },
+  "earlierHarnessAttempt": {
+    "file": "ci-followup-641f236/host-sqlite-repro.log",
+    "status": "manually interrupted after two passing cases while the confirmation widget waited without advancing the fake clock; no product assertion failure was recorded",
+    "resolution": "Bounded real-IO waits plus fake-clock pumps; completion and restore-error UI checked; import, full facts, protection and reopen assertions retained"
+  },
+  "scope": "6 targeted host tests and analysis passed on the candidate files, including complete stored snapshot/table/sequence equality, fresh full model persistence, real confirmation, actual pre-restore protection and file reopening. Native permission/channel/SAF assertions remain subject to the new isolated AVD CI run."
+}

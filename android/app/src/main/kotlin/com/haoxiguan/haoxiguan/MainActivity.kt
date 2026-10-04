@@ -2,6 +2,9 @@ package com.haoxiguan.haoxiguan
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -28,6 +31,36 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.haoxiguan.haoxiguan/notification_settings")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "open") {
+                    result.notImplemented(); return@setMethodCallHandler
+                }
+                val channel = call.argument<String>("channelId")
+                // Only navigate to this app's settings. Never change a user's
+                // permission or recreate a disabled channel to bypass their choice.
+                val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    Intent(if (channel == "habit_reminders") Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS
+                        else Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                        if (channel == "habit_reminders") putExtra(Settings.EXTRA_CHANNEL_ID, channel)
+                    }
+                } else fallback
+                try {
+                    startActivity(intent)
+                    result.success(true)
+                } catch (error: Exception) {
+                    try {
+                        startActivity(fallback)
+                        result.success(true)
+                    } catch (fallbackError: Exception) {
+                        result.success(false)
+                    }
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.haoxiguan.haoxiguan/documents")
             .setMethodCallHandler { call, result ->
                 if (call.method != "save" && call.method != "open") {

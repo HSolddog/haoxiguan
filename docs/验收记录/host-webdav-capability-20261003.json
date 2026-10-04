@@ -1,0 +1,89 @@
+{
+  "publication": "Public summary of synthetic test validation. Full logs and workstation metadata remain local; no user habit data, credentials, local paths, process IDs or device identifiers are included.",
+  "fullLocalEvidenceSha256": "e6b2804876991d555c956169e898b99f0f06f57ccb25395eab69318522462fd6",
+  "fullLocalEvidenceBytes": 9468,
+  "kind": "host-webdav-access-capability-and-certificate-regression",
+  "taskDate": "2026-10-03",
+  "baseCommit": "5c7c425628fd16fa5838a0558ed885a1650de962",
+  "baseTree": "684b8daba98283c51c18c2f220d13b6d1fba51dd",
+  "designClauses": {
+    "I97": "docs/交互设计.md:97 requires write/read/delete testing before activation.",
+    "D86": "docs/数据与同步规范.md:86 requires a distinct certificate failure message."
+  },
+  "scope": {
+    "productionFiles": [
+      "lib/services/webdav_client.dart",
+      "lib/ui/webdav_screen.dart"
+    ],
+    "newTestFile": "test/webdav_capability_test.dart",
+    "updatedRealServiceTest": "test/webdav_integration_test.dart",
+    "behavior": "Configuration activation first verifies a fresh random probe in this device namespace, then creates and reads back the first encrypted business backup, then saves configuration.",
+    "probe": "32 Random.secure bytes and a fresh UUID in access-<UUID>.probe; PUT If-None-Match:*; GET exact byte+SHA-256 match and valid strong ETag; DELETE If-Match; GET must be 404.",
+    "tls": "Typed dart:io TlsException (including HandshakeException) from send or response stream becomes a fixed redacted certificate/security-connection DavFailure. SocketException and generic http.ClientException have separate redacted connection messages."
+  },
+  "testedFileSha256": {
+    "lib/services/webdav_client.dart": "97b3a387541c76b93a653013152bd57f7103a3fc053e715ac2c420e0bf301bcf",
+    "lib/ui/webdav_screen.dart": "4704c95fcdaad78d8fd8602a3d07a38400e6eb28834c40deb9cd436a223b64ee",
+    "test/webdav_capability_test.dart": "7fe4f09896058c0dce2f50f9f66ec3f47ae4a81fed28c9350941fe4214c22f62",
+    "test/webdav_integration_test.dart": "19a8fe80103e242c7cac9d80f776c8918bc7cf389cfd5a19853418d02f5a34bb"
+  },
+  "validation": {
+    "targeted": {
+      "exitCode": 0,
+      "passed": 61,
+      "skipped": 1,
+      "failed": 0,
+      "newCases": 21,
+      "newWidgetCases": 2,
+      "skipReason": "The explicitly provisioned real TLS WebDAV endpoint is not configured in this host invocation."
+    },
+    "analyze": {
+      "exitCode": 0,
+      "issues": 0
+    },
+    "format": {
+      "exitCode": 0,
+      "checkedFiles": 4,
+      "changedFiles": 0
+    }
+  },
+  "coveredScenarios": [
+    "Success accepts DELETE 200 or 204 only after matching random bytes and strong ETag, confirms absence, and leaves pre-existing backup/user bytes unchanged.",
+    "Repeated access verification uses different filenames and random payloads, with no successful probe left behind.",
+    "PUT412/403, GET404, wrong bytes, missing/weak/malformed ETag, DELETE403/412, DELETE200 with residual file, timeout, and lost PUT response all reject capability validation.",
+    "No DELETE is attempted for an ambiguous collision, mismatched read, missing/weak/malformed ETag, or incomplete read; If-Match failure preserves another writer replacement.",
+    "Both new and previously configured UI: delete-permission failure saves no active configuration or first business backup, preserves all five draft fields and existing credentials/pointer, and leaves controller/repository facts unchanged.",
+    "The real controller plus MockHTTP UI test also triggers back and the old save callback before the first new frame, verifying the existing live busy guard permits one operation.",
+    "Repairing server permissions permits deliberate retry; only the new successful probe is deleted, the earlier inert failed probe and old/user files remain, the first real encrypted backup fully restores, and only then is the new pointer saved.",
+    "HandshakeException from both client send and response stream produces the dedicated redacted certificate message; a generic ClientException mentioning certificate text is not guessed to be TLS."
+  ],
+  "counterfactual": {
+    "variant": "Final UI with only verifyAccess call omitted; baseline upload/restore/save flow retained with current optional clientFactory seam.",
+    "sourceSha256": "be354e39c8ad7d1796e8e6a847103ac6d45df95af2d4632cc4bb09172a18ff92",
+    "testSha256": "7fe4f09896058c0dce2f50f9f66ec3f47ae4a81fed28c9350941fe4214c22f62",
+    "packageConfigSha256": "bdccac5e254aaaec539ee020a0f244dc0754ffa1a487d75755af949daa9e8bf1",
+    "omittedLine": "await client.verifyAccess(s.vault, s.device);",
+    "baselineClientSha256": "40bc95fe8415dec42e2d3072e1e91a45936a1fed5a9164fa9e10b3e9b6c921ac",
+    "baselineScreenSha256": "da0774566c551f21f96319dd59a8a19087d8bed7a2c2d32640cf84c28ebe57d9",
+    "baselineSaveBodyChecked": "Baseline _save and variant _save match after substituting the optional current test client factory for the baseline constructor and normalizing whitespace.",
+    "expectedExitCode": 1,
+    "actualExitCode": 1,
+    "failure": "Omitting access verification reproduces the old flow: despite DELETE403, the active configuration ID changes from the expected existing ID to a new random ID."
+  },
+  "realTlsTestChange": {
+    "executionStatus": "Updated and compiled by this target; actual real-service execution remains pending.",
+    "conditionalNegative": "When TEST_DAV_CERT is supplied for an integration-only CA absent from normal trust, a default SecurityContext IOClient must produce the redacted certificate failure and leave the random device directory empty.",
+    "positive": "The explicitly trusted client must complete verifyAccess with no probe left, followed by the existing real encrypted upload/list/restore/protected-import assertions.",
+    "boundary": "The untrusted-CA negative is conditional on explicit test CA configuration; public-certificate endpoints without TEST_DAV_CERT use the positive path.",
+    "tlsPolicy": "No badCertificateCallback, certificate-validation bypass, pinning, or global trust-store change was introduced."
+  },
+  "limitations": [
+    "New UI/server failure matrices use MockHTTP, real HabitController/MemoryHabitRepository, and native backup cryptography; they add no new Android/device or live-service result.",
+    "A successful retry removes its own verified probe; prior failed probes are retained for explicit manual cleanup because their current contents/version may be ambiguous.",
+    "Old-pointer protection here applies to probe/network/pre-store validation failures. Existing BackupSettingsStore commit/cleanup semantics are unchanged: _save commits the active pointer before status persistence, so later status/cleanup errors are not claimed to roll back a committed configuration."
+  ],
+  "remainingVerification": [
+    "Root-owned repository-wide format/analyze/full regression and build.",
+    "Next provisioned real TLS WebDAV service CI must execute the new untrusted-CA rejection and successful probe deletion assertions; older service results do not cover this source."
+  ]
+}

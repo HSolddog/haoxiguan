@@ -54,10 +54,10 @@ func run() error {
 			return err
 		}
 		defer lock.Close()
-		if err = syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		if err = lockProcessFile(lock); err != nil {
 			return fmt.Errorf("server is already running; stop it before maintenance: %w", err)
 		}
-		defer syscall.Flock(int(lock.Fd()), syscall.LOCK_UN)
+		defer unlockProcessFile(lock)
 	}
 	store, err := syncapi.Open(*path)
 	if err != nil {

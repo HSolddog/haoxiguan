@@ -1,0 +1,78 @@
+{
+  "kind": "Late confirmation and preview route regression, plus explicit compatibility consent withdrawal",
+  "baseCommit": "6cbd63a170bec4af25d5c8eaad9697198da396c3",
+  "sourceFileSha256": {
+    "lib/ui/unsaved_changes_guard.dart": "c9b4251f0d61ac226ab47d8baa6b1d16e2377ef4aeb24aeae423bc9e25b5bc9f",
+    "lib/ui/backup_restore_dialog.dart": "fce0eeac320fe65d10fc029f923140225dea8f7ed5feefb8bc05c3a5f9654d6f",
+    "lib/ui/habit_history.dart": "19c7b3554b344ad6277f754afb13fbac68bca83455576ac4c998e2488f1f0db8",
+    "test/unsaved_confirmation_race_test.dart": "3b0f44700786f78340c37478fa892e00df7d034168e5f9fdf74b72248ffb818b",
+    "test/preview_route_race_test.dart": "00c62b6cb8a82acaa7c7fae6f09f00892374a8b051e7c707f20ec028048f773b",
+    "test/save_inflight_race_test.dart": "cec980ede80ffa87cf47c551f3f5c61a55711cee8580600ed98cf7ddab0a2430"
+  },
+  "frozenSourceDirectory": "late-route-final-source",
+  "counterfactual": {
+    "command": "flutter test --no-pub --concurrency=1 --reporter expanded test/unsaved_confirmation_race_test.dart test/preview_route_race_test.dart",
+    "productionSourceCommit": "6cbd63a170bec4af25d5c8eaad9697198da396c3",
+    "passed": 0,
+    "failed": 11,
+    "exitCode": 1,
+    "purpose": "Expected pre-fix failures, executed before editing the three production files; tests are byte-identical in the passing run.",
+    "observedFailures": [
+      "Unintended editor/page closes (expected 0, actual 1).",
+      "Home or newly opened page disappeared after repeated pop.",
+      "Pending save failed to keep the editor mounted.",
+      "Cancellation followed by stale preview callbacks closed the underlying operation page."
+    ]
+  },
+  "finalTarget": {
+    "command": "flutter test --no-pub --concurrency=1 --reporter expanded test/unsaved_confirmation_race_test.dart test/preview_route_race_test.dart test/save_inflight_race_test.dart",
+    "passed": 19,
+    "failed": 0,
+    "exitCode": 0,
+    "groups": {
+      "confirmationAndLeave": 7,
+      "realControllerPreviewCancellation": 4,
+      "inFlightSaveAndConsent": 8
+    }
+  },
+  "assertions": [
+    "Each confirmation accepts at most one response and only while its own route is current.",
+    "Back-dismissing a confirmation invalidates old keep/discard callbacks; later fresh confirmation still works.",
+    "After awaiting permission to leave, recheck the original route and live saving state.",
+    "A stale preview cancel cannot close the underlying page; a stale confirm after cancellation creates no write or protection copy.",
+    "Withdrawing compatibility consent before a new frame blocks an old enabled confirm; database and backup bytes remain unchanged.",
+    "Renewed consent restores complete 1000-character title and 2001-character note with one replacement and one protection copy."
+  ],
+  "logs": [
+    {
+      "taskRootRelativePath": "late-route-initial-format.log",
+      "bytes": 100,
+      "sha256": "d5e4b74fe1e0c21d533f0d13e33c35ab58883a1e5768ffe4f910ba6c1f2de96c"
+    },
+    {
+      "taskRootRelativePath": "late-route-before.log",
+      "bytes": 22746,
+      "sha256": "9247082669ea9fe398a4954f89553e41a2e26c00b2a4fa7d470d4899da263b47"
+    },
+    {
+      "taskRootRelativePath": "late-route-before-source.json",
+      "bytes": 742,
+      "sha256": "904424eca59fef258972cbdbc0acecd52aff41be253a3d1f3d8dc20b02bbc9e5"
+    },
+    {
+      "taskRootRelativePath": "late-route-final-format.log",
+      "bytes": 93,
+      "sha256": "83b683983907b7890241525d472e926949517dfdc731c21880fff9b298fc1615"
+    },
+    {
+      "taskRootRelativePath": "late-route-after.log",
+      "bytes": 3767,
+      "sha256": "afd1218d41a591652b3690a6e5f273fb82cfce40c892164d1da0a2e506f7f246"
+    }
+  ],
+  "limitations": [
+    "Widget and in-memory repository contracts only; no physical Android or SQLite persistence claim from these cases.",
+    "Final integrated analysis, full tests, build and native CI are recorded separately.",
+    "Earlier 56-test and 20-test source evidence remains bound to the previous frozen source, not silently rebound."
+  ]
+}

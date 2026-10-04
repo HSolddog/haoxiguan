@@ -1,0 +1,1545 @@
+{
+  "status": "passed",
+  "sourceCommit": "e33ec3badd6d848a1405551e2814d47439d55cfd",
+  "mode": "real Go executable, host-to-container HTTPS over isolated Docker bridge; no published ports",
+  "users": 20,
+  "devicesPerUser": 3,
+  "initialObjectsTotal": 100000,
+  "ciphertextBytesPerObject": 1024,
+  "pushConcurrency": 20,
+  "bootstrapConcurrency": 60,
+  "pushBatchSize": 100,
+  "pullPageSize": 200,
+  "cpuLimit": 1,
+  "memoryLimitGiB": 1,
+  "readOnlyRoot": true,
+  "user": "65532:65532",
+  "tlsCertificateAndHostnameVerified": true,
+  "tlsServerIdentity": "localhost",
+  "publishedPorts": false,
+  "clientOutsideServerResourceLimit": true,
+  "rateLimitsUnchanged": true,
+  "forwardedIPHeadersSent": false,
+  "limits": [
+    "synthetic opaque payloads; excludes client encryption/decryption",
+    "one shared source IP; no WAN latency or bandwidth simulation",
+    "sampled Docker memory includes page cache, not exact peak RSS",
+    "x86_64 CI observations are not ARM64 or production capacity promises",
+    "latencies are observations, without an invented pass threshold"
+  ],
+  "phases": {
+    "enroll_20_users_60_devices": {
+      "elapsedSeconds": 274.481
+    },
+    "create_100000_objects": {
+      "elapsedSeconds": 123.53
+    },
+    "bootstrap_60_devices": {
+      "elapsedSeconds": 217.856
+    },
+    "refresh_before_interruption": {
+      "elapsedSeconds": 150.342
+    },
+    "concurrent_update_delete_interruption_recovery": {
+      "elapsedSeconds": 96.204
+    },
+    "consistent_backup_reopen": {
+      "elapsedSeconds": 66.982
+    }
+  },
+  "diskBytes": {
+    "empty": {
+      "/data/haoxiguan.sqlite": 4096,
+      "/data/haoxiguan.sqlite-wal": 98912,
+      "/data/haoxiguan.sqlite-shm": 32768,
+      "/data/snapshot.sqlite": 0,
+      "/data/snapshot.sqlite-wal": 0
+    },
+    "enroll_20_users_60_devices": {
+      "/data/haoxiguan.sqlite": 4096,
+      "/data/haoxiguan.sqlite-wal": 2731592,
+      "/data/haoxiguan.sqlite-shm": 32768,
+      "/data/snapshot.sqlite": 0,
+      "/data/snapshot.sqlite-wal": 0
+    },
+    "create_100000_objects": {
+      "/data/haoxiguan.sqlite": 451780608,
+      "/data/haoxiguan.sqlite-wal": 4556752,
+      "/data/haoxiguan.sqlite-shm": 32768,
+      "/data/snapshot.sqlite": 0,
+      "/data/snapshot.sqlite-wal": 0
+    },
+    "bootstrap_60_devices": {
+      "/data/haoxiguan.sqlite": 454045696,
+      "/data/haoxiguan.sqlite-wal": 4556752,
+      "/data/haoxiguan.sqlite-shm": 32768,
+      "/data/snapshot.sqlite": 0,
+      "/data/snapshot.sqlite-wal": 0
+    },
+    "refresh_before_interruption": {
+      "/data/haoxiguan.sqlite": 454045696,
+      "/data/haoxiguan.sqlite-wal": 4556752,
+      "/data/haoxiguan.sqlite-shm": 32768,
+      "/data/snapshot.sqlite": 0,
+      "/data/snapshot.sqlite-wal": 0
+    },
+    "concurrent_update_delete_interruption_recovery": {
+      "/data/haoxiguan.sqlite": 459304960,
+      "/data/haoxiguan.sqlite-wal": 4556752,
+      "/data/haoxiguan.sqlite-shm": 32768,
+      "/data/snapshot.sqlite": 0,
+      "/data/snapshot.sqlite-wal": 0
+    },
+    "consistent_backup": {
+      "/data/haoxiguan.sqlite": 459304960,
+      "/data/haoxiguan.sqlite-wal": 0,
+      "/data/haoxiguan.sqlite-shm": 0,
+      "/data/snapshot.sqlite": 457265152,
+      "/data/snapshot.sqlite-wal": 0
+    },
+    "consistent_backup_reopen": {
+      "/data/haoxiguan.sqlite": 459304960,
+      "/data/haoxiguan.sqlite-wal": 0,
+      "/data/haoxiguan.sqlite-shm": 0,
+      "/data/snapshot.sqlite": 457265152,
+      "/data/snapshot.sqlite-wal": 2142432
+    }
+  },
+  "verification": {
+    "all60BootstrapHistoriesFullyVerified": true,
+    "faultCredentialMinimumLifetimeSeconds": 749.588,
+    "abruptRestart": {
+      "signal": "SIGKILL",
+      "count": 1,
+      "outstandingWorkers": 40,
+      "recoverySeconds": 0.263,
+      "committedResponseDiscardedBeforeRestart": true
+    },
+    "recoveredHistoryFullyVerified": true,
+    "opIdReplayDidNotDuplicateChanges": true,
+    "consistentBackupSeconds": 1.432,
+    "snapshotQuickCheck": "ok",
+    "snapshotCounts": {
+      "objects": 100000,
+      "changes": 102200,
+      "operations": 102200,
+      "users": 20,
+      "devices": 60
+    },
+    "restoredSnapshotHistoryFullyVerified": true,
+    "restoreScope": "isolated same-epoch backup reopen; production cross-machine/epoch rotation covered separately"
+  },
+  "imageId": "sha256:f2ec1d72f96583268a2b0905a2e21c5d6608add07fbd9402fed9bd6672153be2",
+  "architecture": "amd64",
+  "operatingSystem": "linux",
+  "dockerNetworkInternal": true,
+  "idleResource": {
+    "phase": "idle_empty",
+    "elapsedSeconds": 8.597,
+    "memoryBytesIncludingPageCache": 6766592,
+    "cpuUsageNs": 40173000
+  },
+  "currentPhase": "consistent_backup_reopen",
+  "http": {
+    "health": {
+      "statuses": {
+        "200": 3
+      },
+      "attemptLatency": {
+        "samples": 3,
+        "p50Ms": 43.868,
+        "p95Ms": 43.868,
+        "maxMs": 44.559
+      },
+      "successfulAttemptLatency": {
+        "samples": 3,
+        "p50Ms": 43.868,
+        "p95Ms": 43.868,
+        "maxMs": 44.559
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 3,
+        "p50Ms": 43.894,
+        "p95Ms": 43.894,
+        "maxMs": 44.603
+      }
+    },
+    "enroll": {
+      "statuses": {
+        "201": 60,
+        "429": 144
+      },
+      "attemptLatency": {
+        "samples": 204,
+        "p50Ms": 43.869,
+        "p95Ms": 51.394,
+        "maxMs": 56.936
+      },
+      "successfulAttemptLatency": {
+        "samples": 60,
+        "p50Ms": 45.484,
+        "p95Ms": 52.453,
+        "maxMs": 55.318
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 60,
+        "p50Ms": 90175.16,
+        "p95Ms": 120221.061,
+        "maxMs": 120225.544
+      }
+    },
+    "push": {
+      "statuses": {
+        "200": 1000,
+        "429": 54
+      },
+      "attemptLatency": {
+        "samples": 1054,
+        "p50Ms": 505.558,
+        "p95Ms": 1519.479,
+        "maxMs": 2832.773
+      },
+      "successfulAttemptLatency": {
+        "samples": 1000,
+        "p50Ms": 537.198,
+        "p95Ms": 1547.126,
+        "maxMs": 2832.773
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 1000,
+        "p50Ms": 577.665,
+        "p95Ms": 30038.159,
+        "maxMs": 31842.998
+      }
+    },
+    "bootstrap": {
+      "statuses": {
+        "200": 1600,
+        "429": 379,
+        "transport_error": 20
+      },
+      "attemptLatency": {
+        "samples": 1999,
+        "p50Ms": 195.966,
+        "p95Ms": 539.394,
+        "maxMs": 1003.193
+      },
+      "successfulAttemptLatency": {
+        "samples": 1600,
+        "p50Ms": 232.969,
+        "p95Ms": 578.826,
+        "maxMs": 1003.193
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 1600,
+        "p50Ms": 311.013,
+        "p95Ms": 30422.357,
+        "maxMs": 31085.071
+      }
+    },
+    "refresh_before_fault": {
+      "statuses": {
+        "200": 40,
+        "429": 76
+      },
+      "attemptLatency": {
+        "samples": 116,
+        "p50Ms": 44.431,
+        "p95Ms": 54.494,
+        "maxMs": 57.715
+      },
+      "successfulAttemptLatency": {
+        "samples": 40,
+        "p50Ms": 45.298,
+        "p95Ms": 52.774,
+        "maxMs": 55.606
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 40,
+        "p50Ms": 60148.306,
+        "p95Ms": 120225.287,
+        "maxMs": 120227.541
+      }
+    },
+    "concurrent_update": {
+      "statuses": {
+        "200": 200,
+        "transport_error": 19,
+        "429": 19
+      },
+      "attemptLatency": {
+        "samples": 238,
+        "p50Ms": 97.885,
+        "p95Ms": 391.897,
+        "maxMs": 678.013
+      },
+      "successfulAttemptLatency": {
+        "samples": 200,
+        "p50Ms": 104.042,
+        "p95Ms": 411.725,
+        "maxMs": 678.013
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 200,
+        "p50Ms": 139.486,
+        "p95Ms": 30059.892,
+        "maxMs": 30180.85
+      }
+    },
+    "lost_response_replay": {
+      "statuses": {
+        "200": 1
+      },
+      "attemptLatency": {
+        "samples": 1,
+        "p50Ms": 3.822,
+        "p95Ms": 3.822,
+        "maxMs": 3.822
+      },
+      "successfulAttemptLatency": {
+        "samples": 1,
+        "p50Ms": 3.822,
+        "p95Ms": 3.822,
+        "maxMs": 3.822
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 1,
+        "p50Ms": 3.925,
+        "p95Ms": 3.925,
+        "maxMs": 3.925
+      }
+    },
+    "concurrent_delete": {
+      "statuses": {
+        "200": 20
+      },
+      "attemptLatency": {
+        "samples": 20,
+        "p50Ms": 40.266,
+        "p95Ms": 190.142,
+        "maxMs": 212.547
+      },
+      "successfulAttemptLatency": {
+        "samples": 20,
+        "p50Ms": 40.266,
+        "p95Ms": 190.142,
+        "maxMs": 212.547
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 20,
+        "p50Ms": 40.378,
+        "p95Ms": 190.258,
+        "maxMs": 212.623
+      }
+    },
+    "acknowledged_creation_replay": {
+      "statuses": {
+        "200": 20
+      },
+      "attemptLatency": {
+        "samples": 20,
+        "p50Ms": 2.718,
+        "p95Ms": 3.34,
+        "maxMs": 6.114
+      },
+      "successfulAttemptLatency": {
+        "samples": 20,
+        "p50Ms": 2.718,
+        "p95Ms": 3.34,
+        "maxMs": 6.114
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 20,
+        "p50Ms": 2.747,
+        "p95Ms": 3.38,
+        "maxMs": 6.153
+      }
+    },
+    "recovered_bootstrap": {
+      "statuses": {
+        "200": 1040,
+        "429": 80
+      },
+      "attemptLatency": {
+        "samples": 1120,
+        "p50Ms": 100.506,
+        "p95Ms": 187.603,
+        "maxMs": 281.139
+      },
+      "successfulAttemptLatency": {
+        "samples": 1040,
+        "p50Ms": 102.905,
+        "p95Ms": 190.084,
+        "maxMs": 281.139
+      },
+      "logicalRequestLatencyIncludingRetries": {
+        "samples": 1040,
+        "p50Ms": 107.529,
+        "p95Ms": 30117.282,
+        "maxMs": 30208.773
+      }
+    }
+  },
+  "resourceSamples": [
+    {
+      "phase": "idle_empty",
+      "elapsedSeconds": 8.597,
+      "memoryBytesIncludingPageCache": 6766592,
+      "cpuUsageNs": 40173000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 13.606,
+      "memoryBytesIncludingPageCache": 10276864,
+      "cpuUsageNs": 1781029000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 18.608,
+      "memoryBytesIncludingPageCache": 10080256,
+      "cpuUsageNs": 1781594000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 23.611,
+      "memoryBytesIncludingPageCache": 9887744,
+      "cpuUsageNs": 1781594000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 28.614,
+      "memoryBytesIncludingPageCache": 9887744,
+      "cpuUsageNs": 1781594000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 33.616,
+      "memoryBytesIncludingPageCache": 9887744,
+      "cpuUsageNs": 1781594000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 38.619,
+      "memoryBytesIncludingPageCache": 9887744,
+      "cpuUsageNs": 1781594000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 43.622,
+      "memoryBytesIncludingPageCache": 13524992,
+      "cpuUsageNs": 1848852000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 48.625,
+      "memoryBytesIncludingPageCache": 13398016,
+      "cpuUsageNs": 1848966000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 53.628,
+      "memoryBytesIncludingPageCache": 12943360,
+      "cpuUsageNs": 1848966000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 58.631,
+      "memoryBytesIncludingPageCache": 12943360,
+      "cpuUsageNs": 1848966000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 63.633,
+      "memoryBytesIncludingPageCache": 12943360,
+      "cpuUsageNs": 1848966000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 68.636,
+      "memoryBytesIncludingPageCache": 12742656,
+      "cpuUsageNs": 1848966000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 73.639,
+      "memoryBytesIncludingPageCache": 13709312,
+      "cpuUsageNs": 1909741000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 78.642,
+      "memoryBytesIncludingPageCache": 13709312,
+      "cpuUsageNs": 1910610000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 83.644,
+      "memoryBytesIncludingPageCache": 13496320,
+      "cpuUsageNs": 1910610000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 88.647,
+      "memoryBytesIncludingPageCache": 13496320,
+      "cpuUsageNs": 1910610000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 93.65,
+      "memoryBytesIncludingPageCache": 13496320,
+      "cpuUsageNs": 1910610000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 98.653,
+      "memoryBytesIncludingPageCache": 13316096,
+      "cpuUsageNs": 1910610000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 103.656,
+      "memoryBytesIncludingPageCache": 13783040,
+      "cpuUsageNs": 1970200000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 108.659,
+      "memoryBytesIncludingPageCache": 13586432,
+      "cpuUsageNs": 1970955000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 113.662,
+      "memoryBytesIncludingPageCache": 13586432,
+      "cpuUsageNs": 1970955000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 118.664,
+      "memoryBytesIncludingPageCache": 13492224,
+      "cpuUsageNs": 1970955000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 123.667,
+      "memoryBytesIncludingPageCache": 13492224,
+      "cpuUsageNs": 1970955000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 128.67,
+      "memoryBytesIncludingPageCache": 13492224,
+      "cpuUsageNs": 1970955000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 133.672,
+      "memoryBytesIncludingPageCache": 14249984,
+      "cpuUsageNs": 2034273000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 138.675,
+      "memoryBytesIncludingPageCache": 14069760,
+      "cpuUsageNs": 2034958000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 143.677,
+      "memoryBytesIncludingPageCache": 13905920,
+      "cpuUsageNs": 2034958000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 148.68,
+      "memoryBytesIncludingPageCache": 13897728,
+      "cpuUsageNs": 2034958000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 153.683,
+      "memoryBytesIncludingPageCache": 13897728,
+      "cpuUsageNs": 2034958000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 158.685,
+      "memoryBytesIncludingPageCache": 13897728,
+      "cpuUsageNs": 2034958000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 163.688,
+      "memoryBytesIncludingPageCache": 14606336,
+      "cpuUsageNs": 2096840000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 168.691,
+      "memoryBytesIncludingPageCache": 14598144,
+      "cpuUsageNs": 2097365000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 173.694,
+      "memoryBytesIncludingPageCache": 14598144,
+      "cpuUsageNs": 2097365000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 178.697,
+      "memoryBytesIncludingPageCache": 14598144,
+      "cpuUsageNs": 2097365000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 183.699,
+      "memoryBytesIncludingPageCache": 14598144,
+      "cpuUsageNs": 2097365000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 188.702,
+      "memoryBytesIncludingPageCache": 14598144,
+      "cpuUsageNs": 2097365000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 193.705,
+      "memoryBytesIncludingPageCache": 15089664,
+      "cpuUsageNs": 2143948000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 198.708,
+      "memoryBytesIncludingPageCache": 14893056,
+      "cpuUsageNs": 2143948000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 203.71,
+      "memoryBytesIncludingPageCache": 14893056,
+      "cpuUsageNs": 2143948000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 208.713,
+      "memoryBytesIncludingPageCache": 14893056,
+      "cpuUsageNs": 2143948000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 213.716,
+      "memoryBytesIncludingPageCache": 14893056,
+      "cpuUsageNs": 2143948000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 218.719,
+      "memoryBytesIncludingPageCache": 14651392,
+      "cpuUsageNs": 2143948000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 223.721,
+      "memoryBytesIncludingPageCache": 15138816,
+      "cpuUsageNs": 2180788000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 228.724,
+      "memoryBytesIncludingPageCache": 15138816,
+      "cpuUsageNs": 2181047000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 233.727,
+      "memoryBytesIncludingPageCache": 15007744,
+      "cpuUsageNs": 2181047000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 238.729,
+      "memoryBytesIncludingPageCache": 15007744,
+      "cpuUsageNs": 2181047000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 243.732,
+      "memoryBytesIncludingPageCache": 15007744,
+      "cpuUsageNs": 2181047000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 248.734,
+      "memoryBytesIncludingPageCache": 14602240,
+      "cpuUsageNs": 2181047000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 253.737,
+      "memoryBytesIncludingPageCache": 15618048,
+      "cpuUsageNs": 2201785000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 258.74,
+      "memoryBytesIncludingPageCache": 15618048,
+      "cpuUsageNs": 2201785000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 263.743,
+      "memoryBytesIncludingPageCache": 15618048,
+      "cpuUsageNs": 2201785000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 268.745,
+      "memoryBytesIncludingPageCache": 15618048,
+      "cpuUsageNs": 2201785000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 273.748,
+      "memoryBytesIncludingPageCache": 15486976,
+      "cpuUsageNs": 2201785000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 278.751,
+      "memoryBytesIncludingPageCache": 15486976,
+      "cpuUsageNs": 2201785000
+    },
+    {
+      "phase": "enroll_20_users_60_devices",
+      "elapsedSeconds": 283.092,
+      "memoryBytesIncludingPageCache": 15728640,
+      "cpuUsageNs": 2208999000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 283.754,
+      "memoryBytesIncludingPageCache": 37822464,
+      "cpuUsageNs": 2893475000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 288.756,
+      "memoryBytesIncludingPageCache": 104497152,
+      "cpuUsageNs": 7890261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 293.759,
+      "memoryBytesIncludingPageCache": 167034880,
+      "cpuUsageNs": 12891217000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 298.761,
+      "memoryBytesIncludingPageCache": 171327488,
+      "cpuUsageNs": 13601383000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 303.764,
+      "memoryBytesIncludingPageCache": 171327488,
+      "cpuUsageNs": 13601493000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 308.767,
+      "memoryBytesIncludingPageCache": 170979328,
+      "cpuUsageNs": 13601493000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 313.769,
+      "memoryBytesIncludingPageCache": 170979328,
+      "cpuUsageNs": 13601493000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 318.772,
+      "memoryBytesIncludingPageCache": 170823680,
+      "cpuUsageNs": 13601493000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 323.775,
+      "memoryBytesIncludingPageCache": 182149120,
+      "cpuUsageNs": 14020180000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 328.778,
+      "memoryBytesIncludingPageCache": 248205312,
+      "cpuUsageNs": 19021816000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 333.781,
+      "memoryBytesIncludingPageCache": 308719616,
+      "cpuUsageNs": 24025498000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 338.785,
+      "memoryBytesIncludingPageCache": 315400192,
+      "cpuUsageNs": 24977691000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 343.787,
+      "memoryBytesIncludingPageCache": 315400192,
+      "cpuUsageNs": 24977954000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 348.79,
+      "memoryBytesIncludingPageCache": 315400192,
+      "cpuUsageNs": 24977954000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 353.793,
+      "memoryBytesIncludingPageCache": 315400192,
+      "cpuUsageNs": 24977954000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 358.795,
+      "memoryBytesIncludingPageCache": 315342848,
+      "cpuUsageNs": 24977954000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 363.798,
+      "memoryBytesIncludingPageCache": 320778240,
+      "cpuUsageNs": 25133452000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 368.801,
+      "memoryBytesIncludingPageCache": 385814528,
+      "cpuUsageNs": 30128261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 373.805,
+      "memoryBytesIncludingPageCache": 448577536,
+      "cpuUsageNs": 35126128000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 378.808,
+      "memoryBytesIncludingPageCache": 464973824,
+      "cpuUsageNs": 36628031000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 383.811,
+      "memoryBytesIncludingPageCache": 464973824,
+      "cpuUsageNs": 36628031000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 388.813,
+      "memoryBytesIncludingPageCache": 464973824,
+      "cpuUsageNs": 36628031000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 393.816,
+      "memoryBytesIncludingPageCache": 464973824,
+      "cpuUsageNs": 36628031000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 398.818,
+      "memoryBytesIncludingPageCache": 464973824,
+      "cpuUsageNs": 36628031000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 403.821,
+      "memoryBytesIncludingPageCache": 464973824,
+      "cpuUsageNs": 36628031000
+    },
+    {
+      "phase": "create_100000_objects",
+      "elapsedSeconds": 406.632,
+      "memoryBytesIncludingPageCache": 490717184,
+      "cpuUsageNs": 38743279000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 408.823,
+      "memoryBytesIncludingPageCache": 495280128,
+      "cpuUsageNs": 39919021000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 413.826,
+      "memoryBytesIncludingPageCache": 494866432,
+      "cpuUsageNs": 39919782000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 418.828,
+      "memoryBytesIncludingPageCache": 494862336,
+      "cpuUsageNs": 39919782000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 423.831,
+      "memoryBytesIncludingPageCache": 491425792,
+      "cpuUsageNs": 39919782000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 428.834,
+      "memoryBytesIncludingPageCache": 491425792,
+      "cpuUsageNs": 39919782000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 433.837,
+      "memoryBytesIncludingPageCache": 495005696,
+      "cpuUsageNs": 39919782000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 438.839,
+      "memoryBytesIncludingPageCache": 502063104,
+      "cpuUsageNs": 41266041000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 443.842,
+      "memoryBytesIncludingPageCache": 499732480,
+      "cpuUsageNs": 41307904000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 448.845,
+      "memoryBytesIncludingPageCache": 499601408,
+      "cpuUsageNs": 41307904000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 453.847,
+      "memoryBytesIncludingPageCache": 499601408,
+      "cpuUsageNs": 41307904000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 458.85,
+      "memoryBytesIncludingPageCache": 499601408,
+      "cpuUsageNs": 41307904000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 463.853,
+      "memoryBytesIncludingPageCache": 499601408,
+      "cpuUsageNs": 41307904000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 468.858,
+      "memoryBytesIncludingPageCache": 502247424,
+      "cpuUsageNs": 41555169000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 473.86,
+      "memoryBytesIncludingPageCache": 502964224,
+      "cpuUsageNs": 42662751000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 478.863,
+      "memoryBytesIncludingPageCache": 502964224,
+      "cpuUsageNs": 42663482000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 483.865,
+      "memoryBytesIncludingPageCache": 502964224,
+      "cpuUsageNs": 42663482000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 488.868,
+      "memoryBytesIncludingPageCache": 502779904,
+      "cpuUsageNs": 42663482000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 493.871,
+      "memoryBytesIncludingPageCache": 502779904,
+      "cpuUsageNs": 42663482000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 498.873,
+      "memoryBytesIncludingPageCache": 502779904,
+      "cpuUsageNs": 42663482000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 503.876,
+      "memoryBytesIncludingPageCache": 501821440,
+      "cpuUsageNs": 44076501000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 508.879,
+      "memoryBytesIncludingPageCache": 501813248,
+      "cpuUsageNs": 44077241000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 513.882,
+      "memoryBytesIncludingPageCache": 501813248,
+      "cpuUsageNs": 44077241000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 518.885,
+      "memoryBytesIncludingPageCache": 501813248,
+      "cpuUsageNs": 44077241000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 523.887,
+      "memoryBytesIncludingPageCache": 501813248,
+      "cpuUsageNs": 44077241000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 528.89,
+      "memoryBytesIncludingPageCache": 501813248,
+      "cpuUsageNs": 44077241000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 533.893,
+      "memoryBytesIncludingPageCache": 500822016,
+      "cpuUsageNs": 45422112000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 538.895,
+      "memoryBytesIncludingPageCache": 500690944,
+      "cpuUsageNs": 45422858000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 543.898,
+      "memoryBytesIncludingPageCache": 500690944,
+      "cpuUsageNs": 45422858000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 548.9,
+      "memoryBytesIncludingPageCache": 500498432,
+      "cpuUsageNs": 45422858000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 553.903,
+      "memoryBytesIncludingPageCache": 500498432,
+      "cpuUsageNs": 45422858000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 558.906,
+      "memoryBytesIncludingPageCache": 500498432,
+      "cpuUsageNs": 45422858000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 563.908,
+      "memoryBytesIncludingPageCache": 503115776,
+      "cpuUsageNs": 46744193000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 568.911,
+      "memoryBytesIncludingPageCache": 502853632,
+      "cpuUsageNs": 46745141000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 573.913,
+      "memoryBytesIncludingPageCache": 502726656,
+      "cpuUsageNs": 46745141000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 578.916,
+      "memoryBytesIncludingPageCache": 502726656,
+      "cpuUsageNs": 46745141000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 583.918,
+      "memoryBytesIncludingPageCache": 502726656,
+      "cpuUsageNs": 46745141000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 588.921,
+      "memoryBytesIncludingPageCache": 502726656,
+      "cpuUsageNs": 46745141000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 593.924,
+      "memoryBytesIncludingPageCache": 499175424,
+      "cpuUsageNs": 47785062000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 598.926,
+      "memoryBytesIncludingPageCache": 499056640,
+      "cpuUsageNs": 48072077000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 603.929,
+      "memoryBytesIncludingPageCache": 499056640,
+      "cpuUsageNs": 48072660000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 608.931,
+      "memoryBytesIncludingPageCache": 499019776,
+      "cpuUsageNs": 48072660000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 613.934,
+      "memoryBytesIncludingPageCache": 499019776,
+      "cpuUsageNs": 48072660000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 618.937,
+      "memoryBytesIncludingPageCache": 499019776,
+      "cpuUsageNs": 48072660000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 623.939,
+      "memoryBytesIncludingPageCache": 499019776,
+      "cpuUsageNs": 48072660000
+    },
+    {
+      "phase": "bootstrap_60_devices",
+      "elapsedSeconds": 624.498,
+      "memoryBytesIncludingPageCache": 498683904,
+      "cpuUsageNs": 48359213000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 628.942,
+      "memoryBytesIncludingPageCache": 498806784,
+      "cpuUsageNs": 48426414000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 633.944,
+      "memoryBytesIncludingPageCache": 498806784,
+      "cpuUsageNs": 48426936000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 638.947,
+      "memoryBytesIncludingPageCache": 498761728,
+      "cpuUsageNs": 48426936000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 643.95,
+      "memoryBytesIncludingPageCache": 498761728,
+      "cpuUsageNs": 48426936000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 648.953,
+      "memoryBytesIncludingPageCache": 498761728,
+      "cpuUsageNs": 48426936000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 653.956,
+      "memoryBytesIncludingPageCache": 498761728,
+      "cpuUsageNs": 48426936000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 658.958,
+      "memoryBytesIncludingPageCache": 498184192,
+      "cpuUsageNs": 48490519000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 663.961,
+      "memoryBytesIncludingPageCache": 498184192,
+      "cpuUsageNs": 48491072000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 668.963,
+      "memoryBytesIncludingPageCache": 498184192,
+      "cpuUsageNs": 48491072000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 673.966,
+      "memoryBytesIncludingPageCache": 498184192,
+      "cpuUsageNs": 48491072000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 678.968,
+      "memoryBytesIncludingPageCache": 498184192,
+      "cpuUsageNs": 48491072000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 683.971,
+      "memoryBytesIncludingPageCache": 498184192,
+      "cpuUsageNs": 48491072000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 688.974,
+      "memoryBytesIncludingPageCache": 498954240,
+      "cpuUsageNs": 48547897000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 693.976,
+      "memoryBytesIncludingPageCache": 498954240,
+      "cpuUsageNs": 48548488000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 698.979,
+      "memoryBytesIncludingPageCache": 495788032,
+      "cpuUsageNs": 48548488000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 703.982,
+      "memoryBytesIncludingPageCache": 495788032,
+      "cpuUsageNs": 48548488000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 708.984,
+      "memoryBytesIncludingPageCache": 495788032,
+      "cpuUsageNs": 48548488000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 713.987,
+      "memoryBytesIncludingPageCache": 495788032,
+      "cpuUsageNs": 48548488000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 718.989,
+      "memoryBytesIncludingPageCache": 495697920,
+      "cpuUsageNs": 48595261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 723.992,
+      "memoryBytesIncludingPageCache": 495697920,
+      "cpuUsageNs": 48595261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 728.994,
+      "memoryBytesIncludingPageCache": 495456256,
+      "cpuUsageNs": 48595261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 733.997,
+      "memoryBytesIncludingPageCache": 495456256,
+      "cpuUsageNs": 48595261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 739.0,
+      "memoryBytesIncludingPageCache": 495312896,
+      "cpuUsageNs": 48595261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 744.003,
+      "memoryBytesIncludingPageCache": 495312896,
+      "cpuUsageNs": 48595261000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 749.006,
+      "memoryBytesIncludingPageCache": 495489024,
+      "cpuUsageNs": 48622175000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 754.008,
+      "memoryBytesIncludingPageCache": 495489024,
+      "cpuUsageNs": 48622175000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 759.011,
+      "memoryBytesIncludingPageCache": 495489024,
+      "cpuUsageNs": 48622175000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 764.014,
+      "memoryBytesIncludingPageCache": 495489024,
+      "cpuUsageNs": 48622175000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 769.016,
+      "memoryBytesIncludingPageCache": 495374336,
+      "cpuUsageNs": 48622175000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 774.019,
+      "memoryBytesIncludingPageCache": 495374336,
+      "cpuUsageNs": 48622175000
+    },
+    {
+      "phase": "refresh_before_interruption",
+      "elapsedSeconds": 774.852,
+      "memoryBytesIncludingPageCache": 495808512,
+      "cpuUsageNs": 48639776000
+    },
+    {
+      "phase": "before_sigkill",
+      "elapsedSeconds": 774.985,
+      "memoryBytesIncludingPageCache": 496672768,
+      "cpuUsageNs": 48797158000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 779.022,
+      "memoryBytesIncludingPageCache": 26427392,
+      "cpuUsageNs": 1507853000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 784.024,
+      "memoryBytesIncludingPageCache": 26099712,
+      "cpuUsageNs": 1508431000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 789.027,
+      "memoryBytesIncludingPageCache": 25858048,
+      "cpuUsageNs": 1508431000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 794.03,
+      "memoryBytesIncludingPageCache": 25858048,
+      "cpuUsageNs": 1508431000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 799.033,
+      "memoryBytesIncludingPageCache": 25858048,
+      "cpuUsageNs": 1508431000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 804.035,
+      "memoryBytesIncludingPageCache": 25858048,
+      "cpuUsageNs": 1508431000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 809.038,
+      "memoryBytesIncludingPageCache": 26914816,
+      "cpuUsageNs": 2805219000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 814.04,
+      "memoryBytesIncludingPageCache": 26914816,
+      "cpuUsageNs": 2805845000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 819.043,
+      "memoryBytesIncludingPageCache": 26730496,
+      "cpuUsageNs": 2805845000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 824.045,
+      "memoryBytesIncludingPageCache": 26595328,
+      "cpuUsageNs": 2805845000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 829.048,
+      "memoryBytesIncludingPageCache": 26595328,
+      "cpuUsageNs": 2805845000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 834.051,
+      "memoryBytesIncludingPageCache": 26595328,
+      "cpuUsageNs": 2805845000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 839.053,
+      "memoryBytesIncludingPageCache": 27889664,
+      "cpuUsageNs": 3489301000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 844.056,
+      "memoryBytesIncludingPageCache": 30932992,
+      "cpuUsageNs": 4186027000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 849.059,
+      "memoryBytesIncludingPageCache": 30932992,
+      "cpuUsageNs": 4186027000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 854.062,
+      "memoryBytesIncludingPageCache": 30932992,
+      "cpuUsageNs": 4186027000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 859.065,
+      "memoryBytesIncludingPageCache": 30932992,
+      "cpuUsageNs": 4186027000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 864.067,
+      "memoryBytesIncludingPageCache": 30932992,
+      "cpuUsageNs": 4186027000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 869.07,
+      "memoryBytesIncludingPageCache": 30932992,
+      "cpuUsageNs": 4186027000
+    },
+    {
+      "phase": "concurrent_update_delete_interruption_recovery",
+      "elapsedSeconds": 871.068,
+      "memoryBytesIncludingPageCache": 27721728,
+      "cpuUsageNs": 5399339000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 874.288,
+      "memoryBytesIncludingPageCache": 0,
+      "cpuUsageNs": 0
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 879.291,
+      "memoryBytesIncludingPageCache": 21659648,
+      "cpuUsageNs": 1433695000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 884.294,
+      "memoryBytesIncludingPageCache": 21454848,
+      "cpuUsageNs": 1434498000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 889.297,
+      "memoryBytesIncludingPageCache": 21278720,
+      "cpuUsageNs": 1434498000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 894.299,
+      "memoryBytesIncludingPageCache": 21278720,
+      "cpuUsageNs": 1434498000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 899.302,
+      "memoryBytesIncludingPageCache": 21278720,
+      "cpuUsageNs": 1434498000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 904.304,
+      "memoryBytesIncludingPageCache": 21258240,
+      "cpuUsageNs": 1434498000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 909.307,
+      "memoryBytesIncludingPageCache": 21454848,
+      "cpuUsageNs": 2772111000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 914.31,
+      "memoryBytesIncludingPageCache": 21258240,
+      "cpuUsageNs": 2772411000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 919.312,
+      "memoryBytesIncludingPageCache": 21258240,
+      "cpuUsageNs": 2772411000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 924.315,
+      "memoryBytesIncludingPageCache": 21258240,
+      "cpuUsageNs": 2772411000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 929.318,
+      "memoryBytesIncludingPageCache": 21258240,
+      "cpuUsageNs": 2772411000
+    },
+    {
+      "phase": "periodic",
+      "elapsedSeconds": 934.321,
+      "memoryBytesIncludingPageCache": 21258240,
+      "cpuUsageNs": 2772411000
+    },
+    {
+      "phase": "consistent_backup_reopen",
+      "elapsedSeconds": 938.063,
+      "memoryBytesIncludingPageCache": 21262336,
+      "cpuUsageNs": 3345203000
+    }
+  ],
+  "maxSampledMemoryBytesIncludingPageCache": 503115776,
+  "elapsedSeconds": 938.067
+}

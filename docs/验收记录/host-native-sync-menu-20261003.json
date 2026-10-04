@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "recordType": "host-native-sync-menu-regression",
+  "dateUtc": "2026-10-03",
+  "parentLocalCommit": "2e7942ff46adb2446fc6e7b7331ccf9eca5af039",
+  "sourceFiles": [
+    {
+      "path": "tools/android_sync_acceptance.dart",
+      "sha256": "85fd4495a87233a2157098b85dd7239e5e45d296914e0f8a15cd7ce28a8ad20b"
+    },
+    {
+      "path": "test/android_sync_acceptance_menu_test.dart",
+      "sha256": "4e90f3f3d99d3b21f10a6731b76145e8ea0df7464762a65a91693e6c68279602"
+    }
+  ],
+  "failedNativeRun": {
+    "sourceCommit": "809045fd41259241dcfa40130d2c81589fbf3dc0",
+    "runId": 37142406656,
+    "jobId": 111261668508,
+    "sdkInt": 35,
+    "outcome": "failed",
+    "rawEvidencePreserved": true,
+    "reports": [
+      {
+        "role": "A",
+        "path": "../native-sync-ci-37142406656-artifact/report-a.json",
+        "sha256": "2162a802e249fdad7a5205f9c5f0d1b89cf184b05632f8655a5b18f1f648de7a",
+        "reportSequence": 31,
+        "stage": "awaitingReplicaImport",
+        "realTlsTransport": true,
+        "recoverySafVerified": true,
+        "initialPreviewCancelled": true,
+        "initialPreviewConfirmed": true,
+        "fullFactsTransferred": true
+      },
+      {
+        "role": "B",
+        "path": "../native-sync-ci-37142406656-artifact/report-b.json",
+        "sha256": "8b256b9fb4c4e6912be6fe278067658bd7502e8a51c76f5add5a94880e7671b3",
+        "reportSequence": 29,
+        "stage": "failed",
+        "errorCode": "exception_state",
+        "diagnostic": {
+          "failureCode": "exception_state",
+          "lastStage": "awaitingRecoveryJoin",
+          "lastAction": "choose_remote_item",
+          "frameworkFailure": "none"
+        },
+        "realTlsTransport": true,
+        "recoverySafVerified": true,
+        "initialPreviewCancelled": true,
+        "initialPreviewConfirmed": false,
+        "cancelRemoteObjectsBefore": 20,
+        "cancelRemoteObjectsAfter": 20,
+        "cancelRemoteHighWaterBefore": 20,
+        "cancelRemoteHighWaterAfter": 20
+      }
+    ]
+  },
+  "change": {
+    "productionCodeChanged": false,
+    "protocolSchemaChanged": false,
+    "finiteDiagnosticEnumsChanged": false,
+    "defect": "A fixture label mismatch made the remote-choice finder empty; accessing its last match throws StateError. This is consistent with the preserved B exception_state and choose_remote_item diagnostic.",
+    "locator": "The actual DropdownMenuItem<SyncChoice> enabled value SyncChoice.remote anchors its Text descendant; hitTestable excludes selected-value copies behind the popup barrier, and the existing tap requires exactly one match.",
+    "reviewRequirement": "Every one of the 20 real production review candidates remains mandatory; no candidate is skipped and no production UI rule is relaxed."
+  },
+  "hostValidation": {
+    "initialRegressionAttempt": {
+      "exitCode": 1,
+      "passed": 13,
+      "failed": 1,
+      "finding": "The typed menu container's empty center has no direct hit; the actual label descendant is the valid click target.",
+      "logPath": "../native-sync-menu-target-tests-initial.log",
+      "logSha256": "72dff08031e9e0bfc15ee1825e1d603780afec94bf83228a7bdecee386fe9966"
+    },
+    "format": {
+      "exitCode": 0,
+      "files": 2,
+      "changed": 0,
+      "logPath": "../native-sync-menu-format.log",
+      "logSha256": "a082edee672144d78b076211de87cf60ad572a2045ac70410ca65dc5c11e9199"
+    },
+    "targetTests": {
+      "command": "flutter test --no-pub test/android_sync_acceptance_menu_test.dart test/android_sync_acceptance_diagnostics_test.dart test/android_sync_acceptance_protocol_test.dart test/android_sync_acceptance_facts_test.dart",
+      "exitCode": 0,
+      "passed": 14,
+      "failed": 0,
+      "logPath": "../native-sync-menu-target-tests.log",
+      "logSha256": "07cfe46f45caecdd4715e73a76de64c9f418949da3be658cea1c6e9dbecd632d"
+    },
+    "analyze": {
+      "command": "flutter analyze --no-pub tools/android_sync_acceptance.dart tools/native_sync/diagnostics.dart tools/native_sync/protocol.dart tools/native_sync/facts.dart test/android_sync_acceptance_menu_test.dart test/android_sync_acceptance_diagnostics_test.dart test/android_sync_acceptance_protocol_test.dart test/android_sync_acceptance_facts_test.dart",
+      "exitCode": 0,
+      "items": 8,
+      "issues": 0,
+      "durationSeconds": 2.0,
+      "logPath": "../native-sync-menu-analyze.log",
+      "logSha256": "0a57ed59ef8b7213250b55d4cf5f3bba82f4ef3cf18f62e9e20c97c6822595b2"
+    },
+    "productionDialogRegression": {
+      "screen": "SyncConflictDialog",
+      "phoneLogicalSize": [412, 915],
+      "candidateCount": 20,
+      "localEntitiesEmpty": true,
+      "allCandidatesRemoteOnly": true,
+      "allCandidatesIndividuallyTapped": true,
+      "uniqueVisibleTypedRemoteMenuPerCandidate": true,
+      "allSelectionsRemote": true,
+      "completeSelectionsBeforeApply": true,
+      "allPortableBusinessFieldsMatchBaseline": true,
+      "usesSyntheticBusinessFactsOnly": true
+    }
+  },
+  "boundary": "Host production-dialog regression passed. The preserved source 809045fd native-sync run remains failed; convergence, SQLite/process reopen and disconnected backup are not established by these host tests. A new exact-source Android native-sync CI run is required. No production server, publishing, signing credentials or long-term phone validation is involved."
+}

@@ -1,0 +1,226 @@
+{
+  "sourceLocal": "4a873fd077a231598dcc02fa7a8687bef1c0a930",
+  "sourceTree": "e0025a70c5064609037ba6df3a23ce616a97421f",
+  "buildType": "debug",
+  "command": "flutter build apk --debug --no-pub",
+  "buildExitCode": 0,
+  "gradleSeconds": 80.0,
+  "productPathsCleanAfterBuild": true,
+  "signingEnvironment": "Four release-signing variable names removed only; no secret values read or output",
+  "apk": {
+    "taskRootRelativePath": "tools\\artifacts\\haoxiguan-product-debug-4a873fd.apk",
+    "bytes": 170831993,
+    "sha256": "2e802a5d741679b42e98fbbab9e7cb9b3858f76d07c32ba95006f745f08cc118",
+    "applicationId": "com.haoxiguan.haoxiguan",
+    "versionName": "1.2.0",
+    "versionCode": 6,
+    "minSdk": 24,
+    "targetSdk": 36
+  },
+  "signature": {
+    "exitCode": 0,
+    "schemeV2": true,
+    "certificateDn": "C=US, O=Android, CN=Android Debug",
+    "certificateSha256": "94fed045b73b8dd9ecff083d990d3f312373e73866b225f0715c80eca2f9118a"
+  },
+  "zipalign": {
+    "command": "zipalign -c -P 16 -v 4",
+    "exitCode": 0
+  },
+  "nativeLibraries": [
+    {
+      "entry": "lib/arm64-v8a/libVkLayer_khronos_validation.so",
+      "sha256": "ae445f7e74d402e3a367adb230b1edd9841899fcb3310166e5cc96a09ad37a3f",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/arm64-v8a/libdartjni.so",
+      "sha256": "4b5b1141178486f14eaf8bc7617c036b8c284ff26fd077ca607937534041e4a3",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/arm64-v8a/libdatastore_shared_counter.so",
+      "sha256": "d3e48717c9aa147e0ab21063ba0e8e0211cabf8bf40b222640829519edbf58e1",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/arm64-v8a/libflutter.so",
+      "sha256": "f5489f4cc38fbde832ff85cf3e02d1ad856e5399d1d9814268866e5f2cd9fea8",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/arm64-v8a/libsodium.so",
+      "sha256": "e22fb48f03b9e5b91d05fc64a87366755eaa83878575333364e35aee2b4753d1",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/arm64-v8a/libsqlite3.so",
+      "sha256": "081df67ee9ab852daea6a0679427e90fc89a0245d06f93dafe2309875c609c5c",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libdartjni.so",
+      "sha256": "c515ac985dbb3124dcd41263b3d81a05df8c9b44f7e00e6fa89c79efa39382f5",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libdatastore_shared_counter.so",
+      "sha256": "716c5d8d2cac8ca0edf65da8f139c7886b726ac79d542a14edeb94994ba6d3dc",
+      "loadAlignments": [
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libflutter.so",
+      "sha256": "741c002e3921fb826867f581e5143c36c83ac472108d44c4e2fe1961a1557729",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libsodium.so",
+      "sha256": "3d8e3d1dad53a99a4044f260dcd4c55c2ef36aa092bce6d385ee080da5931acb",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/armeabi-v7a/libsqlite3.so",
+      "sha256": "5f331b44ef2549f1e3fa2153ad22d60d85c5a43766e4690a29cc49a0652db772",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/x86_64/libdartjni.so",
+      "sha256": "5d8ff1f5e40098a7ee96441e128430e2e6f70949bc1930cb36826926f8fdf1ce",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/x86_64/libdatastore_shared_counter.so",
+      "sha256": "fb6c9208988c49ae94943bc3236fa763ba584722e044fa4ea9a12d2941027105",
+      "loadAlignments": [
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/x86_64/libflutter.so",
+      "sha256": "f6bf3a4c928f7345b8f73785b9a344dab757c436ecfad211d199e2cf71068a30",
+      "loadAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/x86_64/libsodium.so",
+      "sha256": "b7b7377d42ed5ebd9c88b3ec665b138ae05c1633c57fd7372e50661e5f2eab28",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    },
+    {
+      "entry": "lib/x86_64/libsqlite3.so",
+      "sha256": "c773c3a25e4c11a450cc700ac95d665c3a1ae75ad426a204fc9b7a7a69b0e191",
+      "loadAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elfEvidence": "Identical ELF bytes to c176047 actual llvm-readelf report"
+    }
+  ],
+  "logs": [
+    {
+      "taskRootRelativePath": "compatible-restore-debug-build.log",
+      "bytes": 991,
+      "sha256": "ba805e61a96b8f2d47d6cae57c7de8dfcfaefb78bd2fe589c5244d9ae0367bee"
+    },
+    {
+      "taskRootRelativePath": "compatible-restore-debug-build-wrapper.log",
+      "bytes": 1114,
+      "sha256": "6523295b148d2e18b42e5b171db8bca6d84d3d9e343c8af6c0156b6e10d96c8b"
+    },
+    {
+      "taskRootRelativePath": "compatible-restore-debug-aapt.log",
+      "bytes": 5239,
+      "sha256": "a8fb5741d048495166c45b17c0d3ee4bec10be3a249f2c4d4d23fe7981ad38c8"
+    },
+    {
+      "taskRootRelativePath": "compatible-restore-debug-signature.log",
+      "bytes": 972,
+      "sha256": "11702f8f46c89c80c475bbbff2d68a414221d96ac0697526dd3aa06267243970"
+    },
+    {
+      "taskRootRelativePath": "compatible-restore-debug-zipalign.log",
+      "bytes": 41154,
+      "sha256": "b6d0fa6f7037f80c37cbb087d912430570904222c2b974a4f89c3e50d2b6b9d8"
+    }
+  ],
+  "limitations": [
+    "Debug build only; not installed or published.",
+    "Long-term release keystore and passwords not read.",
+    "Static alignment is not a release artifact or a 16KiB-page device runtime test.",
+    "KGP compatibility warning about future Flutter releases retained in original build log; current build exited zero."
+  ]
+}
