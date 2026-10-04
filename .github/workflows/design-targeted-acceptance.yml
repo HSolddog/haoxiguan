@@ -19,6 +19,7 @@ env:
 jobs:
   nextcloud:
     name: Current-source Nextcloud interoperability
+    if: ${{ !contains(github.event.head_commit.message, '[page16k-only]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -68,6 +69,7 @@ jobs:
 
   page16k:
     name: Official 16 KiB emulator runtime
+    if: ${{ !contains(github.event.head_commit.message, '[nextcloud-only]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
@@ -114,7 +116,7 @@ jobs:
       - name: Strict 16384-page runtime and existing four native phases
         run: |
           python3 tools/run_android_acceptance.py \
-            --api 35 --image-target google_apis_ps16k --expected-page-size 16384 \
+            --api 35 --image-target google_apis_ps16k --expected-page-size 16384 --memory-mb 4096 \
             --product-apk build/product-startup/haoxiguan-debug.apk \
             --apks build/acceptance --output build/page16k-acceptance
       - name: Preserve 16 KiB page and runtime evidence

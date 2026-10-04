@@ -117,6 +117,9 @@ class TlsProxyHandler(BaseHTTPRequestHandler):
     def forward(self):
         status = 502
         connection = None
+        response_encoded = False
+        response_gzip_etag = False
+        response_strong_etag = False
         try:
             length = int(self.headers.get('Content-Length', '0'))
             if (length < 0 or length > MAX_PROXY_BYTES
@@ -135,6 +138,13 @@ class TlsProxyHandler(BaseHTTPRequestHandler):
                                                     timeout=15)
             connection.request(self.command, self.path, body=body, headers=headers)
             response = connection.getresponse()
+            # Boolean representation diagnostics only: never retain headers,
+            # credentials, ETag values or request URIs in the proxy evidence.
+            encoding = response.getheader('Content-Encoding', '').strip().lower()
+            tag = response.getheader('ETag', '')
+            response_encoded = encoding not in {'', 'identity'}
+            response_gzip_etag = tag.endswith('-gzip"')
+            response_strong_etag = bool(re.fullmatch(r'"[\x21\x23-\x7e\x80-\xff]*"', tag))
             payload = response.read(MAX_PROXY_BYTES + 1)
             if len(payload) > MAX_PROXY_BYTES:
                 raise OSError('oversized response')
@@ -163,6 +173,9 @@ class TlsProxyHandler(BaseHTTPRequestHandler):
                     'conditionalCreate': self.headers.get('If-None-Match') == '*',
                     'conditionalDelete': self.command == 'DELETE' and
                                          self.headers.get('If-Match') is not None,
+                    'responseContentEncoded': response_encoded,
+                    'responseEtagHasGzipSuffix': response_gzip_etag,
+                    'responseStrongEtag': response_strong_etag,
                 }) + '\n')
                 self.server.event_log.flush()
 
