@@ -52,18 +52,37 @@ jobs:
           cache-dependency-path: server/go.sum
       - name: Check only targeted Dart formatting and analysis
         run: |
-          dart format --output=none --set-exit-if-changed test/nextcloud_integration_test.dart
-          flutter analyze test/nextcloud_integration_test.dart
+          dart format --output=none --set-exit-if-changed lib/services/webdav_client.dart test/webdav_client_test.dart test/nextcloud_integration_test.dart
+          dart analyze lib/services/webdav_client.dart
+          dart analyze test/webdav_client_test.dart
+          dart analyze test/nextcloud_integration_test.dart
+      - name: Verify DAV conditions and representation behavior
+        run: flutter test --no-pub --reporter=expanded test/webdav_client_test.dart test/webdav_capability_test.dart
       - name: Verify Nextcloud runner isolation
         run: python3 -m unittest discover -s tools -p test_nextcloud_integration_runner.py -v
       - name: Real Nextcloud TLS recovery and access probe
         run: python3 tools/run_nextcloud_integration.py --output build/nextcloud-integration --startup-timeout 600 --test-timeout 900
+      - name: Install existing pinned isolated WsgiDAV service
+        run: |
+          python3 -m venv "$RUNNER_TEMP/haoxiguan-webdav-venv"
+          "$RUNNER_TEMP/haoxiguan-webdav-venv/bin/python" -m pip install --disable-pip-version-check -r tools/webdav-test-requirements.txt
+      - name: Verify the same client against WsgiDAV TLS
+        timeout-minutes: 7
+        run: '"$RUNNER_TEMP/haoxiguan-webdav-venv/bin/python" tools/run_webdav_integration.py'
       - name: Preserve sanitized Nextcloud evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: nextcloud-current-${{ github.sha }}
           path: build/nextcloud-integration/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Preserve WsgiDAV evidence for the client fix
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wsgidav-current-${{ github.sha }}
+          path: build/webdav-integration/
           if-no-files-found: warn
           retention-days: 14
 
