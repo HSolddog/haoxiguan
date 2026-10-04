@@ -136,7 +136,10 @@ class WebDavClient {
     for (var attempt = 0; attempt < 3; attempt++) {
       final request = http.Request(method, _uri(relative))
         ..followRedirects = false
-        ..headers.addAll({'Authorization': _authorization, ...headers});
+        ..headers.addAll({'Authorization': _authorization, ...headers})
+        // Compression can change an ETag used by a later conditional write or
+        // delete. Request the stored representation and preserve its exact tag.
+        ..headers['Accept-Encoding'] = 'identity';
       if (body != null) request.bodyBytes = body;
       DavResponse result;
       try {

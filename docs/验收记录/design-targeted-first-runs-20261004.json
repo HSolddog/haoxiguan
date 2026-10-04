@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "kind": "Original-design targeted acceptance: preserved failed runs",
+  "designCommit": "2454e7259b8c0609b8516e85c00d79a96c57e9d4",
+  "overall": "failed; final corrected-source execution still required",
+  "firstRun": {
+    "sourceCommit": "286ec4bd7d50e4646bd617a8af209103f095b6f6",
+    "tree": "5163399250a1e01d205151c59374ac0e5e3d4cc6",
+    "runId": 37168401786,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37168401786",
+    "nextcloud": {
+      "jobId": 111336116982,
+      "artifactId": 11290861439,
+      "artifactSha256": "520520ef97d76e3415a17c4bf7c0b6879d470b1ce516ee1d6fde3c4eaf7dd2a6",
+      "resultsSha256": "e460bb9a47a0257149d0cc6b3e3dc25f92ad1f158f62087f7a509cdcd58be47b",
+      "sourceSha256": "1cf00e34eb09b32c8159abf3a5f6abec4781d099744d66e24c209286ef9e007b",
+      "sourceFileCount": 146,
+      "sourceGitBlobsVerified": true,
+      "serviceVersion": "33.0.9",
+      "imageDigest": "nextcloud@sha256:a97666d6ae931bde78a80cfba8abdf46d436d7b540f31895803f6fb0a012d689",
+      "actualTests": {
+        "passed": 3,
+        "failed": 1,
+        "skipped": 0
+      },
+      "verified": [
+        "real TLS access probe and encrypted cross-device recovery",
+        "ordinary and compatible restore: cancel preserves all 11 SQLite tables",
+        "explicit compatible consent, original protection and reopen equality",
+        "1000-character title, 2001-character note and extension metadata preserved"
+      ],
+      "failure": "Synthetic timestamp marker PUT If-Match returned 412 before prune; retention not verified",
+      "cleanup": "owned-container-and-anonymous-volumes-removed"
+    },
+    "page16k": {
+      "jobId": 111336117109,
+      "artifactId": 11289989306,
+      "artifactSha256": "0f358d83f612a2d54b02526f7efb47940226602a49b0bbc941a51079e3951133",
+      "actualPageSize": 16384,
+      "image": "system-images;android-35;google_apis_ps16k;x86_64",
+      "guestMemoryMiB": 2048,
+      "productStartupPassed": false,
+      "completedNativePhases": 0,
+      "failure": "Guest lowmemorykiller killed the foreground product process; strict live-PID gate refused",
+      "memoryFix": "Explicit 4096 MiB guest; default ordinary emulator memory remains 2048 MiB",
+      "boundary": "Official x86_64 simulated 16 KiB environment, not an ARM64 physical-device result"
+    }
+  },
+  "diagnosticRun": {
+    "sourceCommit": "e40bc2f6a71279c30e1d6daf25bbf9b965f1c7dc",
+    "tree": "bcba69bf1ab65c1691abc8fc648059a41fc0f41c",
+    "runId": 37169307283,
+    "jobId": 111338816892,
+    "url": "https://github.com/HSolddog/haoxiguan/actions/runs/37169307283",
+    "artifactSha256": "e2efa473d4b0aea8267a7407344dd9066f6ff82c71b412ba95b74d758ba41b9d",
+    "resultsSha256": "9e545a10aecc8ee0c182e9b310a89462c8caa86f2e9e5d053bd4e70218e300e2",
+    "sourceSha256": "c4a67b69ff45f2ae1f6c9f65bd7239189c2c01c4eacaabc4a15d0a5739570b1d",
+    "actualTests": {
+      "passed": 3,
+      "failed": 1,
+      "skipped": 0
+    },
+    "markerGetRepresentation": {
+      "responseContentEncoded": true,
+      "responseEtagHasGzipSuffix": true,
+      "responseStrongEtag": true
+    },
+    "followingOriginalIfMatchPutStatus": 412,
+    "retentionVerified": false,
+    "page16kJob": "intentionally skipped"
+  },
+  "plannedFix": "Request identity representations; preserve original strong ETags and every If-Match condition",
+  "primaryDocumentation": "https://httpd.apache.org/docs/2.4/mod/mod_deflate.html#deflatealteretag",
+  "privacy": "Public summary omits local paths, URLs with temporary signatures, TLS keys, authentication headers and raw ETags"
+}

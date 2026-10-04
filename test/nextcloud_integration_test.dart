@@ -400,6 +400,9 @@ void main() {
         debugPrint(
           'NEXTCLOUD_MARKER_REPRESENTATION=${jsonEncode(representation)}',
         );
+        expect(representation['responseContentEncoded'], isFalse);
+        expect(representation['responseEtagHasGzipSuffix'], isFalse);
+        expect(representation['responseStrongEtag'], isTrue);
         try {
           await client.request(
             'PUT',
