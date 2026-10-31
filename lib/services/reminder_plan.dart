@@ -34,6 +34,8 @@ List<PlannedReminder> buildReminderPlan(
         continue;
       }
       if (!habit.isScheduledOn(day) || habit.isCompletedOn(day)) continue;
+      // The day stays recordable after the target is met; only the reminder stops.
+      if (habit.planOn(day).flexible && habit.periodResult(day).met) continue;
       result.add(PlannedReminder(habit, day, hour, minute));
     }
   }

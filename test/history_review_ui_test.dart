@@ -41,7 +41,46 @@ void main() {
     expect(find.textContaining('进行中（未结算）'), findsOneWidget);
     expect(find.text('当前连续 0 周'), findsOneWidget);
     expect(find.text('历史最佳 0 周'), findsOneWidget);
+    expect(find.textContaining('次计划'), findsNothing);
     expect(find.textContaining('0%'), findsNothing);
+  });
+
+  testWidgets('日计划连续单位是天，月计划是月', (tester) async {
+    await controller.addHabit(
+      title: '每天',
+      emoji: '🌱',
+      colorValue: 0xff5f8068,
+      weekdays: {1, 2, 3, 4, 5, 6, 7},
+    );
+    await controller.addHabit(
+      title: '每月',
+      emoji: '🌙',
+      colorValue: 0xff5f8068,
+      weekdays: {1, 2, 3, 4, 5, 6, 7},
+      scheduleType: 'month',
+      scheduleCount: 3,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              for (final habit in controller.habits)
+                HabitHistorySummary(
+                  controller: controller,
+                  habit: habit,
+                  days: 30,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(find.text('当前连续 0 天'), findsOneWidget);
+    expect(find.text('历史最佳 0 天'), findsOneWidget);
+    expect(find.text('当前连续 0 月'), findsOneWidget);
+    expect(find.text('历史最佳 0 月'), findsOneWidget);
+    expect(find.textContaining('次计划'), findsNothing);
   });
 
   testWidgets('历史校正UI必须经影响预览确认，取消不修改', (tester) async {

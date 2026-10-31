@@ -577,9 +577,12 @@ class HabitController extends ChangeNotifier {
     if (index < 0) return;
     final habit = _habits[index];
     if (habit.recordType != 'boolean' ||
-        habit.inTrash ||
-        dateOnly(date).isAfter(today) ||
-        dateOnly(date).isBefore(dateOnly(habit.createdAt))) {
+        habit.checkInBlockReason(
+              date,
+              today: today,
+              adding: !habit.isCompletedOn(date),
+            ) !=
+            null) {
       return;
     }
     final key = dateKey(date);
@@ -602,10 +605,8 @@ class HabitController extends ChangeNotifier {
     if (index < 0) return;
     final habit = _habits[index];
     if (habit.recordType != 'boolean' ||
-        habit.inTrash ||
         habit.isCompletedOn(date) ||
-        dateOnly(date).isAfter(today) ||
-        dateOnly(date).isBefore(dateOnly(habit.createdAt))) {
+        habit.checkInBlockReason(date, today: today) != null) {
       return;
     }
     final id = const Uuid().v5(
@@ -635,13 +636,13 @@ class HabitController extends ChangeNotifier {
       final index = _habits.indexWhere((habit) => habit.id == habitId);
       if (index < 0) return;
       final habit = _habits[index];
+      final blocked = habit.checkInBlockReason(date, today: today);
       if (habit.inTrash ||
           habit.recordType == 'boolean' ||
           value < 0 ||
           value > 1000000000000 ||
-          dateOnly(date).isAfter(today) ||
-          dateOnly(date).isBefore(dateOnly(habit.createdAt))) {
-        throw const FormatException('记录范围无效');
+          blocked != null) {
+        throw FormatException(blocked ?? '记录范围无效');
       }
       if (habit.entries.any((e) => e.id == id)) return;
       final entries = habit.entries
@@ -662,11 +663,14 @@ class HabitController extends ChangeNotifier {
       final index = _habits.indexWhere((h) => h.id == habitId);
       if (index < 0) throw const FormatException('习惯不存在');
       final habit = _habits[index];
-      if (habit.inTrash ||
-          dateOnly(date).isAfter(today) ||
-          dateOnly(date).isBefore(habit.createdAt)) {
-        throw const FormatException('记录日期无效');
-      }
+      final adding =
+          habit.recordType != 'boolean' || !habit.isCompletedOn(date);
+      final blocked = habit.checkInBlockReason(
+        date,
+        today: today,
+        adding: adding,
+      );
+      if (blocked != null) throw FormatException(blocked);
       final isBoolean = habit.recordType == 'boolean';
       final id = isBoolean
           ? const Uuid().v5(

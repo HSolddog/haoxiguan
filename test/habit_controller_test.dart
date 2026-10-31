@@ -164,7 +164,7 @@ void main() {
     expect(updated.isCompletedOn(now.add(const Duration(days: 1))), isFalse);
   });
 
-  test('每周任意天达到设定次数后，本周期不再重复安排', () async {
+  test('每周任意天达到设定次数后仍留在今日并可继续打卡', () async {
     final habit = Habit(
       id: 'flex-week',
       title: '灵活运动',
@@ -191,6 +191,9 @@ void main() {
     final updated = controller.habitById('flex-week')!;
     expect(updated.completions.length, 3);
     expect(updated.isScheduledOn(now), isTrue);
+    expect(updated.periodProgressLabel(now), '本周已达标 3/2');
+    expect(controller.periodHabits.map((habit) => habit.id), ['flex-week']);
+    expect(controller.todayHabits, isEmpty);
     expect(executionLabel(updated), '每周任意 2 天');
   });
 
@@ -303,6 +306,44 @@ void main() {
     await controller.load();
 
     expect(controller.effortPoints(controller.habits.single), 15);
+  });
+
+  test('周计划超额打卡按次数加努力值，未打满目标才扣分', () async {
+    Habit weekHabit(List<int> days) => Habit(
+      id: 'effort-week',
+      title: '灵活运动',
+      emoji: '🏃',
+      colorValue: 0xFF5F8068,
+      weekdays: const <int>{1, 2, 3, 4, 5, 6, 7},
+      createdAt: DateTime(2026, 7, 6),
+      scheduleType: 'week',
+      scheduleCount: 3,
+      effortEnabled: true,
+      rewardPoints: 10,
+      penaltyPoints: 5,
+      targetCount: 3,
+      completions: {
+        for (final day in days)
+          '2026-07-${day.toString().padLeft(2, '0')}':
+              '2026-07-${day.toString().padLeft(2, '0')}T10:00:00',
+      },
+    );
+    Future<int> points(List<int> days) async {
+      final controller = HabitController(
+        MemoryHabitRepository(
+          jsonEncode(<String, Object?>{
+            'version': 2,
+            'habits': <Object?>[weekHabit(days).toJson()],
+          }),
+        ),
+        clock: () => now,
+      );
+      await controller.load();
+      return controller.effortPoints(controller.habits.single);
+    }
+
+    expect(await points([6, 7, 8, 9, 10]), 50);
+    expect(await points([6, 7]), 15);
   });
 
   test('默认习惯也可以永久删除，主题与回顾周期会持久化', () async {

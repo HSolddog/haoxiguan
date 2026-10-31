@@ -174,13 +174,51 @@ class Habit {
     return true;
   }
 
+  /// A day on the plan. Reaching a week/month target does not turn this off,
+  /// so extra check-ins and backfills stay available. Reminders stop separately.
   bool isScheduledOn(DateTime date) {
     final day = dateOnly(date);
     if (!isActiveOn(day)) return false;
-    final plan = planOn(day);
-    if (!plan.allows(day)) return false;
-    if (!plan.flexible) return true;
-    return isCompletedOn(day) || !periodResult(day).met;
+    return planOn(day).allows(day);
+  }
+
+  /// Why a new check-in or backfill cannot be stored, or null when it can.
+  /// Undoing an existing completion is allowed on inactive days.
+  String? checkInBlockReason(
+    DateTime date, {
+    required DateTime today,
+    bool adding = true,
+  }) {
+    final day = dateOnly(date);
+    if (day.isAfter(dateOnly(today))) return '不能为未来日期打卡';
+    if (inTrash) return '习惯在回收站中，不能打卡';
+    if (day.isBefore(dateOnly(createdAt))) return '早于开始日期，不能补卡';
+    if (!adding) return null;
+    if (archivedAt != null && !day.isBefore(dateOnly(archivedAt!))) {
+      return '这一天习惯已停用，不能打卡';
+    }
+    if (pausedAt != null && !day.isBefore(dateOnly(pausedAt!))) {
+      return '习惯已暂停，这一天不能打卡';
+    }
+    if (exemptions.contains(dateKey(day))) {
+      return '休息日不能打卡，长按可取消休息';
+    }
+    if (!planOn(day).allows(day)) return '这一天不在计划星期内';
+    return null;
+  }
+
+  bool canCheckInOn(
+    DateTime date, {
+    required DateTime today,
+    bool adding = true,
+  }) => checkInBlockReason(date, today: today, adding: adding) == null;
+
+  String periodProgressLabel(DateTime date) {
+    final plan = planOn(date);
+    final result = periodResult(date);
+    final scope = plan.kind == 'month' ? '本月' : '本周';
+    final ratio = '${result.completed}/${plan.periodTarget}';
+    return result.met ? '$scope已达标 $ratio' : '$scope $ratio';
   }
 
   int completionsInPeriod(DateTime date) => periodResult(date).completed;

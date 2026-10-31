@@ -43,6 +43,19 @@ void main() {
       isFalse,
     );
   });
+  test('周目标达标后剩余日期不再提醒，记录本身不受影响', () {
+    final monday = DateTime(2026, 7, 13, 8);
+    final tuesday = DateTime(2026, 7, 14, 8);
+    final done = habit(
+      'week',
+      kind: 'week',
+    ).copyWith(completions: {'2026-07-13': '2026-07-13T07:00:00.000'});
+    expect(done.periodResult(monday).met, isTrue);
+    expect(done.isScheduledOn(tuesday), isTrue);
+    expect(done.canCheckInOn(tuesday, today: tuesday), isTrue);
+    final plan = buildReminderPlan([done], monday, days: 7);
+    expect(plan.where((reminder) => reminder.habit.id == 'week'), isEmpty);
+  });
   test('提醒按实际日期排序且有总量上限', () {
     final plan = buildReminderPlan(
       [habit('z'), habit('a')],
