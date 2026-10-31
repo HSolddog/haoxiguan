@@ -124,15 +124,64 @@ void main() {
     expect(controller.completedCountInRange(habit, days: 30), 0);
     expect(controller.settledResults(habit).single.completed, 2);
   });
-  test('非计划日记录作为额外行为，不加入达标分子', () async {
+  test('非计划日不能新增打卡，也不计入达标', () async {
     final id = await create(kind: 'weekdays', days: {1, 3, 5});
     now = DateTime(2026, 7, 14);
     await controller.markCompleted(id, now);
     now = DateTime(2026, 7, 15);
     final habit = controller.habitById(id)!;
-    expect(habit.completions, hasLength(1));
+    expect(habit.isCompletedOn(DateTime(2026, 7, 14)), isFalse);
+    expect(habit.completions, isEmpty);
+    expect(
+      habit.checkInBlockReason(DateTime(2026, 7, 14), today: now),
+      '这一天不在计划星期内',
+    );
     expect(controller.completedCountInRange(habit, days: 30), 0);
     expect(controller.expectedCountInRange(habit, days: 30), 1);
+  });
+  test('周目标达标后仍可补卡，超额不改变周期达标率', () async {
+    final id = await create(kind: 'week', count: 3);
+    for (final day in [13, 14, 15, 16, 17]) {
+      now = DateTime(2026, 7, day);
+      expect(
+        await controller.markCompleted(id, DateTime(2026, 7, day)),
+        isTrue,
+      );
+    }
+    final during = controller.habitById(id)!;
+    expect(during.periodResult(DateTime(2026, 7, 13)).completed, 5);
+    expect(during.periodResult(DateTime(2026, 7, 13)).met, isTrue);
+    expect(during.periodProgressLabel(DateTime(2026, 7, 17)), '本周已达标 5/3');
+    expect(during.isScheduledOn(DateTime(2026, 7, 17)), isTrue);
+    expect(controller.periodHabits.map((habit) => habit.id), contains(id));
+    expect(await controller.markCompleted(id, DateTime(2026, 7, 18)), isTrue);
+    expect(
+      controller.habitById(id)!.isCompletedOn(DateTime(2026, 7, 18)),
+      isFalse,
+    );
+    expect(
+      controller
+          .habitById(id)!
+          .checkInBlockReason(DateTime(2026, 7, 18), today: now),
+      '不能为未来日期打卡',
+    );
+    await controller.toggleRest(id, DateTime(2026, 7, 16));
+    expect(
+      controller
+          .habitById(id)!
+          .checkInBlockReason(DateTime(2026, 7, 16), today: now, adding: true),
+      '休息日不能打卡，长按可取消休息',
+    );
+    expect(
+      controller.habitById(id)!.isCompletedOn(DateTime(2026, 7, 16)),
+      isTrue,
+    );
+    now = DateTime(2026, 7, 20);
+    final settled = controller.habitById(id)!;
+    expect(controller.expectedCountInRange(settled, days: 30), 1);
+    expect(controller.completedCountInRange(settled, days: 30), 1);
+    expect(controller.completionRate(settled), 1);
+    expect(controller.currentStreak(settled), 1);
   });
   test('整周期休息不增加、不打断连续', () async {
     final id = await create(kind: 'week', count: 1);

@@ -641,6 +641,10 @@ class _ProgressCard extends StatelessWidget {
   }
 }
 
+Color _periodMetColor(Brightness brightness) => brightness == Brightness.dark
+    ? const Color(0xFF8ED6A8)
+    : const Color(0xFF1B7A45);
+
 class HabitCard extends StatefulWidget {
   const HabitCard({
     super.key,
@@ -664,6 +668,17 @@ class _HabitCardState extends State<HabitCard> {
   Future<void> _quickRecord() async {
     if (_saving) return;
     final messenger = ScaffoldMessenger.of(context);
+    final adding = habit.recordType != 'boolean' || !habit.isCompletedOn(date);
+    final blocked = habit.checkInBlockReason(
+      date,
+      today: controller.today,
+      adding: adding,
+    );
+    if (blocked != null) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(content: Text(blocked)));
+      return;
+    }
     setState(() => _saving = true);
     final undo = await controller.quickRecord(habit.id, date);
     if (!mounted) return;
@@ -713,6 +728,9 @@ class _HabitCardState extends State<HabitCard> {
         ? '＋5 分钟'
         : '＋1 ${habit.unit}';
     final colors = Theme.of(context).colorScheme;
+    final periodMet =
+        habit.planOn(date).flexible && habit.periodResult(date).met;
+    final metColor = _periodMetColor(Theme.of(context).brightness);
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
@@ -752,14 +770,26 @@ class _HabitCardState extends State<HabitCard> {
                           Text(
                             '${habit.valueLabel(habit.valueOn(date))} / ${habit.valueLabel(habit.planOn(date).dailyTarget)}',
                           ),
-                        Text(completed ? '今日已完成' : '今日待完成'),
-                        if (habit.planOn(date).flexible) ...[
+                        Text(
+                          completed ? '今日已完成' : '今日待完成',
+                          style: periodMet
+                              ? TextStyle(
+                                  color: metColor,
+                                  fontWeight: FontWeight.w800,
+                                )
+                              : null,
+                        ),
+                        if (habit.planOn(date).flexible)
                           Text(
-                            '${habit.planOn(date).kind == 'week' ? '本周' : '本月'} ${habit.periodResult(date).completed}/${habit.periodResult(date).expected} 天',
+                            habit.periodProgressLabel(date),
+                            key: Key('period-status-${habit.id}'),
+                            style: TextStyle(
+                              color: periodMet ? metColor : null,
+                              fontWeight: periodMet
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                            ),
                           ),
-                          if (habit.periodResult(date).met)
-                            const Text('本周期已达标，仍可继续记录'),
-                        ],
                         Text(
                           habit.reminderTime ?? executionLabel(habit),
                           style: Theme.of(context).textTheme.bodySmall,
@@ -803,10 +833,14 @@ class _HabitCardState extends State<HabitCard> {
                       ),
                       style: IconButton.styleFrom(
                         backgroundColor: completed
-                            ? colors.primary
+                            ? (periodMet ? metColor : colors.primary)
+                            : periodMet
+                            ? metColor.withValues(alpha: 0.16)
                             : colors.primaryContainer,
                         foregroundColor: completed
-                            ? colors.onPrimary
+                            ? readableOn(periodMet ? metColor : colors.primary)
+                            : periodMet
+                            ? metColor
                             : colors.onPrimaryContainer,
                       ),
                       onPressed: _saving ? null : _quickRecord,
@@ -2594,6 +2628,16 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
         )
       : null;
 
+  void _showCalendarHint(String message) {
+    setState(() {
+      _writeError = message;
+      _writeTarget = 'calendar';
+    });
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
+  }
+
   void _showWriteError(String message) {
     setState(() => _writeError = message);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2855,24 +2899,33 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                           final scheduled = habit.isScheduledOn(day);
                           final completed = habit.isCompletedOn(day);
                           final backfilled = habit.isBackfilledOn(day);
-                          final available =
+                          final blockReason = habit.checkInBlockReason(
+                            day,
+                            today: controller.today,
+                            adding: !completed,
+                          );
+                          final canRest =
                               !habit.inTrash &&
                               !day.isBefore(dateOnly(habit.createdAt)) &&
                               !day.isAfter(controller.today);
+                          // Future and pre-start cells explain a tap, but must not
+                          // become partial buttons when the 7-column calendar scrolls.
+                          final hintOnly = blockReason != null && !canRest;
                           final isToday =
                               dateKey(day) == dateKey(controller.today);
                           return Semantics(
-                            button: available,
+                            button: !hintOnly,
                             label:
                                 '${day.month}月${day.day}日，${completed
                                     ? '已完成'
                                     : scheduled
                                     ? '待完成'
-                                    : '非计划日'}${backfilled ? '，补录' : ''}${available ? '' : '，不可记录'}',
+                                    : '非计划日'}${backfilled ? '，补录' : ''}${blockReason == null ? '' : '，$blockReason'}',
                             child: InkWell(
                               key: Key('detail-day-${dateKey(day)}'),
+                              excludeFromSemantics: hintOnly,
                               borderRadius: BorderRadius.circular(13),
-                              onLongPress: available && !_writing
+                              onLongPress: canRest && !_writing
                                   ? () => _write(() async {
                                       final rest = habit.exemptions.contains(
                                         dateKey(day),
@@ -2923,11 +2976,12 @@ class _HabitDetailSheetState extends State<HabitDetailSheet> {
                                       return null;
                                     }, target: 'calendar')
                                   : null,
-                              onTap:
-                                  available &&
-                                      (habit.recordType != 'boolean' ||
-                                          !_writing)
+                              onTap: habit.recordType != 'boolean' || !_writing
                                   ? () {
+                                      if (blockReason != null) {
+                                        _showCalendarHint(blockReason);
+                                        return;
+                                      }
                                       if (habit.recordType == 'boolean') {
                                         _write(
                                           () => controller.toggleCompletion(

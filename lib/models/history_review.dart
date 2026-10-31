@@ -7,7 +7,7 @@ String reviewKind(PlanVersion plan) => plan.flexible ? plan.kind : 'day';
 String reviewUnit(String kind) => switch (kind) {
   'week' => '周',
   'month' => '月',
-  _ => '次计划',
+  _ => '天',
 };
 
 class HistoryGroup {
